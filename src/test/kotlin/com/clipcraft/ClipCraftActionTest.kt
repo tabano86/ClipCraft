@@ -5,14 +5,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ClipCraftActionTest {
-
  @Test
  fun testProcessContentWithLineNumbers() {
   val action = ClipCraftAction()
   val content = "foo\nbar\nbaz"
   val opts = ClipCraftOptions(includeLineNumbers = true)
   val result = action.processContent(content, opts, "txt")
-  val expected = "   1: foo\n   2: bar\n   3: baz"
+  val expected = "   1: foo" + System.lineSeparator() +
+          "   2: bar" + System.lineSeparator() +
+          "   3: baz"
   assertEquals(expected, result)
  }
 
@@ -22,7 +23,9 @@ class ClipCraftActionTest {
   val content = "alpha\nbeta\ngamma"
   val opts = ClipCraftOptions(includeLineNumbers = false)
   val result = action.processContent(content, opts, "txt")
-  val expected = "alpha\nbeta\ngamma"
+  val expected = "alpha" + System.lineSeparator() +
+          "beta" + System.lineSeparator() +
+          "gamma"
   assertEquals(expected, result)
  }
 
@@ -32,7 +35,8 @@ class ClipCraftActionTest {
   val content = "code line\n// comment line\nmore code"
   val opts = ClipCraftOptions(includeLineNumbers = false, removeComments = true)
   val result = action.processContent(content, opts, "java")
-  val expected = "code line\nmore code"
+  val expected = "code line" + System.lineSeparator() +
+          "more code"
   assertEquals(expected, result)
  }
 
@@ -42,7 +46,8 @@ class ClipCraftActionTest {
   val content = "  foo  \n  bar  "
   val opts = ClipCraftOptions(includeLineNumbers = false, trimLineWhitespace = true)
   val result = action.processContent(content, opts, "txt")
-  val expected = "foo\nbar"
+  val expected = "  foo" + System.lineSeparator() +
+          "  bar"
   assertEquals(expected, result)
  }
 }

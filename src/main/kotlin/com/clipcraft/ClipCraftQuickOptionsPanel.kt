@@ -1,14 +1,32 @@
 package com.clipcraft
 
 import com.clipcraft.model.ClipCraftOptions
-import javax.swing.*
+import javax.swing.JCheckBox
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JTextField
 
+/**
+ * A compact panel for quick adjustment of advanced options.
+ * This panel is shown when the user holds Alt while invoking the action.
+ */
 class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions) : JPanel() {
-    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(","))
-    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(","))
-    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(","))
-    private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
-    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Line Whitespace", initialOptions.trimLineWhitespace)
+    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(",")).apply {
+        toolTipText = "Comma-separated folder names to ignore."
+    }
+    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(",")).apply {
+        toolTipText = "Comma-separated file names to ignore."
+    }
+    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(",")).apply {
+        toolTipText = "Comma-separated regex patterns to ignore files."
+    }
+    private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments).apply {
+        toolTipText = "Strip out comment lines from code."
+    }
+    private val trimLineWhitespaceCheckBox =
+        JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace).apply {
+            toolTipText = "Remove trailing spaces (but preserve indentation)."
+        }
 
     init {
         layout = java.awt.GridLayout(0, 2, 10, 10)

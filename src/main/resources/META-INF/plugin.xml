@@ -6,17 +6,13 @@
     <description><![CDATA[
         ClipCraft bulk-copies multiple files and directories (including subdirectories)
         and formats their contents for easy sharing. Large files are handled in the background,
-        and user settings are stored persistently for minimal friction.
+        and user settings are stored persistently with an intuitive UI.
     ]]></description>
 
-    <!-- Our plugin requires at least platform modules. -->
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Persistent state management -->
         <applicationService serviceImplementation="com.clipcraft.ClipCraftSettings"/>
-
-        <!-- Register a settings page under "File → Settings → ClipCraft" -->
         <applicationConfigurable
                 instance="com.clipcraft.ClipCraftConfigurable"
                 displayName="ClipCraft"
@@ -28,13 +24,10 @@
                 id="ClipCraftAction"
                 class="com.clipcraft.ClipCraftAction"
                 text="ClipCraft: Copy Formatted Code"
-                description="Copies multiple files' code in bulk.">
-            <!-- Appear in Editor popup menu, Project View popup, and main toolbar. -->
+                description="Copies and formats code from selected files in bulk.">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="MainToolBar" anchor="last"/>
-
-            <!-- Shortcut: Ctrl+Alt+X -->
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt X"/>
         </action>
     </actions>

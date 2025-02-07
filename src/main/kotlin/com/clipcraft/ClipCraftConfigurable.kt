@@ -1,33 +1,61 @@
 package com.clipcraft
 
-import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
-import java.awt.GridLayout
 import javax.swing.*
 
+/**
+ * Settings page for ClipCraft.
+ * Provides a full-featured UI with tooltips and clear labels.
+ */
 class ClipCraftConfigurable : Configurable {
+    private val panel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
 
-    private val panel = JPanel().apply {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+    // Basic Options
+    private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers").apply {
+        toolTipText = "Prefix each line with its line number."
+    }
+    private val showPreviewCheckBox = JCheckBox("Show Preview").apply {
+        toolTipText = "Display a preview dialog of the copied code."
+    }
+    private val exportToFileCheckBox = JCheckBox("Export to File").apply {
+        toolTipText = "Save the copied code to a file instead of the clipboard."
+    }
+    private val exportFilePathField = JTextField(30).apply {
+        toolTipText = "File path to export the copied code (default: project directory/clipcraft_output.txt)."
+    }
+    private val includeMetadataCheckBox = JCheckBox("Include File Metadata").apply {
+        toolTipText = "Include file size and last modified timestamp in the header."
+    }
+    private val autoProcessCheckBox = JCheckBox("Automatically Process (No Prompt)").apply {
+        toolTipText = "Process files immediately without prompting for options."
+    }
+    private val largeFileThresholdField = JTextField(10).apply {
+        toolTipText = "Threshold (in bytes) above which files are loaded with a progress indicator."
+    }
+    private val singleCodeBlockCheckBox = JCheckBox("Merge into One Code Block").apply {
+        toolTipText = "Merge all file outputs into a single code block."
+    }
+    private val minimizeWhitespaceCheckBox = JCheckBox("Minimize Blank Lines").apply {
+        toolTipText = "Collapse consecutive blank lines in the output."
     }
 
-    private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers")
-    private val showPreviewCheckBox = JCheckBox("Show Preview")
-    private val exportToFileCheckBox = JCheckBox("Export to File")
-    private val exportFilePathField = JTextField(30)
-    private val includeMetadataCheckBox = JCheckBox("Include File Metadata")
-    private val autoProcessCheckBox = JCheckBox("Automatically Process (No Prompt)")
-    private val largeFileThresholdField = JTextField(10)
-    private val singleCodeBlockCheckBox = JCheckBox("Merge everything into one code block")
-    private val minimizeWhitespaceCheckBox = JCheckBox("Minimize consecutive blank lines")
-
-    // Advanced options components.
-    private val ignoreFoldersField = JTextField(30)
-    private val ignoreFilesField = JTextField(30)
-    private val ignorePatternsField = JTextField(30)
-    private val removeCommentsCheckBox = JCheckBox("Remove Comments")
-    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Line Whitespace")
+    // Advanced Options
+    private val ignoreFoldersField = JTextField(30).apply {
+        toolTipText = "Comma-separated folder names to ignore (e.g. .git, build)."
+    }
+    private val ignoreFilesField = JTextField(30).apply {
+        toolTipText = "Comma-separated file names to ignore."
+    }
+    private val ignorePatternsField = JTextField(30).apply {
+        toolTipText = "Comma-separated regex patterns; matching file names will be ignored."
+    }
+    private val removeCommentsCheckBox = JCheckBox("Remove Comments").apply {
+        toolTipText = "Strip out comment lines from source code."
+    }
+    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace").apply {
+        toolTipText = "Remove trailing spaces from each line (preserves indentation)."
+    }
 
     init {
         panel.add(includeLineNumbersCheckBox)
@@ -42,9 +70,10 @@ class ClipCraftConfigurable : Configurable {
         panel.add(singleCodeBlockCheckBox)
         panel.add(minimizeWhitespaceCheckBox)
 
-        // Advanced options panel with a titled border.
-        val advancedPanel = JPanel(GridLayout(0, 2, 10, 10))
-        advancedPanel.border = BorderFactory.createTitledBorder("Advanced Options")
+        val advancedPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            border = BorderFactory.createTitledBorder("Advanced Options")
+        }
         advancedPanel.add(JLabel("Ignore Folders (comma separated):"))
         advancedPanel.add(ignoreFoldersField)
         advancedPanel.add(JLabel("Ignore Files (comma separated):"))
@@ -54,6 +83,7 @@ class ClipCraftConfigurable : Configurable {
         advancedPanel.add(removeCommentsCheckBox)
         advancedPanel.add(trimLineWhitespaceCheckBox)
 
+        panel.add(Box.createVerticalStrut(10))
         panel.add(advancedPanel)
     }
 
@@ -124,6 +154,6 @@ class ClipCraftConfigurable : Configurable {
     }
 
     override fun disposeUIResources() {
-        // nothing special to dispose
+        // Dispose of UI resources if necessary.
     }
 }

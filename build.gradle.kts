@@ -30,7 +30,7 @@ java {
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     sinceBuild.set("182")
-    untilBuild.set("*")
+    untilBuild.set("243.*")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

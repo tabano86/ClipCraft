@@ -1,31 +1,32 @@
 package com.clipcraft
 
+import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import javax.swing.*
 
 /**
  * Settings page for ClipCraft.
- * Provides a full-featured UI with tooltips and clear labels.
+ * Provides a full-featured UI with clear labels, tooltips, and an intuitive layout.
  */
 class ClipCraftConfigurable : Configurable {
     private val panel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
 
     // Basic Options
     private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers").apply {
-        toolTipText = "Prefix each line with its line number."
+        toolTipText = "Prefix each line with its number."
     }
     private val showPreviewCheckBox = JCheckBox("Show Preview").apply {
-        toolTipText = "Display a preview dialog of the copied code."
+        toolTipText = "Display a preview dialog before copying."
     }
     private val exportToFileCheckBox = JCheckBox("Export to File").apply {
-        toolTipText = "Save the copied code to a file instead of the clipboard."
+        toolTipText = "Save the output to a file instead of the clipboard."
     }
     private val exportFilePathField = JTextField(30).apply {
-        toolTipText = "File path to export the copied code (default: project directory/clipcraft_output.txt)."
+        toolTipText = "File path to export the output (default: project directory/clipcraft_output.txt)."
     }
     private val includeMetadataCheckBox = JCheckBox("Include File Metadata").apply {
-        toolTipText = "Include file size and last modified timestamp in the header."
+        toolTipText = "Display file size and last modified info in the header."
     }
     private val autoProcessCheckBox = JCheckBox("Automatically Process (No Prompt)").apply {
         toolTipText = "Process files immediately without prompting for options."
@@ -38,6 +39,14 @@ class ClipCraftConfigurable : Configurable {
     }
     private val minimizeWhitespaceCheckBox = JCheckBox("Minimize Blank Lines").apply {
         toolTipText = "Collapse consecutive blank lines in the output."
+    }
+
+    // New Options: Output Format and Remove Import Statements
+    private val outputFormatComboBox = JComboBox(OutputFormat.values()).apply {
+        toolTipText = "Select output format: Markdown, Plain Text, or HTML."
+    }
+    private val removeImportsCheckBox = JCheckBox("Remove Import Statements").apply {
+        toolTipText = "Remove import statements from the code."
     }
 
     // Advanced Options
@@ -69,6 +78,9 @@ class ClipCraftConfigurable : Configurable {
         panel.add(largeFileThresholdField)
         panel.add(singleCodeBlockCheckBox)
         panel.add(minimizeWhitespaceCheckBox)
+        panel.add(JLabel("Output Format:"))
+        panel.add(outputFormatComboBox)
+        panel.add(removeImportsCheckBox)
 
         val advancedPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -105,6 +117,8 @@ class ClipCraftConfigurable : Configurable {
                 largeFileThresholdField.text != opts.largeFileThreshold.toString() ||
                 singleCodeBlockCheckBox.isSelected != opts.singleCodeBlock ||
                 minimizeWhitespaceCheckBox.isSelected != opts.minimizeWhitespace ||
+                outputFormatComboBox.selectedItem != opts.outputFormat ||
+                removeImportsCheckBox.isSelected != opts.removeImports ||
                 ignoreFoldersField.text != opts.ignoreFolders.joinToString(",") ||
                 ignoreFilesField.text != opts.ignoreFiles.joinToString(",") ||
                 ignorePatternsField.text != opts.ignorePatterns.joinToString(",") ||
@@ -124,6 +138,8 @@ class ClipCraftConfigurable : Configurable {
         opts.largeFileThreshold = largeFileThresholdField.text.toLongOrNull() ?: opts.largeFileThreshold
         opts.singleCodeBlock = singleCodeBlockCheckBox.isSelected
         opts.minimizeWhitespace = minimizeWhitespaceCheckBox.isSelected
+        opts.outputFormat = outputFormatComboBox.selectedItem as OutputFormat
+        opts.removeImports = removeImportsCheckBox.isSelected
 
         opts.ignoreFolders = ignoreFoldersField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         opts.ignoreFiles = ignoreFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
@@ -145,6 +161,8 @@ class ClipCraftConfigurable : Configurable {
         largeFileThresholdField.text = opts.largeFileThreshold.toString()
         singleCodeBlockCheckBox.isSelected = opts.singleCodeBlock
         minimizeWhitespaceCheckBox.isSelected = opts.minimizeWhitespace
+        outputFormatComboBox.selectedItem = opts.outputFormat
+        removeImportsCheckBox.isSelected = opts.removeImports
 
         ignoreFoldersField.text = opts.ignoreFolders.joinToString(",")
         ignoreFilesField.text = opts.ignoreFiles.joinToString(",")
@@ -154,6 +172,6 @@ class ClipCraftConfigurable : Configurable {
     }
 
     override fun disposeUIResources() {
-        // Dispose of UI resources if necessary.
+        // Dispose resources if needed.
     }
 }

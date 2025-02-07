@@ -1,16 +1,17 @@
 package com.clipcraft
 
 import com.clipcraft.model.ClipCraftOptions
-import javax.swing.JCheckBox
-import javax.swing.JLabel
-import javax.swing.JPanel
-import javax.swing.JTextField
+import com.clipcraft.model.OutputFormat
+import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.project.Project
+import javax.swing.*
 
 /**
  * A compact panel for quick adjustment of advanced options.
- * This panel is shown when the user holds Alt while invoking the action.
+ * It is displayed when the user holds Alt while invoking the action.
+ * Also includes an “Open Full Settings” button for easy access.
  */
-class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions) : JPanel() {
+class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val project: Project?) : JPanel() {
     private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(",")).apply {
         toolTipText = "Comma-separated folder names to ignore."
     }
@@ -27,6 +28,19 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions) : JPanel() {
         JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace).apply {
             toolTipText = "Remove trailing spaces (but preserve indentation)."
         }
+    private val outputFormatComboBox = JComboBox(OutputFormat.values()).apply {
+        selectedItem = initialOptions.outputFormat
+        toolTipText = "Select output format: Markdown, Plain, or HTML."
+    }
+    private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports).apply {
+        toolTipText = "Remove import statements from code."
+    }
+    private val openSettingsButton = JButton("Open Full Settings").apply {
+        toolTipText = "Open full ClipCraft settings."
+        addActionListener {
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, "ClipCraft")
+        }
+    }
 
     init {
         layout = java.awt.GridLayout(0, 2, 10, 10)
@@ -38,6 +52,10 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions) : JPanel() {
         add(ignorePatternsField)
         add(removeCommentsCheckBox)
         add(trimLineWhitespaceCheckBox)
+        add(JLabel("Output Format:"))
+        add(outputFormatComboBox)
+        add(removeImportsCheckBox)
+        add(openSettingsButton)
     }
 
     fun getOptions(): ClipCraftOptions {
@@ -47,7 +65,9 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions) : JPanel() {
             ignoreFiles = ignoreFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
             ignorePatterns = ignorePatternsField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
             removeComments = removeCommentsCheckBox.isSelected,
-            trimLineWhitespace = trimLineWhitespaceCheckBox.isSelected
+            trimLineWhitespace = trimLineWhitespaceCheckBox.isSelected,
+            outputFormat = outputFormatComboBox.selectedItem as OutputFormat,
+            removeImports = removeImportsCheckBox.isSelected
         )
     }
 }

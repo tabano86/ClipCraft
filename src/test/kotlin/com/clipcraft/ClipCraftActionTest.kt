@@ -1,6 +1,7 @@
 package com.clipcraft
 
 import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.OutputFormat
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -48,6 +49,27 @@ class ClipCraftActionTest {
   val result = action.processContent(content, opts, "txt")
   val expected = "  foo" + System.lineSeparator() +
           "  bar"
+  assertEquals(expected, result)
+ }
+
+ @Test
+ fun testProcessContentWithRemoveImports() {
+  val action = ClipCraftAction()
+  val content = "import java.util.*\npublic class Test {}"
+  val opts = ClipCraftOptions(includeLineNumbers = false, removeImports = true)
+  val result = action.processContent(content, opts, "java")
+  val expected = "public class Test {}"
+  assertEquals(expected, result.trim())
+ }
+
+ @Test
+ fun testOutputFormatHTML() {
+  val action = ClipCraftAction()
+  val content = "foo\nbar"
+  val opts = ClipCraftOptions(includeLineNumbers = false, outputFormat = OutputFormat.HTML)
+  val result = action.processContent(content, opts, "txt")
+  val expected = "foo" + System.lineSeparator() +
+          "bar"
   assertEquals(expected, result)
  }
 }

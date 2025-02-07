@@ -1,13 +1,14 @@
 package com.clipcraft
 
 import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.ui.DialogWrapper
 import java.awt.GridLayout
 import javax.swing.*
 
 /**
  * A modal dialog for quickly configuring ClipCraft options.
- * Designed for users who prefer not to use the full settings page.
+ * Ideal for users who prefer not to use the full settings page.
  */
 class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
     private val panel = JPanel(GridLayout(0, 2, 10, 10))
@@ -28,6 +29,15 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     }
     private val includeMetadataCheckBox = JCheckBox("Include File Metadata", initialOptions.includeMetadata).apply {
         toolTipText = "Display file size and last modified info."
+    }
+
+    // New Options
+    private val outputFormatComboBox = JComboBox(OutputFormat.values()).apply {
+        selectedItem = initialOptions.outputFormat
+        toolTipText = "Select output format: Markdown, Plain, or HTML."
+    }
+    private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports).apply {
+        toolTipText = "Remove import statements from the code."
     }
 
     // Advanced options
@@ -56,6 +66,9 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
         panel.add(JLabel("Export File Path:"))
         panel.add(exportFilePathField)
         panel.add(includeMetadataCheckBox)
+        panel.add(JLabel("Output Format:"))
+        panel.add(outputFormatComboBox)
+        panel.add(removeImportsCheckBox)
 
         val advancedPanel = JPanel(GridLayout(0, 2, 10, 10)).apply {
             border = BorderFactory.createTitledBorder("Advanced Options")
@@ -70,7 +83,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
         advancedPanel.add(trimLineWhitespaceCheckBox)
 
         panel.add(advancedPanel)
-        // Add an empty label to fill grid symmetry.
+        // Fill grid symmetry.
         panel.add(JLabel())
         init()
     }
@@ -87,6 +100,8 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
         largeFileThreshold = initialOptions.largeFileThreshold,
         singleCodeBlock = initialOptions.singleCodeBlock,
         minimizeWhitespace = initialOptions.minimizeWhitespace,
+        outputFormat = outputFormatComboBox.selectedItem as OutputFormat,
+        removeImports = removeImportsCheckBox.isSelected,
         ignoreFolders = ignoreFoldersField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
         ignoreFiles = ignoreFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
         ignorePatterns = ignorePatternsField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },

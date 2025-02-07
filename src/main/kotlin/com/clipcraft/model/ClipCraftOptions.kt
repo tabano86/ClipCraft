@@ -1,12 +1,19 @@
 package com.clipcraft.model
 
 /**
+ * Supported output formats.
+ */
+enum class OutputFormat {
+    MARKDOWN, PLAIN, HTML
+}
+
+/**
  * Stores all user preferences for ClipCraft.
  *
- * Tooltips (shown in UI) describe each field.
+ * Tooltips in the UI explain each field.
  */
 data class ClipCraftOptions(
-    // Output formatting
+    // Output formatting options
     var includeLineNumbers: Boolean = false,
     var showPreview: Boolean = false,
     var exportToFile: Boolean = false,
@@ -22,5 +29,7 @@ data class ClipCraftOptions(
     var ignoreFiles: List<String> = emptyList(),
     var ignorePatterns: List<String> = emptyList(),
     var removeComments: Boolean = false,       // Remove comment lines from source files
-    var trimLineWhitespace: Boolean = false      // Remove trailing whitespace on each line
+    var trimLineWhitespace: Boolean = false,     // Remove trailing whitespace on each line
+    var removeImports: Boolean = false,          // Remove import statements from code
+    var outputFormat: OutputFormat = OutputFormat.MARKDOWN // Output format: Markdown, Plain, or HTML
 )

@@ -1,6 +1,7 @@
 package com.clipcraft
 
 import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.OutputFormat
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
@@ -22,10 +23,13 @@ import java.nio.file.Paths
 import javax.swing.JOptionPane
 
 /**
- * The main action that collects and formats code from the selected files.
+ * Main action that collects and formats code from selected files.
  *
- * It supports advanced options including ignoring specific folders/files,
- * removing comments, and trimming trailing whitespace.
+ * New features include:
+ * • Optionally removing import statements.
+ * • Multiple output formats (Markdown, Plain Text, HTML).
+ * • Additional compatibility for more languages.
+ * • Availability in many context menus (including editor tab right-click).
  */
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -39,9 +43,9 @@ class ClipCraftAction : AnAction() {
         val settings = ClipCraftSettings.getInstance()
         var curOpts = settings.state
 
-        // Quick options override: if Alt key is held, show the quick options panel.
+        // Quick options override: if Alt is held, show the quick options panel.
         curOpts = if (e.inputEvent is MouseEvent && (e.inputEvent as MouseEvent).isAltDown) {
-            val quickPanel = ClipCraftQuickOptionsPanel(curOpts)
+            val quickPanel = ClipCraftQuickOptionsPanel(curOpts, project)
             val result = JOptionPane.showConfirmDialog(
                 null,
                 quickPanel,
@@ -51,14 +55,14 @@ class ClipCraftAction : AnAction() {
             )
             if (result == JOptionPane.OK_OPTION) quickPanel.getOptions() else return
         } else if (!curOpts.autoProcess) {
-            // Otherwise, show full options dialog if autoProcess is disabled.
+            // Otherwise, if autoProcess is disabled, show the full options dialog.
             val dialog = ClipCraftOptionsDialog(curOpts)
             if (!dialog.showAndGet()) return else dialog.getOptions()
         } else {
             curOpts
         }
 
-        // Persist any changes to the settings.
+        // Persist any changes.
         settings.loadState(curOpts)
 
         val basePath = project?.basePath ?: ""
@@ -70,7 +74,7 @@ class ClipCraftAction : AnAction() {
             if (block.isNotEmpty()) blocks += block
         }
 
-        // Combine blocks using the selected preferences.
+        // Combine blocks per user settings.
         val combined = if (curOpts.singleCodeBlock) {
             val merged = blocks.joinToString(System.lineSeparator() + System.lineSeparator())
             if (curOpts.minimizeWhitespace) minimizeWhitespace(merged) else merged
@@ -99,9 +103,9 @@ class ClipCraftAction : AnAction() {
     }
 
     /**
-     * Processes a VirtualFile. If it is a directory, recursively processes its children.
-     * If it is a file, applies the current options (ignore rules, comment removal, etc.)
-     * and returns the formatted snippet.
+     * Processes a VirtualFile recursively.
+     * For files, applies ignore rules and formatting options (comment/import removal, etc.)
+     * then wraps the code block according to the chosen output format.
      */
     private fun processVirtualFile(
         file: VirtualFile,
@@ -115,7 +119,6 @@ class ClipCraftAction : AnAction() {
                 processVirtualFile(it, basePath, opts, project)
             }
         } else {
-            // Only process textual files.
             if (!isTextFile(file)) return ""
             val content = if (file.length > opts.largeFileThreshold) {
                 loadFileWithProgress(file, project)
@@ -133,17 +136,17 @@ class ClipCraftAction : AnAction() {
             }
             val language = detectLanguage(file)
             val processedContent = processContent(content, opts, language)
-            return """
-                $header
-                ```$language
-                $processedContent
-                ```
-            """.trimIndent()
+            val formattedBlock = when (opts.outputFormat) {
+                OutputFormat.MARKDOWN -> "```$language\n$processedContent\n```"
+                OutputFormat.PLAIN -> processedContent
+                OutputFormat.HTML -> "<pre><code class=\"$language\">$processedContent</code></pre>"
+            }
+            return "$header\n$formattedBlock"
         }
     }
 
     /**
-     * Determines if a file or folder should be ignored based on user-defined rules.
+     * Checks whether a file (or folder) should be skipped per ignore rules.
      */
     private fun shouldIgnoreFile(file: VirtualFile, opts: ClipCraftOptions): Boolean {
         if (file.isDirectory && opts.ignoreFolders.any { file.name.equals(it, ignoreCase = true) }) return true
@@ -153,7 +156,7 @@ class ClipCraftAction : AnAction() {
     }
 
     /**
-     * Reads the first few bytes of the file to determine if it is textual.
+     * Determines if a file is textual.
      */
     private fun isTextFile(file: VirtualFile): Boolean {
         val sample = file.contentsToByteArray().take(8000)
@@ -177,7 +180,7 @@ class ClipCraftAction : AnAction() {
     }
 
     /**
-     * Detects the language for syntax highlighting based on file extension.
+     * Uses file extension to determine language for syntax highlighting.
      */
     private fun detectLanguage(file: VirtualFile): String = when (file.extension?.lowercase()) {
         "java" -> "java"
@@ -191,52 +194,71 @@ class ClipCraftAction : AnAction() {
         "xml" -> "xml"
         "json" -> "json"
         "md" -> "markdown"
+        "c", "cpp" -> "cpp"
+        "cs" -> "csharp"
         else -> "txt"
     }
 
     /**
-     * Processes file content according to options.
-     * Uses system line separators and optionally includes line numbers,
-     * removes comments, and trims trailing whitespace.
+     * Processes file content: applies line numbering, optional trimming,
+     * comment removal, and import removal.
      */
     fun processContent(text: String, opts: ClipCraftOptions, language: String): String {
         val newline = System.lineSeparator()
         val sb = StringBuilder()
         var lineNum = 1
         for (line in text.lines()) {
-            // When trimming whitespace, preserve indentation by only trimming the end.
             val processedLine = if (opts.trimLineWhitespace) line.trimEnd() else line
-            val finalLine = if (opts.includeLineNumbers) {
+            val numberedLine = if (opts.includeLineNumbers) {
                 "%4d: %s".format(lineNum, processedLine)
             } else processedLine
-            sb.append(finalLine).append(newline)
+            sb.append(numberedLine).append(newline)
             lineNum++
         }
         var processed = sb.toString().trimEnd()
         if (opts.removeComments) {
             processed = removeComments(processed, language)
         }
+        if (opts.removeImports) {
+            processed = removeImportStatements(processed, language)
+        }
         return processed
     }
 
     /**
-     * Removes comments from code based on language-specific rules.
+     * Removes comments using language-specific rules.
      */
     private fun removeComments(text: String, language: String): String = when (language) {
-        "java", "kotlin", "javascript", "typescript" -> {
+        "java", "kotlin", "javascript", "typescript", "csharp", "cpp" -> {
             val noBlockComments = text.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
             noBlockComments.lines().filter { !it.trim().startsWith("//") }.joinToString(System.lineSeparator())
         }
-
         "python", "ruby", "sh", "bash" -> {
             text.lines().filter { !it.trim().startsWith("#") }.joinToString(System.lineSeparator())
         }
-
         else -> text
     }
 
     /**
-     * Removes consecutive blank lines from the output.
+     * Removes import statements based on language.
+     */
+    private fun removeImportStatements(text: String, language: String): String {
+        return when (language) {
+            "java", "kotlin", "javascript", "typescript", "csharp", "cpp" -> {
+                text.lines().filter { !it.trim().startsWith("import ") }.joinToString(System.lineSeparator())
+            }
+
+            "python" -> {
+                text.lines().filter { !it.trim().startsWith("import ") && !it.trim().startsWith("from ") }
+                    .joinToString(System.lineSeparator())
+            }
+
+            else -> text
+        }
+    }
+
+    /**
+     * Collapses consecutive blank lines.
      */
     private fun minimizeWhitespace(input: String): String {
         val result = mutableListOf<String>()

@@ -9,10 +9,10 @@ class ClipCraftActionTest {
  @Test
  fun testProcessContentWithLineNumbers() {
   val action = ClipCraftAction()
-  val content = "first line\nsecond line\nthird line"
-  val options = ClipCraftOptions(includeLineNumbers = true)
-  val result = action.processContent(content, options)
-  val expected = "   1: first line\n   2: second line\n   3: third line"
+  val content = "alpha\nbeta\ngamma"
+  val opts = ClipCraftOptions(includeLineNumbers = true)
+  val result = action.processContent(content, opts)
+  val expected = "   1: alpha\n   2: beta\n   3: gamma"
   assertEquals(expected, result)
  }
 
@@ -20,8 +20,8 @@ class ClipCraftActionTest {
  fun testProcessContentWithoutLineNumbers() {
   val action = ClipCraftAction()
   val content = "alpha\nbeta\ngamma"
-  val options = ClipCraftOptions(includeLineNumbers = false)
-  val result = action.processContent(content, options)
+  val opts = ClipCraftOptions(includeLineNumbers = false)
+  val result = action.processContent(content, opts)
   val expected = "alpha\nbeta\ngamma"
   assertEquals(expected, result)
  }

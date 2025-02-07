@@ -12,6 +12,8 @@ class ClipCraftOptionsDialog(initialOptions: ClipCraftOptions) : DialogWrapper(t
     private val exportToFileCheckBox = JCheckBox("Export to File", initialOptions.exportToFile)
     private val exportFilePathField = JTextField(initialOptions.exportFilePath, 30)
     private val includeMetadataCheckBox = JCheckBox("Include File Metadata", initialOptions.includeMetadata)
+    private val singleBlockCheckBox = JCheckBox("Single Code Block", initialOptions.singleCodeBlock)
+    private val minimizeWhitespaceCheckBox = JCheckBox("Minimize Whitespace", initialOptions.minimizeWhitespace)
 
     init {
         title = "ClipCraft Options"
@@ -27,6 +29,8 @@ class ClipCraftOptionsDialog(initialOptions: ClipCraftOptions) : DialogWrapper(t
         grid.add(JLabel("Export File Path:"))
         grid.add(exportFilePathField)
         grid.add(includeMetadataCheckBox)
+        grid.add(singleBlockCheckBox)
+        grid.add(minimizeWhitespaceCheckBox)
         panel.add(grid, BorderLayout.CENTER)
         return panel
     }
@@ -37,7 +41,9 @@ class ClipCraftOptionsDialog(initialOptions: ClipCraftOptions) : DialogWrapper(t
             showPreview = showPreviewCheckBox.isSelected,
             exportToFile = exportToFileCheckBox.isSelected,
             exportFilePath = exportFilePathField.text,
-            includeMetadata = includeMetadataCheckBox.isSelected
+            includeMetadata = includeMetadataCheckBox.isSelected,
+            singleCodeBlock = singleBlockCheckBox.isSelected,
+            minimizeWhitespace = minimizeWhitespaceCheckBox.isSelected
         )
     }
 }

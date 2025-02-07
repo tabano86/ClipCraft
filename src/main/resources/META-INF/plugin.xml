@@ -4,30 +4,27 @@
     <version>1.0.0</version>
     <vendor email="support@clipcraft.com" url="https://clipcraft.com">ClipCraft Inc.</vendor>
     <description><![CDATA[
-    ClipCraft bulk-copies multiple files and directories (including subdirectories)
-    and formats their contents for easy sharing. Large files are handled in the background,
-    user settings are remembered persistently, and minimal clicks are required to use.
-  ]]></description>
+      ClipCraft bulk-copies multiple files and directories (including subdirectories)
+      and formats their contents for easy sharing. Large files are handled in the background,
+      user settings are remembered persistently, and minimal clicks are required to use.
+    ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Persistence of settings -->
+        <!-- Application-level settings to avoid UI conflicts -->
         <applicationService serviceImplementation="com.clipcraft.ClipCraftSettings"/>
-        <!-- Register our settings UI -->
-        <projectConfigurable instance="com.clipcraft.ClipCraftConfigurable"
-                             displayName="ClipCraft" id="ClipCraftConfigurable"/>
+        <applicationConfigurable instance="com.clipcraft.ClipCraftConfigurable"
+                                 displayName="ClipCraft" id="ClipCraftConfigurable"/>
     </extensions>
 
     <actions>
         <action id="ClipCraftAction" class="com.clipcraft.ClipCraftAction"
-                text="ClipCraft: Copy Formatted Code" description="Copies files' code in bulk.">
-            <!-- Appear in the editor context menu AND the project view context menu. -->
+                text="ClipCraft: Copy Formatted Code"
+                description="Copies multiple files' code in bulk.">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-            <!-- Also appear in the main toolbar -->
             <add-to-group group-id="MainToolBar" anchor="last"/>
-            <!-- Shortcut Ctrl+Alt+X -->
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt X"/>
         </action>
     </actions>

@@ -2,8 +2,9 @@ package com.clipcraft
 
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.options.Configurable
-import java.awt.GridLayout
+import com.intellij.openapi.options.ConfigurationException
 import javax.swing.*
+import java.awt.GridLayout
 
 class ClipCraftConfigurable : Configurable {
 
@@ -14,14 +15,15 @@ class ClipCraftConfigurable : Configurable {
     private val includeMetadataCheckBox = JCheckBox("Include File Metadata")
     private val autoProcessCheckBox = JCheckBox("No Prompt (Auto Process)")
     private val largeFileThresholdField = JTextField(10)
+    private val singleBlockCheckBox = JCheckBox("Single Code Block")
+    private val minimizeWhitespaceCheckBox = JCheckBox("Minimize Whitespace")
 
     private var mainPanel: JPanel? = null
 
     override fun getDisplayName(): String = "ClipCraft"
 
-    override fun createComponent(): JComponent? {
-        mainPanel = JPanel(GridLayout(0, 2, 10, 10))
-        mainPanel?.apply {
+    override fun createComponent(): JComponent {
+        mainPanel = JPanel(GridLayout(0, 2, 10, 10)).apply {
             add(includeLineNumbersCheckBox)
             add(showPreviewCheckBox)
             add(exportToFileCheckBox)
@@ -31,22 +33,27 @@ class ClipCraftConfigurable : Configurable {
             add(autoProcessCheckBox)
             add(JLabel("Large File Threshold (bytes):"))
             add(largeFileThresholdField)
+            add(singleBlockCheckBox)
+            add(minimizeWhitespaceCheckBox)
         }
         reset()
-        return mainPanel
+        return mainPanel!!
     }
 
     override fun isModified(): Boolean {
         val saved = ClipCraftSettings.getInstance().state
-        return saved.includeLineNumbers != includeLineNumbersCheckBox.isSelected ||
-                saved.showPreview != showPreviewCheckBox.isSelected ||
-                saved.exportToFile != exportToFileCheckBox.isSelected ||
-                saved.exportFilePath != exportFilePathField.text ||
-                saved.includeMetadata != includeMetadataCheckBox.isSelected ||
-                saved.autoProcess != autoProcessCheckBox.isSelected ||
-                saved.largeFileThreshold.toString() != largeFileThresholdField.text
+        return includeLineNumbersCheckBox.isSelected != saved.includeLineNumbers ||
+                showPreviewCheckBox.isSelected != saved.showPreview ||
+                exportToFileCheckBox.isSelected != saved.exportToFile ||
+                exportFilePathField.text != saved.exportFilePath ||
+                includeMetadataCheckBox.isSelected != saved.includeMetadata ||
+                autoProcessCheckBox.isSelected != saved.autoProcess ||
+                largeFileThresholdField.text != saved.largeFileThreshold.toString() ||
+                singleBlockCheckBox.isSelected != saved.singleCodeBlock ||
+                minimizeWhitespaceCheckBox.isSelected != saved.minimizeWhitespace
     }
 
+    @Throws(ConfigurationException::class)
     override fun apply() {
         val settings = ClipCraftSettings.getInstance()
         val opts = settings.state
@@ -57,7 +64,8 @@ class ClipCraftConfigurable : Configurable {
         opts.includeMetadata = includeMetadataCheckBox.isSelected
         opts.autoProcess = autoProcessCheckBox.isSelected
         opts.largeFileThreshold = largeFileThresholdField.text.toLongOrNull() ?: opts.largeFileThreshold
-        // Save back
+        opts.singleCodeBlock = singleBlockCheckBox.isSelected
+        opts.minimizeWhitespace = minimizeWhitespaceCheckBox.isSelected
         settings.loadState(opts)
     }
 
@@ -70,6 +78,8 @@ class ClipCraftConfigurable : Configurable {
         includeMetadataCheckBox.isSelected = opts.includeMetadata
         autoProcessCheckBox.isSelected = opts.autoProcess
         largeFileThresholdField.text = opts.largeFileThreshold.toString()
+        singleBlockCheckBox.isSelected = opts.singleCodeBlock
+        minimizeWhitespaceCheckBox.isSelected = opts.minimizeWhitespace
     }
 
     override fun disposeUIResources() {

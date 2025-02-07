@@ -224,7 +224,7 @@ class ClipCraftAction : AnAction() {
      */
     private fun removeComments(text: String, language: String): String = when (language) {
         "java", "kotlin", "javascript", "typescript" -> {
-            val noBlockComments = text.replace(Regex("/\\*.*?\\*/", RegexOption.DOTALL), "")
+            val noBlockComments = text.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
             noBlockComments.lines().filter { !it.trim().startsWith("//") }.joinToString(System.lineSeparator())
         }
 

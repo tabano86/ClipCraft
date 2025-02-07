@@ -14,8 +14,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Application-level settings to avoid UI conflicts -->
         <applicationService serviceImplementation="com.clipcraft.ClipCraftSettings"/>
-        <applicationConfigurable instance="com.clipcraft.ClipCraftConfigurable"
-                                 displayName="ClipCraft" id="ClipCraftConfigurable"/>
+        <applicationConfigurable instance="com.clipcraft.ClipCraftConfigurable" displayName="ClipCraft" id="ClipCraftConfigurable"/>
+
     </extensions>
 
     <actions>

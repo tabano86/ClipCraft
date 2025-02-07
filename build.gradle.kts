@@ -31,8 +31,7 @@ java {
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     sinceBuild.set("223")
-    // No upper bound
-    untilBuild.set("*")
+    untilBuild.set("223.*")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

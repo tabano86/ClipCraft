@@ -4,19 +4,19 @@
     <version>1.0.0</version>
     <vendor email="support@clipcraft.com" url="https://clipcraft.com">ClipCraft Inc.</vendor>
     <description><![CDATA[
-    ClipCraft bulk-copies multiple files and directories (including subdirectories)
-    and formats their contents for easy sharing. Large files are handled in the background,
-    and user settings are stored persistently for minimal friction.
-  ]]></description>
+        ClipCraft bulk-copies multiple files and directories (including subdirectories)
+        and formats their contents for easy sharing. Large files are handled in the background,
+        and user settings are stored persistently for minimal friction.
+    ]]></description>
 
     <!-- Our plugin requires at least platform modules. -->
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Our persistent state management -->
+        <!-- Persistent state management -->
         <applicationService serviceImplementation="com.clipcraft.ClipCraftSettings"/>
 
-        <!-- Register a user-facing settings page under "File → Settings → ClipCraft" -->
+        <!-- Register a settings page under "File → Settings → ClipCraft" -->
         <applicationConfigurable
                 instance="com.clipcraft.ClipCraftConfigurable"
                 displayName="ClipCraft"

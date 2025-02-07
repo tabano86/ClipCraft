@@ -3,6 +3,7 @@ package com.clipcraft
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
+import java.awt.GridLayout
 import javax.swing.*
 
 class ClipCraftConfigurable : Configurable {
@@ -21,6 +22,13 @@ class ClipCraftConfigurable : Configurable {
     private val singleCodeBlockCheckBox = JCheckBox("Merge everything into one code block")
     private val minimizeWhitespaceCheckBox = JCheckBox("Minimize consecutive blank lines")
 
+    // Advanced options components.
+    private val ignoreFoldersField = JTextField(30)
+    private val ignoreFilesField = JTextField(30)
+    private val ignorePatternsField = JTextField(30)
+    private val removeCommentsCheckBox = JCheckBox("Remove Comments")
+    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Line Whitespace")
+
     init {
         panel.add(includeLineNumbersCheckBox)
         panel.add(showPreviewCheckBox)
@@ -33,6 +41,20 @@ class ClipCraftConfigurable : Configurable {
         panel.add(largeFileThresholdField)
         panel.add(singleCodeBlockCheckBox)
         panel.add(minimizeWhitespaceCheckBox)
+
+        // Advanced options panel with a titled border.
+        val advancedPanel = JPanel(GridLayout(0, 2, 10, 10))
+        advancedPanel.border = BorderFactory.createTitledBorder("Advanced Options")
+        advancedPanel.add(JLabel("Ignore Folders (comma separated):"))
+        advancedPanel.add(ignoreFoldersField)
+        advancedPanel.add(JLabel("Ignore Files (comma separated):"))
+        advancedPanel.add(ignoreFilesField)
+        advancedPanel.add(JLabel("Ignore Patterns (regex, comma separated):"))
+        advancedPanel.add(ignorePatternsField)
+        advancedPanel.add(removeCommentsCheckBox)
+        advancedPanel.add(trimLineWhitespaceCheckBox)
+
+        panel.add(advancedPanel)
     }
 
     override fun getDisplayName(): String = "ClipCraft"
@@ -52,7 +74,12 @@ class ClipCraftConfigurable : Configurable {
                 autoProcessCheckBox.isSelected != opts.autoProcess ||
                 largeFileThresholdField.text != opts.largeFileThreshold.toString() ||
                 singleCodeBlockCheckBox.isSelected != opts.singleCodeBlock ||
-                minimizeWhitespaceCheckBox.isSelected != opts.minimizeWhitespace
+                minimizeWhitespaceCheckBox.isSelected != opts.minimizeWhitespace ||
+                ignoreFoldersField.text != opts.ignoreFolders.joinToString(",") ||
+                ignoreFilesField.text != opts.ignoreFiles.joinToString(",") ||
+                ignorePatternsField.text != opts.ignorePatterns.joinToString(",") ||
+                removeCommentsCheckBox.isSelected != opts.removeComments ||
+                trimLineWhitespaceCheckBox.isSelected != opts.trimLineWhitespace
     }
 
     @Throws(ConfigurationException::class)
@@ -67,6 +94,13 @@ class ClipCraftConfigurable : Configurable {
         opts.largeFileThreshold = largeFileThresholdField.text.toLongOrNull() ?: opts.largeFileThreshold
         opts.singleCodeBlock = singleCodeBlockCheckBox.isSelected
         opts.minimizeWhitespace = minimizeWhitespaceCheckBox.isSelected
+
+        opts.ignoreFolders = ignoreFoldersField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        opts.ignoreFiles = ignoreFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        opts.ignorePatterns = ignorePatternsField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        opts.removeComments = removeCommentsCheckBox.isSelected
+        opts.trimLineWhitespace = trimLineWhitespaceCheckBox.isSelected
+
         ClipCraftSettings.getInstance().loadState(opts)
     }
 
@@ -81,6 +115,12 @@ class ClipCraftConfigurable : Configurable {
         largeFileThresholdField.text = opts.largeFileThreshold.toString()
         singleCodeBlockCheckBox.isSelected = opts.singleCodeBlock
         minimizeWhitespaceCheckBox.isSelected = opts.minimizeWhitespace
+
+        ignoreFoldersField.text = opts.ignoreFolders.joinToString(",")
+        ignoreFilesField.text = opts.ignoreFiles.joinToString(",")
+        ignorePatternsField.text = opts.ignorePatterns.joinToString(",")
+        removeCommentsCheckBox.isSelected = opts.removeComments
+        trimLineWhitespaceCheckBox.isSelected = opts.trimLineWhitespace
     }
 
     override fun disposeUIResources() {

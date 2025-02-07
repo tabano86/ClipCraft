@@ -19,6 +19,7 @@ import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.Paths
 import javax.swing.JOptionPane
+import java.awt.event.MouseEvent
 
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -30,39 +31,50 @@ class ClipCraftAction : AnAction() {
         }
 
         val settings = ClipCraftSettings.getInstance()
-        val curOpts = settings.state
+        var curOpts = settings.state
 
-        // If autoProcess = false, show a dialog
-        val finalOpts = if (!curOpts.autoProcess) {
+        // Quick options override: if Alt is held, show the quick options panel near the click.
+        curOpts = if (e.inputEvent is MouseEvent && (e.inputEvent as MouseEvent).isAltDown) {
+            val quickPanel = ClipCraftQuickOptionsPanel(curOpts)
+            val result = JOptionPane.showConfirmDialog(
+                null,
+                quickPanel,
+                "Quick ClipCraft Options",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+            )
+            if (result == JOptionPane.OK_OPTION) quickPanel.getOptions() else return
+        } else if (!curOpts.autoProcess) {
+            // Show full options dialog if autoProcess is disabled.
             val dialog = ClipCraftOptionsDialog(curOpts)
             if (!dialog.showAndGet()) return else dialog.getOptions()
         } else {
             curOpts
         }
 
-        // Save any changes from the dialog
-        settings.loadState(finalOpts)
+        // Save any changes from the dialog/quick options.
+        settings.loadState(curOpts)
 
         val basePath = project?.basePath ?: ""
         val blocks = mutableListOf<String>()
 
-        // For each selected file or directory, process it
+        // Process each selected file or directory.
         selected.forEach { vf ->
-            val block = processVirtualFile(vf, basePath, finalOpts, project)
+            val block = processVirtualFile(vf, basePath, curOpts, project)
             if (block.isNotEmpty()) blocks += block
         }
 
-        // Combine them based on user prefs
-        val combined = if (finalOpts.singleCodeBlock) {
+        // Combine the blocks based on user preferences.
+        val combined = if (curOpts.singleCodeBlock) {
             val merged = blocks.joinToString("\n\n")
-            if (finalOpts.minimizeWhitespace) minimizeWhitespace(merged) else merged
+            if (curOpts.minimizeWhitespace) minimizeWhitespace(merged) else merged
         } else {
             val joined = blocks.joinToString("\n\n")
-            if (finalOpts.minimizeWhitespace) minimizeWhitespace(joined) else joined
+            if (curOpts.minimizeWhitespace) minimizeWhitespace(joined) else joined
         }
 
-        if (finalOpts.exportToFile) {
-            val outPath = if (finalOpts.exportFilePath.isNotEmpty()) finalOpts.exportFilePath
+        if (curOpts.exportToFile) {
+            val outPath = if (curOpts.exportFilePath.isNotEmpty()) curOpts.exportFilePath
             else "$basePath/clipcraft_output.txt"
             try {
                 File(outPath).writeText(combined, Charsets.UTF_8)
@@ -71,7 +83,7 @@ class ClipCraftAction : AnAction() {
                 ephemeralNotification("Export failed: ${ex.message}", project)
             }
         } else {
-            if (finalOpts.showPreview) {
+            if (curOpts.showPreview) {
                 JOptionPane.showMessageDialog(null, combined, "ClipCraft Preview", JOptionPane.INFORMATION_MESSAGE)
             } else {
                 CopyPasteManager.getInstance().setContents(StringSelection(combined))
@@ -86,20 +98,21 @@ class ClipCraftAction : AnAction() {
         opts: ClipCraftOptions,
         project: Project?
     ): String {
+        if (shouldIgnoreFile(file, opts)) return ""
         if (file.isDirectory) {
-            // Recursively process subdirectories
+            // Recursively process subdirectories.
             return file.children.joinToString("\n\n") {
                 processVirtualFile(it, basePath, opts, project)
             }
         } else {
-            // Check if textual
+            // Process only textual files.
             if (!isTextFile(file)) return ""
             val content = if (file.length > opts.largeFileThreshold) {
                 loadFileWithProgress(file, project)
             } else {
                 loadFileContent(file)
             }
-            // Build the final snippet
+            // Build the snippet header.
             val relPath = if (basePath.isNotEmpty())
                 Paths.get(basePath).relativize(Paths.get(file.path)).toString() else file.path
 
@@ -109,13 +122,25 @@ class ClipCraftAction : AnAction() {
                     append(" [Size: ${file.length} bytes, Last Modified: ${file.timeStamp}]")
                 }
             }
+            val language = detectLanguage(file)
+            val processedContent = processContent(content, opts, language)
             return """
                 $header
-                ```${detectLanguage(file)}
-                ${processContent(content, opts)}
+                ```$language
+                $processedContent
                 ```
             """.trimIndent()
         }
+    }
+
+    private fun shouldIgnoreFile(file: VirtualFile, opts: ClipCraftOptions): Boolean {
+        // Ignore directories based on folder names.
+        if (file.isDirectory && opts.ignoreFolders.any { file.name.equals(it, ignoreCase = true) }) return true
+        // Ignore files based on exact names.
+        if (!file.isDirectory && opts.ignoreFiles.any { file.name.equals(it, ignoreCase = true) }) return true
+        // Ignore files based on regex patterns.
+        if (!file.isDirectory && opts.ignorePatterns.any { Regex(it).containsMatchIn(file.name) }) return true
+        return false
     }
 
     private fun isTextFile(file: VirtualFile): Boolean {
@@ -157,7 +182,7 @@ class ClipCraftAction : AnAction() {
         }
     }
 
-    fun processContent(text: String, opts: ClipCraftOptions): String {
+    fun processContent(text: String, opts: ClipCraftOptions, language: String): String {
         val sb = StringBuilder()
         var lineNum = 1
         for (line in text.lines()) {
@@ -167,17 +192,40 @@ class ClipCraftAction : AnAction() {
             sb.append(finalLine).append("\n")
             lineNum++
         }
-        return sb.toString().trimEnd()
+        var processed = sb.toString().trimEnd()
+
+        // Remove comments if enabled.
+        if (opts.removeComments) {
+            processed = removeComments(processed, language)
+        }
+        // Trim whitespace on each line if enabled.
+        if (opts.trimLineWhitespace) {
+            processed = processed.lines().joinToString("\n") { it.trim() }
+        }
+        return processed
+    }
+
+    private fun removeComments(text: String, language: String): String {
+        return when (language) {
+            "java", "kotlin", "javascript", "typescript" -> {
+                // Remove block comments.
+                val noBlockComments = text.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
+                // Remove line comments starting with //
+                noBlockComments.lines().filter { !it.trim().startsWith("//") }.joinToString("\n")
+            }
+            "python", "ruby", "sh", "bash" -> {
+                text.lines().filter { !it.trim().startsWith("#") }.joinToString("\n")
+            }
+            else -> text
+        }
     }
 
     private fun minimizeWhitespace(input: String): String {
-        // Remove consecutive blank lines
+        // Remove consecutive blank lines.
         val lines = input.lines()
         val result = mutableListOf<String>()
         for (line in lines) {
-            if (line.isBlank() && result.lastOrNull()?.isBlank() == true) {
-                continue
-            }
+            if (line.isBlank() && result.lastOrNull()?.isBlank() == true) continue
             result += line
         }
         return result.joinToString("\n")

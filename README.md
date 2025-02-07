@@ -1,28 +1,39 @@
 # ClipCraft
 
-**ClipCraft** is an IntelliJ Platform plugin that makes it easy to bulk-copy and format code from multiple files and directories—including nested ones—with just a few clicks. The plugin is optimized for performance, can handle large files in the background, and saves your preferences for a hassle-free experience.
+**ClipCraft** is a powerful and streamlined plugin designed for developers who need to quickly gather, format, and share
+code. With ClipCraft, you can bulk-copy code from multiple files and directories—including all nested subdirectories—and
+automatically convert the output into clean, ready-to-use Markdown format. This makes it easy to paste code snippets
+into chat apps, documentation, or any Markdown-supported platform.
 
 ## Features
 
-- **Bulk Copy & Formatting**  
-  Process multiple files or entire directories at once. Automatically format code by adding headers, optional line numbers, and language hints.
+- **Bulk Processing & Markdown Formatting:**\
+  Select an entire folder or multiple files, and ClipCraft will traverse through all subdirectories to extract code. It
+  then generates a Markdown-formatted output where each file’s contents are wrapped in proper code fences, with optional
+  language hints for syntax highlighting and optional line numbering.
 
-- **File Metadata**  
-  Optionally include details such as file size and last modified date with the copied code.
+- **Optimized for Large Files:**\
+  For files exceeding a user-defined threshold, ClipCraft handles file reading in the background—keeping your IDE
+  responsive even when processing very large files.
 
-- **Large File Support**  
-  Files exceeding a user-defined size threshold load in the background with a dedicated progress indicator to ensure the IDE remains responsive.
+- **Customizable Output Options:**\
+  Configure whether to merge all output into a single Markdown code block or keep separate blocks for each file. You can
+  also choose to minimize extra blank lines and include file metadata (e.g., file size, last modified date) in the
+  header of each snippet.
 
-- **Persistent Settings**  
-  Configure your preferences in the IDE settings page once and have them persist for future sessions. Options include:
-    - Enabling/disabling line numbers.
-    - Choosing between a preview or immediate copy.
-    - Defining an export file path.
-    - Enabling automatic processing without prompts.
-    - Setting the large file size threshold.
+- **Persistent User Preferences:**\
+  Your settings are saved between sessions, so whether you prefer always having line numbers, automatically exporting
+  the output to a file, or displaying a preview before copying, your preferences are remembered.
 
-- **Multiple Access Points**  
-  Activate ClipCraft from the editor context menu, the project view, or the main toolbar. A default keyboard shortcut (Ctrl+Alt+X) is also provided for quick access.
+- **Minimal Clicks, Maximum Efficiency:**\
+  Designed for simplicity, ClipCraft integrates seamlessly into IntelliJ IDEA. Access it via context menus in the Editor
+  and Project View, through a main toolbar button, or simply by using the keyboard shortcut (Ctrl+Alt+X) to trigger the
+  action.
+
+- **Language-Aware Snippets:**\
+  ClipCraft automatically detects the programming language based on file extension (e.g., Java, Kotlin, Python,
+  JavaScript, etc.) and applies the appropriate language hint in the Markdown code fences. This ensures that your shared
+  code is formatted with proper syntax highlighting wherever Markdown is supported.
 
 ## Installation
 
@@ -47,6 +58,7 @@ Once the plugin is installed, you can customize its behavior by navigating to:
 **File → Settings → ClipCraft**
 
 Here you can adjust the following options:
+
 - **Include Line Numbers:** Toggle to add line numbers in the formatted output.
 - **Show Preview:** Enable to display a preview before copying or exporting.
 - **Export to File:** Set a file path if you prefer saving the output to a file instead of copying it to the clipboard.
@@ -70,9 +82,12 @@ Here you can adjust the following options:
 
 ## CI/CD and Publishing
 
-This project is set up for continuous integration with GitHub Actions. The workflow builds the plugin and can be extended to publish it to the JetBrains Plugin Repository. When publishing:
+This project is set up for continuous integration with GitHub Actions. The workflow builds the plugin and can be
+extended to publish it to the JetBrains Plugin Repository. When publishing:
+
 - **Channel:** Publish your first stable release to the stable channel.
-- **Distribution:** Upload the generated ZIP file from the build process along with required metadata such as license, tags (e.g., IntelliJ Plugin, Code Formatter), and a channel designation.
+- **Distribution:** Upload the generated ZIP file from the build process along with required metadata such as license,
+  tags (e.g., IntelliJ Plugin, Code Formatter), and a channel designation.
 
 ## License
 
@@ -81,12 +96,14 @@ ClipCraft is licensed under the Apache License 2.0. Please refer to the `LICENSE
 ## Contributing
 
 Contributions are welcome! To contribute:
+
 1. Fork the repository.
 2. Create a new feature branch.
 3. Submit a pull request with your changes.
 
 ## Support
 
-If you have any questions or encounter any issues, please reach out via our support channel at [tabano86@gmail.com](mailto:tabano86@gmail.com).
+If you have any questions or encounter any issues, please reach out via our support channel
+at [tabano86@gmail.com](mailto:tabano86@gmail.com).
 
 Enjoy using ClipCraft for efficient and effortless code copying and formatting in IntelliJ IDEA!

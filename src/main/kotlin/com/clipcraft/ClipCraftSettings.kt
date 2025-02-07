@@ -6,8 +6,12 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
+/**
+ * Stores user settings in ClipCraftSettings.xml
+ */
 @State(name = "ClipCraftSettings", storages = [Storage("ClipCraftSettings.xml")])
 class ClipCraftSettings : PersistentStateComponent<ClipCraftOptions> {
+
     private var myOptions = ClipCraftOptions()
 
     override fun getState(): ClipCraftOptions = myOptions

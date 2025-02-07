@@ -1,6 +1,5 @@
 plugins {
     id("java")
-    // Use org.jetbrains.intellij 1.17.4
     id("org.jetbrains.intellij") version "1.17.4"
     kotlin("jvm") version "1.8.21"
 }
@@ -13,9 +12,9 @@ repositories {
 }
 
 intellij {
-    // IntelliJ 2022.3
+    // Target IntelliJ IDEA 2022.3 (Community Edition).
     version.set("2022.3")
-    type.set("IC") // Community Edition
+    type.set("IC")
 }
 
 dependencies {
@@ -30,8 +29,8 @@ java {
 }
 
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild.set("223")
-    untilBuild.set("223.*")
+    sinceBuild.set("182")
+    untilBuild.set("*")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

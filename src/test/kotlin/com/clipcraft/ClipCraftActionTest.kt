@@ -9,10 +9,10 @@ class ClipCraftActionTest {
  @Test
  fun testProcessContentWithLineNumbers() {
   val action = ClipCraftAction()
-  val content = "alpha\nbeta\ngamma"
+  val content = "foo\nbar\nbaz"
   val opts = ClipCraftOptions(includeLineNumbers = true)
   val result = action.processContent(content, opts)
-  val expected = "   1: alpha\n   2: beta\n   3: gamma"
+  val expected = "   1: foo\n   2: bar\n   3: baz"
   assertEquals(expected, result)
  }
 

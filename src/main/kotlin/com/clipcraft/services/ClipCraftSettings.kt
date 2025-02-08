@@ -3,6 +3,7 @@ package com.clipcraft.services
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
@@ -10,19 +11,25 @@ import com.intellij.openapi.components.Storage
  * Global app-level settings for ClipCraft.
  * Now supports multiple named profiles via an internal map.
  */
+
 @State(name = "ClipCraftSettings", storages = [Storage("ClipCraftSettings.xml")])
+@Service(Service.Level.APP)
 class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
 
     data class State(
-        // key = profile name, value = ClipCraftOptions
-        var profiles: MutableMap<String, ClipCraftOptions> = mutableMapOf("Default" to ClipCraftOptions()),
-        // tracks which profile is active
-        var activeProfileName: String = "Default"
+        var activeProfileName: String = "Default",
+        var profiles: MutableMap<String, ClipCraftOptions> = mutableMapOf()
     )
 
-    private var myState = State()
 
-    override fun getState(): State = myState
+    private var myState: State = State(
+        activeProfileName = "Default",
+        profiles = mutableMapOf("Default" to ClipCraftOptions())  // initialize default profile
+    )
+
+    override fun getState(): State {
+        return myState
+    }
 
     override fun loadState(state: State) {
         myState = state
@@ -67,8 +74,9 @@ class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
     }
 
     companion object {
-        fun getInstance(): ClipCraftSettings {
-            return ApplicationManager.getApplication().getService(ClipCraftSettings::class.java)
-        }
+        /** Gets the singleton instance of ClipCraftSettings */
+        fun getInstance(): ClipCraftSettings =
+            ApplicationManager
+                .getApplication().getService(ClipCraftSettings::class.java)
     }
 }

@@ -1,12 +1,14 @@
 package com.clipcraft.services
 
-import kotlin.system.measureNanoTime
-
+/**
+ * Captures performance metrics, printing them to stdout.
+ * Ideal for debugging or performance analysis.
+ */
 object ClipCraftPerformanceMetrics {
     fun <T> measure(label: String, block: () -> T): T {
-        val start = System.nanoTime()
+        val startNs = System.nanoTime()
         val result = block()
-        val durationNs = System.nanoTime() - start
+        val durationNs = System.nanoTime() - startNs
         println("Performance [$label]: ${durationNs / 1_000_000} ms")
         return result
     }

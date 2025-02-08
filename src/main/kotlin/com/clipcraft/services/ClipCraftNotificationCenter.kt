@@ -5,6 +5,9 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.project.Project
 
+/**
+ * Central place for sending user-facing notifications in IntelliJ.
+ */
 object ClipCraftNotificationCenter {
 
     fun notifyInfo(message: String, project: Project?) {

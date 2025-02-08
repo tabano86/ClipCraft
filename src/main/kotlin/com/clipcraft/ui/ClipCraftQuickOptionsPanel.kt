@@ -8,31 +8,21 @@ import com.intellij.openapi.project.Project
 import java.awt.GridLayout
 import javax.swing.*
 
+/**
+ * A simplified, quick options panel. Displayed if user ALT-clicks the main ClipCraft action.
+ */
 class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val project: Project?) : JPanel() {
-    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(","), 30).apply {
-        toolTipText = "Comma-separated folder names to ignore."
-    }
-    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(","), 30).apply {
-        toolTipText = "Comma-separated file names to ignore."
-    }
-    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(","), 30).apply {
-        toolTipText = "Comma-separated regex patterns to ignore files."
-    }
-    private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments).apply {
-        toolTipText = "Strip out comment lines from code."
-    }
-    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace).apply {
-        toolTipText = "Remove trailing whitespace from each line."
-    }
+
+    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(","), 30)
+    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(","), 30)
+    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(","), 30)
+    private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
+    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace)
     private val outputFormatComboBox = JComboBox(OutputFormat.values()).apply {
         selectedItem = initialOptions.outputFormat
-        toolTipText = "Select output format: Markdown, Plain, or HTML."
     }
-    private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports).apply {
-        toolTipText = "Remove import statements from the code."
-    }
+    private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
     private val openSettingsButton = JButton("Open Full Settings").apply {
-        toolTipText = "Open the full ClipCraft settings panel."
         addActionListener {
             ShowSettingsUtil.getInstance().showSettingsDialog(project, "ClipCraft")
         }

@@ -1,25 +1,21 @@
 package com.clipcraft.ui
 
 import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.ThemeMode
 import com.intellij.openapi.ui.DialogWrapper
 import javax.swing.*
 
-class ClipCraftWizard(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
+class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
 
-    private val stepPanel = JPanel().apply {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-    }
-
+    private val stepPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     private var currentStep = 0
-
     private val stepLabels = listOf(
         JLabel("Welcome to ClipCraft! Let’s set up your preferences."),
         JLabel("Configure Output and Filtering"),
         JLabel("Review and Finish")
     )
-
-    private val lineNumbersCheck = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
-    private val themeCombo = JComboBox(arrayOf("System Default", "Light", "Dark")).apply {
+    private val lineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
+    private val themeComboBox = JComboBox(arrayOf("System Default", "Light", "Dark")).apply {
         selectedIndex = initialOptions.themeMode.ordinal
     }
 
@@ -38,12 +34,14 @@ class ClipCraftWizard(private val initialOptions: ClipCraftOptions) : DialogWrap
         stepPanel.add(stepLabels[currentStep])
         when (currentStep) {
             0 -> {
-                stepPanel.add(lineNumbersCheck)
-                stepPanel.add(themeCombo)
+                stepPanel.add(lineNumbersCheckBox)
+                stepPanel.add(themeComboBox)
             }
+
             1 -> {
-                // Future step: add controls for filtering and output options
+                // Future controls can be added here.
             }
+
             2 -> {
                 stepPanel.add(JLabel("All set!"))
             }
@@ -52,15 +50,24 @@ class ClipCraftWizard(private val initialOptions: ClipCraftOptions) : DialogWrap
         stepPanel.repaint()
     }
 
+    // Custom next action (not an override)
+    fun doNextAction() {
+        if (currentStep < stepLabels.size - 1) {
+            currentStep++
+            updateStep()
+        } else {
+            doOKAction()
+        }
+    }
+
     fun getConfiguredOptions(): ClipCraftOptions {
-        val newOpts = initialOptions.copy(
-            includeLineNumbers = lineNumbersCheck.isSelected,
-            themeMode = when (themeCombo.selectedIndex) {
-                1 -> com.clipcraft.model.ThemeMode.LIGHT
-                2 -> com.clipcraft.model.ThemeMode.DARK
-                else -> com.clipcraft.model.ThemeMode.SYSTEM_DEFAULT
+        return initialOptions.copy(
+            includeLineNumbers = lineNumbersCheckBox.isSelected,
+            themeMode = when (themeComboBox.selectedIndex) {
+                1 -> ThemeMode.LIGHT
+                2 -> ThemeMode.DARK
+                else -> ThemeMode.SYSTEM_DEFAULT
             }
         )
-        return newOpts
     }
 }

@@ -72,6 +72,7 @@ class ClipCraftActionTest {
         val content = "foo\nbar"
         val opts = ClipCraftOptions(outputFormat = OutputFormat.HTML)
         val result = action.processContent(content, opts, "txt")
+        // For HTML, we do not insert <html> tags, but we do preserve line breaks.
         val expected = "foo\nbar"
         assertEquals(expected, result)
     }

@@ -1,44 +1,44 @@
 package com.clipcraft.services
 
+import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.project.Project
 import java.io.File
 
+/**
+ * Handles optional sharing or exporting to external services.
+ */
 object ClipCraftSharingService {
 
     fun shareToGist(content: String, project: Project?): Boolean {
-        try {
-            // Stub: Replace with actual HTTP calls to GitHub Gist API
-            return true
+        // Stub: Implement actual networking here
+        return try {
+            true
         } catch (e: Exception) {
-            return false
+            false
         }
     }
 
     fun exportToCloud(content: String, provider: String, project: Project?): Boolean {
-        try {
-            // Stub: Replace with integration for cloud providers such as Google Drive or Dropbox.
-            return true
+        // Stub: Implement actual cloud integration here
+        return try {
+            true
         } catch (e: Exception) {
-            return false
+            false
         }
     }
 
-    fun exportMultipleFormats(
-        baseFilePath: String,
-        formats: Set<com.clipcraft.model.OutputFormat>,
-        combined: String
-    ): List<String> {
-        val savedFiles = mutableListOf<String>()
+    fun exportMultipleFormats(baseFilePath: String, formats: Set<OutputFormat>, combined: String): List<String> {
+        val saved = mutableListOf<String>()
         for (fmt in formats) {
-            val extension = when (fmt) {
-                com.clipcraft.model.OutputFormat.MARKDOWN -> "md"
-                com.clipcraft.model.OutputFormat.HTML -> "html"
+            val ext = when (fmt) {
+                OutputFormat.MARKDOWN -> "md"
+                OutputFormat.HTML -> "html"
                 else -> "txt"
             }
-            val path = "$baseFilePath.$extension"
+            val path = "$baseFilePath.$ext"
             File(path).writeText(combined)
-            savedFiles += path
+            saved += path
         }
-        return savedFiles
+        return saved
     }
 }

@@ -6,11 +6,8 @@ import java.io.File
 object ClipCraftSharingService {
 
     fun shareToGist(content: String, project: Project?): Boolean {
-        // Hypothetical code that calls GitHub Gist API
-        // In real usage, you'd use an http client to POST the content.
         try {
-            // ...
-            // Return Gist URL or success status
+            // Stub: Replace with actual HTTP calls to GitHub Gist API
             return true
         } catch (e: Exception) {
             return false
@@ -18,9 +15,8 @@ object ClipCraftSharingService {
     }
 
     fun exportToCloud(content: String, provider: String, project: Project?): Boolean {
-        // e.g., Google Drive, Dropbox
         try {
-            // ...
+            // Stub: Replace with integration for cloud providers such as Google Drive or Dropbox.
             return true
         } catch (e: Exception) {
             return false
@@ -32,7 +28,6 @@ object ClipCraftSharingService {
         formats: Set<com.clipcraft.model.OutputFormat>,
         combined: String
     ): List<String> {
-        // Save the content in multiple formats (MD, HTML, TXT, etc.)
         val savedFiles = mutableListOf<String>()
         for (fmt in formats) {
             val extension = when (fmt) {

@@ -5,7 +5,6 @@ import com.intellij.openapi.fileTypes.FileTypeManager
 
 object ClipCraftUtil {
     fun resolveFileType(languageHint: String): FileType {
-        // Rough mapping for demonstration
         return when (languageHint.lowercase()) {
             "java" -> FileTypeManager.getInstance().findFileTypeByName("JAVA")!!
             "kotlin" -> FileTypeManager.getInstance().findFileTypeByName("Kotlin")!!

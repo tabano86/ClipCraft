@@ -54,10 +54,6 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val p
         add(openSettingsButton)
     }
 
-    /**
-     * Returns a new ClipCraftOptions instance based on the current quick panel settings.
-     * This uses a copy of the persisted state and applies the quick changes.
-     */
     fun getOptions(): ClipCraftOptions {
         val currentOpts = ClipCraftSettings.getInstance().state
         return currentOpts.copy(

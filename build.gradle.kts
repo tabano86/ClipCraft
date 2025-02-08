@@ -15,6 +15,8 @@ intellij {
     // Target IntelliJ IDEA 2022.3 (Community Edition).
     version.set("2022.3")
     type.set("IC")
+    // Declare the Git4Idea dependency here:
+    plugins.set(listOf("Git4Idea"))
 }
 
 dependencies {

@@ -10,7 +10,6 @@ class ClipCraftWizard(private val initialOptions: ClipCraftOptions) : DialogWrap
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
     }
 
-    // Example: three steps, but you can expand.
     private var currentStep = 0
 
     private val stepLabels = listOf(
@@ -23,8 +22,6 @@ class ClipCraftWizard(private val initialOptions: ClipCraftOptions) : DialogWrap
     private val themeCombo = JComboBox(arrayOf("System Default", "Light", "Dark")).apply {
         selectedIndex = initialOptions.themeMode.ordinal
     }
-
-    // ... more components per step ...
 
     init {
         title = "ClipCraft Setup Wizard"
@@ -41,16 +38,13 @@ class ClipCraftWizard(private val initialOptions: ClipCraftOptions) : DialogWrap
         stepPanel.add(stepLabels[currentStep])
         when (currentStep) {
             0 -> {
-                // Step 1 items
                 stepPanel.add(lineNumbersCheck)
                 stepPanel.add(themeCombo)
             }
             1 -> {
-                // Step 2 items
-                // e.g., advanced filtering, macros, etc.
+                // Future step: add controls for filtering and output options
             }
             2 -> {
-                // Step 3 summary
                 stepPanel.add(JLabel("All set!"))
             }
         }
@@ -58,18 +52,7 @@ class ClipCraftWizard(private val initialOptions: ClipCraftOptions) : DialogWrap
         stepPanel.repaint()
     }
 
-    override fun doNextAction() {
-        if (currentStep < stepLabels.size - 1) {
-            currentStep++
-            updateStep()
-        } else {
-            // final step -> OK
-            doOKAction()
-        }
-    }
-
     fun getConfiguredOptions(): ClipCraftOptions {
-        // gather final options from wizard UI
         val newOpts = initialOptions.copy(
             includeLineNumbers = lineNumbersCheck.isSelected,
             themeMode = when (themeCombo.selectedIndex) {

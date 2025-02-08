@@ -17,12 +17,10 @@ class ClipCraftConfigurable : Configurable {
     private val filterRegexField = JTextField(30)
     private val shareGistCheck = JCheckBox("Share to Gist")
     private val multiExportCombo = JComboBox(arrayOf("None", "Markdown,HTML", "Markdown,HTML,Plain"))
-    // ... plus your existing controls ...
 
     override fun getDisplayName(): String = "ClipCraft"
 
     override fun createComponent(): JComponent {
-        // Build UI
         panel.add(JLabel("Theme:"))
         panel.add(themeCombo)
         panel.add(JLabel("Filter Regex:"))
@@ -31,16 +29,14 @@ class ClipCraftConfigurable : Configurable {
         panel.add(JScrollPane(macrosArea))
         panel.add(shareGistCheck)
         panel.add(multiExportCombo)
-        // ... existing UI from original ...
         reset()
         return panel
     }
 
     override fun isModified(): Boolean {
         val opts = ClipCraftSettings.getInstance().state
-        // Check fields vs. opts
-        // ...
-        return true // simplified
+        // This simplified version always returns true. Implement field-by-field checking for production.
+        return true
     }
 
     @Throws(ConfigurationException::class)
@@ -49,7 +45,6 @@ class ClipCraftConfigurable : Configurable {
         opts.themeMode = themeCombo.selectedItem as ThemeMode
         opts.filterRegex = filterRegexField.text
         opts.shareToGistEnabled = shareGistCheck.isSelected
-        // parse macros
         val macroMap = mutableMapOf<String, String>()
         macrosArea.text.lines().forEach { line ->
             val kv = line.split("=")
@@ -63,7 +58,6 @@ class ClipCraftConfigurable : Configurable {
             else -> opts.simultaneousExports = emptySet()
         }
 
-        // ... apply other fields ...
         ClipCraftSettings.getInstance().loadState(opts)
     }
 

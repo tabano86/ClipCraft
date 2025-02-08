@@ -12,8 +12,6 @@ class ClipCraftWizardTest {
     fun testWizardDefaultTheme() {
         val initial = ClipCraftOptions()
         val wizard = ClipCraftWizard(initial)
-        // Normally you'd show the wizard, user changes something, then getConfiguredOptions.
-        // Here we simulate direct access for test.
         val finalOpts = wizard.getConfiguredOptions()
         assertEquals(ThemeMode.SYSTEM_DEFAULT, finalOpts.themeMode)
     }

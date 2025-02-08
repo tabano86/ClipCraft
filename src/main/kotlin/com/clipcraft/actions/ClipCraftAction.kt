@@ -28,17 +28,15 @@ class ClipCraftAction : AnAction() {
         val project = e.project
         var opts = getOptions(project, e) ?: return
 
-        // Apply theme if changed
+        // Apply theme according to settings.
         ClipCraftThemeManager.applyTheme(opts.themeMode)
 
-        // Main logic: gather content
         val selected = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
         if (selected.isNullOrEmpty()) {
             ClipCraftNotificationCenter.notifyInfo("No files or directories selected.", project)
             return
         }
 
-        // If measurePerformance is enabled, wrap core in a timing block
         val combinedContent = if (opts.measurePerformance) {
             ClipCraftPerformanceMetrics.measure("ClipCraft Processing") {
                 processFiles(selected, opts, project)
@@ -47,15 +45,11 @@ class ClipCraftAction : AnAction() {
             processFiles(selected, opts, project)
         }
 
-        // Possibly export to multiple formats
         if (opts.simultaneousExports.isNotEmpty()) {
             val basePath = opts.exportFilePath.ifEmpty { (project?.basePath ?: "") + "/clipcraft_output" }
             val exportedPaths = ClipCraftSharingService.exportMultipleFormats(basePath, opts.simultaneousExports, combinedContent)
             ClipCraftNotificationCenter.notifyInfo("Simultaneously exported: ${exportedPaths.joinToString()}", project)
-        }
-
-        // Standard single-format handling
-        else if (opts.exportToFile) {
+        } else if (opts.exportToFile) {
             val outPath = if (opts.exportFilePath.isNotEmpty()) opts.exportFilePath
             else (project?.basePath ?: "") + "/clipcraft_output.txt"
             try {
@@ -65,19 +59,16 @@ class ClipCraftAction : AnAction() {
                 ClipCraftNotificationCenter.notifyError("Export failed: ${ex.message}", project)
             }
         } else {
-            // Copy to clipboard
             CopyPasteManager.getInstance().setContents(StringSelection(combinedContent))
             ClipCraftNotificationCenter.notifyInfo("Code copied to clipboard.", project)
         }
 
-        // Gist or Cloud
         if (opts.shareToGistEnabled) {
             val success = ClipCraftSharingService.shareToGist(combinedContent, project)
             if (success) ClipCraftNotificationCenter.notifyInfo("Shared to Gist!", project)
             else ClipCraftNotificationCenter.notifyError("Failed to share to Gist", project)
         }
         if (opts.exportToCloudServices) {
-            // Example usage
             ClipCraftSharingService.exportToCloud(combinedContent, "GoogleDrive", project)
         }
     }
@@ -86,13 +77,11 @@ class ClipCraftAction : AnAction() {
         val settings = ClipCraftSettings.getInstance()
         var curOpts = settings.state
 
-        // If per-project config is enabled
         if (curOpts.perProjectConfig && project != null) {
             val projService = ClipCraftProjectProfileManager.getInstance(project)
             curOpts = projService.state
         }
 
-        // ALT-click => Quick options
         curOpts = if (e.inputEvent is MouseEvent && (e.inputEvent as MouseEvent).isAltDown) {
             val quickPanel = ClipCraftQuickOptionsPanel(curOpts, project)
             val result = JOptionPane.showConfirmDialog(
@@ -104,14 +93,12 @@ class ClipCraftAction : AnAction() {
             )
             if (result == JOptionPane.OK_OPTION) quickPanel.getOptions() else return null
         } else if (!curOpts.autoProcess) {
-            // Show full dialog
             val dialog = ClipCraftOptionsDialog(curOpts)
             if (!dialog.showAndGet()) return null else dialog.getOptions()
         } else {
             curOpts
         }
 
-        // Save updated
         settings.loadState(curOpts)
         if (curOpts.perProjectConfig && project != null) {
             ClipCraftProjectProfileManager.getInstance(project).loadState(curOpts)
@@ -130,7 +117,6 @@ class ClipCraftAction : AnAction() {
     }
 
     private fun processVirtualFile(file: VirtualFile, opts: ClipCraftOptions, project: Project?): String {
-        // Regex filter
         if (opts.filterRegex.isNotBlank()) {
             if (!Regex(opts.filterRegex).containsMatchIn(file.path)) {
                 return ""
@@ -148,7 +134,6 @@ class ClipCraftAction : AnAction() {
                 append("File: $relPath")
                 if (opts.includeMetadata) {
                     append(" [Size: ${file.length} bytes, Modified: ${file.timeStamp}]")
-                    // Git metadata
                     if (opts.displayGitMetadata && project != null) {
                         val gitInfo = ClipCraftGitIntegration.getGitMetadata(project, file.path)
                         if (gitInfo.isNotEmpty()) append(" $gitInfo")
@@ -222,7 +207,6 @@ class ClipCraftAction : AnAction() {
         var processed = sb.toString().trimEnd()
         if (opts.removeComments) processed = removeComments(processed, language)
         if (opts.removeImports) processed = removeImportStatements(processed, language)
-        // Apply macros
         processed = ClipCraftMacroManager.applyMacros(processed, opts.macros)
         return processed
     }
@@ -273,7 +257,6 @@ class ClipCraftAction : AnAction() {
 
     private fun isTextFile(file: VirtualFile): Boolean {
         val sample = file.contentsToByteArray().take(8000)
-        // If any null bytes -> likely binary
         return sample.none { it.toInt() == 0 }
     }
 }

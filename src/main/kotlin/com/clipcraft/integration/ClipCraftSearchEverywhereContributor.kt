@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.Processor
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JList
-import javax.swing.JLabel
 import javax.swing.ListCellRenderer
 
 class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String> {
@@ -18,39 +17,27 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String>
     override fun showInFindResults(): Boolean = false
 
     override fun getElementsRenderer(): ListCellRenderer<in String> {
-        // A simple renderer that displays the string value in a label.
-        return DefaultListCellRenderer().apply {
-            // Customize the renderer if needed
-            // For example, you might want to change font or color here.
-        }
+        return DefaultListCellRenderer()
     }
 
     override fun getDataForItem(element: String, dataId: String): Any? {
-        // Return additional data for a given item if needed.
         return null
     }
 
     override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in String>) {
-        // Option 1: If you don't expect this overload to be used,
-        // you can leave it empty or delegate to the project-specific version if a project context is known.
-        // For now, we'll simply do nothing.
+        // Stubbed: Provide suggestions or commands as needed.
     }
 
     override fun processSelectedItem(selected: String, modifiers: Int, searchText: String): Boolean {
-        // Perform the desired action based on the user's selection.
         when (selected) {
             "ClipCraft: Open Wizard" -> {
-                // TODO: Open your custom wizard here.
-                // e.g., MyWizard.open(project)
+                // Trigger wizard action if needed.
             }
             "ClipCraft: Reset Defaults" -> {
-                // TODO: Reset plugin defaults.
+                // Trigger reset action.
             }
             "ClipCraft: Share to Gist" -> {
-                // TODO: Trigger sharing to Gist.
-            }
-            else -> {
-                // Optionally, handle unexpected selections.
+                // Trigger share action.
             }
         }
         return true

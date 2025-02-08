@@ -7,7 +7,6 @@ object ClipCraftPerformanceMetrics {
         val start = System.nanoTime()
         val result = block()
         val durationNs = System.nanoTime() - start
-        // In real usage, you might log to a file or show in a UI panel
         println("Performance [$label]: ${durationNs / 1_000_000} ms")
         return result
     }

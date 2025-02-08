@@ -3,33 +3,36 @@ package com.clipcraft.services
 import com.clipcraft.model.ThemeMode
 import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.ui.ExperimentalUI
 
 object ClipCraftThemeManager {
 
     fun applyTheme(themeMode: ThemeMode) {
-        // This is a simplified approach.
-        // In practice, you might apply specific light/dark UI themes or rely on the IDE's system default.
         val lafManager = LafManager.getInstance()
         when (themeMode) {
             ThemeMode.LIGHT -> {
-                // Force a known Light LaF
-                // e.g., IntelliJ Light
+                // Select a look and feel that contains "Light" in its name
                 lafManager.currentLookAndFeel =
-                    lafManager.installedLookAndFeels.find { it.name.contains("Light") } ?: lafManager.defaultLightLaf
+                    lafManager.installedLookAndFeels.find { it.name.contains("Light", ignoreCase = true) }
+                        ?: selectFallbackLaf(lafManager)
             }
             ThemeMode.DARK -> {
-                // Force a known Dark LaF
-                // e.g., Darcula
+                // Select a look and feel that contains "Dark" or "Darcula"
                 lafManager.currentLookAndFeel =
-                    lafManager.installedLookAndFeels.find { it.name.contains("Dark") || it.name.contains("Darcula") }
+                    lafManager.installedLookAndFeels.find {
+                        it.name.contains("Dark", ignoreCase = true) || it.name.contains("Darcula", ignoreCase = true)
+                    } ?: selectFallbackLaf(lafManager)
             }
             else -> {
-                // Use system default or IntelliJ default
-                lafManager.setCurrentLookAndFeel(lafManager.defaultLightLaf)
-                ExperimentalUI.setNewUI(false) // Example toggling new UI
+                // For any other mode, fallback to a light theme.
+                lafManager.currentLookAndFeel =
+                    lafManager.installedLookAndFeels.find { it.name.contains("Light", ignoreCase = true) }
+                        ?: selectFallbackLaf(lafManager)
+                // Note: ExperimentalUI#setNewUI is an internal API and should not be used.
             }
         }
         ApplicationManager.getApplication().invokeLater { lafManager.updateUI() }
     }
+
+    private fun selectFallbackLaf(lafManager: LafManager) =
+        lafManager.installedLookAndFeels.firstOrNull() ?: error("No Look and Feel available")
 }

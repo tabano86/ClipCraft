@@ -49,7 +49,6 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
 
     init {
         title = "ClipCraft Options"
-        // Main options
         panel.add(includeLineNumbersCheckBox)
         panel.add(showPreviewCheckBox)
         panel.add(exportToFileCheckBox)
@@ -60,7 +59,6 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
         panel.add(outputFormatComboBox)
         panel.add(removeImportsCheckBox)
 
-        // Advanced options in a subpanel
         val advancedPanel = JPanel(GridLayout(0, 2, 10, 10)).apply {
             border = BorderFactory.createTitledBorder("Advanced Options")
             add(JLabel("Ignore Folders (comma separated):"))
@@ -78,10 +76,6 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
 
     override fun createCenterPanel(): JComponent = panel
 
-    /**
-     * Gather the configured options from the dialog.
-     * Fields not exposed in this dialog remain as in the original options.
-     */
     fun getOptions(): ClipCraftOptions {
         return ClipCraftOptions(
             includeLineNumbers = includeLineNumbersCheckBox.isSelected,
@@ -100,6 +94,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             trimLineWhitespace = trimLineWhitespaceCheckBox.isSelected,
             removeImports = removeImportsCheckBox.isSelected,
             outputFormat = outputFormatComboBox.selectedItem as? OutputFormat ?: initialOptions.outputFormat,
+            // Unchanged fields for options not handled in this dialog:
             themeMode = initialOptions.themeMode,
             customTemplates = initialOptions.customTemplates,
             enableDragAndDrop = initialOptions.enableDragAndDrop,

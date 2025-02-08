@@ -15,15 +15,14 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Persistent state -->
         <applicationService serviceImplementation="com.clipcraft.services.ClipCraftSettings"/>
-        <!-- If you use project-level service: -->
-        <!-- <projectService serviceImplementation="com.clipcraft.services.ClipCraftProjectProfileManager"/> -->
-
+        <!-- If you use project-level service, uncomment the following:
+        <projectService serviceImplementation="com.clipcraft.services.ClipCraftProjectProfileManager"/>
+        -->
         <!-- Configurable -->
         <applicationConfigurable
                 instance="com.clipcraft.ui.ClipCraftConfigurable"
                 displayName="ClipCraft"
                 id="ClipCraftConfigurable" />
-
         <!-- Search Everywhere -->
         <searchEverywhereContributor implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributor"/>
     </extensions>
@@ -38,7 +37,7 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="MainToolBar" anchor="last"/>
             <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
-            <keyboard-shortcut keymap="\$default" first-keystroke="ctrl alt X"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt X"/>
         </action>
 
         <action

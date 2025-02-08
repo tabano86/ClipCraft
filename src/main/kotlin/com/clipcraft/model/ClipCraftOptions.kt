@@ -24,7 +24,6 @@ data class ClipCraftOptions(
     var singleCodeBlock: Boolean = false,
     var minimizeWhitespace: Boolean = false,
 
-    // Ignoring logic
     var ignoreFolders: List<String> = listOf(".git", "build", "out", "node_modules"),
     var ignoreFiles: List<String> = emptyList(),
     var ignorePatterns: List<String> = emptyList(),
@@ -34,7 +33,6 @@ data class ClipCraftOptions(
     var removeImports: Boolean = false,
     var outputFormat: OutputFormat = OutputFormat.MARKDOWN,
 
-    // NEW FIELDS
     var themeMode: ThemeMode = ThemeMode.SYSTEM_DEFAULT,
     var customTemplates: List<CustomTemplate> = emptyList(),
     var enableDragAndDrop: Boolean = true, // allow drag-and-drop files

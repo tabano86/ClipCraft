@@ -6,17 +6,20 @@ import com.clipcraft.ui.ClipCraftSetupWizard
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
-/**
- * Opens the ClipCraft Setup Wizard.
- */
-class ClipCraftWizardAction : AnAction("ClipCraft: Setup Wizard", "Open ClipCraft Setup Wizard", null) {
+class ClipCraftWizardAction : AnAction(
+    "ClipCraft: Setup Wizard",
+    "Open ClipCraft Setup Wizard",
+    null
+) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project
-        val currentOpts = ClipCraftSettings.getInstance().state
+        val settings = ClipCraftSettings.getInstance()
+        val currentOpts = settings.getActiveOptions()
         val wizard = ClipCraftSetupWizard(currentOpts)
         if (wizard.showAndGet()) {
             val newOpts = wizard.getConfiguredOptions()
-            ClipCraftSettings.getInstance().loadState(newOpts)
+            // Save into the active profile
+            settings.saveProfile(settings.state.activeProfileName, newOpts)
             ClipCraftNotificationCenter.notifyInfo("ClipCraft Wizard completed!", project)
         }
     }

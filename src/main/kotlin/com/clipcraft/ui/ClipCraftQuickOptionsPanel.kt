@@ -6,16 +6,11 @@ import com.clipcraft.services.ClipCraftSettings
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import java.awt.GridLayout
-import javax.swing.BorderFactory
-import javax.swing.JButton
-import javax.swing.JComboBox
-import javax.swing.JLabel
-import javax.swing.JPanel
-import javax.swing.JTextField
-import javax.swing.JCheckBox
+import javax.swing.*
 
 /**
- * A compact, quick-options panel that appears on ALT-click.
+ * A "quick" panel that can appear in a pop-up for adjusting common settings.
+ * Triggered, e.g., if the user ALT-clicks the main action.
  */
 class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val project: Project?) : JPanel() {
 
@@ -53,7 +48,7 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val p
     }
 
     fun getOptions(): ClipCraftOptions {
-        val currentOpts = ClipCraftSettings.getInstance().state
+        val currentOpts = ClipCraftSettings.getInstance().getActiveOptions()
         return currentOpts.copy(
             ignoreFolders = ignoreFoldersField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
             ignoreFiles = ignoreFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },

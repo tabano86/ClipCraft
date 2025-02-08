@@ -11,7 +11,7 @@ import java.awt.BorderLayout
 import javax.swing.JPanel
 
 /**
- * A live preview panel that uses IntelliJ's EditorTextField for syntax highlighting.
+ * Basic panel that can show a preview of the final content.
  */
 class ClipCraftPreviewPanel : JPanel(BorderLayout()) {
 

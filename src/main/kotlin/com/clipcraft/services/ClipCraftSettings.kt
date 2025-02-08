@@ -6,15 +6,64 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
+/**
+ * Global app-level settings for ClipCraft.
+ * Now supports multiple named profiles via an internal map.
+ */
 @State(name = "ClipCraftSettings", storages = [Storage("ClipCraftSettings.xml")])
-class ClipCraftSettings : PersistentStateComponent<ClipCraftOptions> {
+class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
 
-    private var myOptions = ClipCraftOptions()
+    data class State(
+        // key = profile name, value = ClipCraftOptions
+        var profiles: MutableMap<String, ClipCraftOptions> = mutableMapOf("Default" to ClipCraftOptions()),
+        // tracks which profile is active
+        var activeProfileName: String = "Default"
+    )
 
-    override fun getState(): ClipCraftOptions = myOptions
+    private var myState = State()
 
-    override fun loadState(state: ClipCraftOptions) {
-        myOptions = state
+    override fun getState(): State = myState
+
+    override fun loadState(state: State) {
+        myState = state
+    }
+
+    /**
+     * Returns the currently active profile's ClipCraftOptions.
+     */
+    fun getActiveOptions(): ClipCraftOptions {
+        return myState.profiles[myState.activeProfileName] ?: ClipCraftOptions()
+    }
+
+    /**
+     * Saves (adds or updates) a profile by name.
+     */
+    fun saveProfile(name: String, options: ClipCraftOptions) {
+        myState.profiles[name] = options
+    }
+
+    /**
+     * Deletes a profile by name, if it exists (cannot delete the active profile).
+     */
+    fun deleteProfile(name: String) {
+        if (name == myState.activeProfileName) return
+        myState.profiles.remove(name)
+    }
+
+    /**
+     * Sets the active profile. Does nothing if profile name doesn't exist.
+     */
+    fun setActiveProfile(name: String) {
+        if (myState.profiles.containsKey(name)) {
+            myState.activeProfileName = name
+        }
+    }
+
+    /**
+     * Returns all known profile names.
+     */
+    fun listProfileNames(): List<String> {
+        return myState.profiles.keys.toList()
     }
 
     companion object {

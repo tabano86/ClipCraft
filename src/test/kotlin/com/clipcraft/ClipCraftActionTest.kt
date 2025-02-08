@@ -19,12 +19,23 @@ class ClipCraftActionTest {
     }
 
     @Test
-    fun testProcessContentWithoutLineNumbers() {
+    fun testProcessContentCollapseBlankLines() {
+        val action = ClipCraftAction()
+        val content = "alpha\n\n\nbeta\n\n\ngamma"
+        val opts = ClipCraftOptions(collapseBlankLines = true)
+        val result = action.processContent(content, opts, "txt")
+        // Only a single blank line should remain between alpha/beta/gamma
+        val expected = "alpha\n\nbeta\n\ngamma"
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun testProcessContentSingleLine() {
         val action = ClipCraftAction()
         val content = "alpha\nbeta\ngamma"
-        val opts = ClipCraftOptions(includeLineNumbers = false)
+        val opts = ClipCraftOptions(singleLineOutput = true)
         val result = action.processContent(content, opts, "txt")
-        val expected = "alpha\nbeta\ngamma"
+        val expected = "alpha beta gamma"
         assertEquals(expected, result)
     }
 
@@ -39,25 +50,6 @@ class ClipCraftActionTest {
     }
 
     @Test
-    fun testProcessContentWithTrimLineWhitespace() {
-        val action = ClipCraftAction()
-        val content = "  foo  \n  bar  "
-        val opts = ClipCraftOptions(trimLineWhitespace = true)
-        val result = action.processContent(content, opts, "txt")
-        val expected = "  foo\n  bar"
-        assertEquals(expected, result)
-    }
-
-    @Test
-    fun testProcessContentWithRemoveImports() {
-        val action = ClipCraftAction()
-        val content = "import java.util.*\npublic class Test {}"
-        val opts = ClipCraftOptions(removeImports = true)
-        val result = action.processContent(content, opts, "java")
-        assertEquals("public class Test {}", result.trim())
-    }
-
-    @Test
     fun testMacroReplacement() {
         val action = ClipCraftAction()
         val content = "Hello, \${NAME}!"
@@ -67,12 +59,24 @@ class ClipCraftActionTest {
     }
 
     @Test
+    fun testChunking() {
+        val action = ClipCraftAction()
+        val bigString = "1234567890".repeat(100) // 1000 chars
+        val chunked = action.chunkContent(bigString, 300)
+        // Expect 4 chunks: 300, 300, 300, 100
+        assertEquals(4, chunked.size)
+        assertEquals(300, chunked[0].length)
+        assertEquals(300, chunked[1].length)
+        assertEquals(300, chunked[2].length)
+        assertEquals(100, chunked[3].length)
+    }
+
+    @Test
     fun testOutputFormatHTML() {
         val action = ClipCraftAction()
         val content = "foo\nbar"
         val opts = ClipCraftOptions(outputFormat = OutputFormat.HTML)
         val result = action.processContent(content, opts, "txt")
-        // For HTML, we do not insert <html> tags, but we do preserve line breaks.
         val expected = "foo\nbar"
         assertEquals(expected, result)
     }

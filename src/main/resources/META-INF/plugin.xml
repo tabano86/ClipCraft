@@ -1,23 +1,29 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>2.0.0</version>
+    <version>3.0.0</version>
     <vendor email="support@clipcraft.com" url="https://clipcraft.com">ClipCraft Inc.</vendor>
 
     <description><![CDATA[
         ClipCraft copies and formats code from multiple files/directories.
-        Features include a live preview, configurable options, macro support, Git metadata integration,
-        multi-format export, and quick settings – all seamlessly integrated into IntelliJ.
+        Now with next-generation features:
+         - multiple named profiles,
+         - directory summaries,
+         - advanced whitespace trimming/compression,
+         - GPT-friendly chunking,
+         - concurrency for faster processing,
+         - improved UI, and more!
     ]]></description>
 
+    <!-- Make sure this depends on the IntelliJ platform modules. -->
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Application-Level Persistent State -->
         <applicationService serviceImplementation="com.clipcraft.services.ClipCraftSettings"/>
 
-        <!-- Uncomment if using per-project configs:
-             <projectService serviceImplementation="com.clipcraft.services.ClipCraftProjectProfileManager"/> -->
+        <!-- If using per-project configs: -->
+        <!-- <projectService serviceImplementation="com.clipcraft.services.ClipCraftProjectProfileManager"/> -->
 
         <!-- Settings panel -->
         <applicationConfigurable
@@ -55,6 +61,14 @@
                 class="com.clipcraft.actions.ClipCraftResetDefaultsAction"
                 text="ClipCraft: Reset to Defaults"
                 description="Reset ClipCraft settings to their default values.">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+
+        <action
+                id="ClipCraftSwitchProfileAction"
+                class="com.clipcraft.actions.ClipCraftSwitchProfileAction"
+                text="ClipCraft: Switch Profile"
+                description="Switch among multiple named ClipCraft profiles.">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
     </actions>

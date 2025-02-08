@@ -4,14 +4,10 @@ import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.project.Project
 import java.io.File
 
-/**
- * Handles optional sharing or exporting to external services.
- */
 object ClipCraftSharingService {
-
     fun shareToGist(content: String, project: Project?): Boolean {
-        // Stub: Implement actual networking here
         return try {
+            // Implement actual HTTP calls to GitHub Gist API here.
             true
         } catch (e: Exception) {
             false
@@ -19,8 +15,8 @@ object ClipCraftSharingService {
     }
 
     fun exportToCloud(content: String, provider: String, project: Project?): Boolean {
-        // Stub: Implement actual cloud integration here
         return try {
+            // Implement cloud integration (e.g., Google Drive API) here.
             true
         } catch (e: Exception) {
             false

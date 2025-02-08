@@ -27,8 +27,6 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project
         val opts = obtainOptions(project, e)
-        // opts is guaranteed non-null
-        ClipCraftThemeManager.applyTheme(opts.themeMode)
 
         val selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
         if (selectedFiles.isNullOrEmpty()) {

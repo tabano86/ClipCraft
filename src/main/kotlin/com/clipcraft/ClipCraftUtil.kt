@@ -3,10 +3,6 @@ package com.clipcraft
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.FileTypeManager
 
-/**
- * Utility for resolving IntelliJ FileType from a simple language string,
- * e.g. "java" -> "JAVA" file type.
- */
 object ClipCraftUtil {
     fun resolveFileType(languageHint: String): FileType {
         return when (languageHint.lowercase()) {

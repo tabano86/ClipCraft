@@ -6,10 +6,16 @@ import com.clipcraft.services.ClipCraftSettings
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import java.awt.GridLayout
-import javax.swing.*
+import javax.swing.BorderFactory
+import javax.swing.JButton
+import javax.swing.JComboBox
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JTextField
+import javax.swing.JCheckBox
 
 /**
- * A simplified, quick options panel. Displayed if user ALT-clicks the main ClipCraft action.
+ * A compact, quick-options panel that appears on ALT-click.
  */
 class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val project: Project?) : JPanel() {
 
@@ -23,6 +29,7 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val p
     }
     private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
     private val openSettingsButton = JButton("Open Full Settings").apply {
+        toolTipText = "Open the complete ClipCraft settings dialog."
         addActionListener {
             ShowSettingsUtil.getInstance().showSettingsDialog(project, "ClipCraft")
         }
@@ -30,11 +37,12 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val p
 
     init {
         layout = GridLayout(0, 2, 10, 10)
-        add(JLabel("Ignore Folders (comma separated):"))
+        border = BorderFactory.createTitledBorder("Quick Options")
+        add(JLabel("Ignore Folders:"))
         add(ignoreFoldersField)
-        add(JLabel("Ignore Files (comma separated):"))
+        add(JLabel("Ignore Files:"))
         add(ignoreFilesField)
-        add(JLabel("Ignore Patterns (regex, comma separated):"))
+        add(JLabel("Ignore Patterns:"))
         add(ignorePatternsField)
         add(removeCommentsCheckBox)
         add(trimLineWhitespaceCheckBox)

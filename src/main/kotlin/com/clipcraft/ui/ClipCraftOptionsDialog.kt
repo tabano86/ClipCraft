@@ -3,67 +3,96 @@ package com.clipcraft.ui
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.ui.DialogWrapper
-import java.awt.GridLayout
-import javax.swing.*
+import com.intellij.util.ui.FormBuilder
+import java.awt.BorderLayout
+import javax.swing.BorderFactory
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JTextField
+import javax.swing.JCheckBox
+import javax.swing.JComboBox
 
 /**
- * A dialog that manually sets various options. Shown when autoProcess == false or triggered manually.
+ * A full options dialog for advanced configuration.
+ * The UI is divided into Basic Options (most-used settings) and Advanced Options.
  */
 class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
 
-    private val panel = JPanel(GridLayout(0, 2, 10, 10))
+    private val mainPanel: JPanel
 
-    private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
-    private val showPreviewCheckBox = JCheckBox("Show Preview", initialOptions.showPreview)
-    private val exportToFileCheckBox = JCheckBox("Export to File", initialOptions.exportToFile)
-    private val exportFilePathField = JTextField(initialOptions.exportFilePath, 30)
-    private val includeMetadataCheckBox = JCheckBox("Include File Metadata", initialOptions.includeMetadata)
+    // Basic Options
+    private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers).apply {
+        toolTipText = "When enabled, each line will be prefixed with its line number."
+    }
+    private val showPreviewCheckBox = JCheckBox("Show Preview", initialOptions.showPreview).apply {
+        toolTipText = "Display a preview dialog before copying output to clipboard."
+    }
+    private val exportToFileCheckBox = JCheckBox("Export to File", initialOptions.exportToFile).apply {
+        toolTipText = "When enabled, output is saved to a file instead of copying to clipboard."
+    }
+    private val exportFilePathField = JTextField(initialOptions.exportFilePath, 30).apply {
+        toolTipText = "File path to export output (if left blank, defaults to project directory)."
+    }
+    private val includeMetadataCheckBox = JCheckBox("Include File Metadata", initialOptions.includeMetadata).apply {
+        toolTipText = "Include file size and last modified date in the output header."
+    }
     private val outputFormatComboBox = JComboBox(OutputFormat.values()).apply {
         selectedItem = initialOptions.outputFormat
+        toolTipText = "Select the output format (Markdown, Plain, or HTML)."
     }
-    private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
+    private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports).apply {
+        toolTipText = "Strips import statements from code to reduce clutter."
+    }
 
-    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(","), 30)
-    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(","), 30)
-    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(","), 30)
-    private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
-    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace)
+    // Advanced Options
+    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(","), 30).apply {
+        toolTipText = "List folder names to ignore (comma-separated). Default: .git, build, out, node_modules"
+    }
+    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(","), 30).apply {
+        toolTipText = "List file names to ignore (comma-separated)."
+    }
+    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(","), 30).apply {
+        toolTipText = "Enter regex patterns to ignore files (comma-separated)."
+    }
+    private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments).apply {
+        toolTipText = "Strip out comments from the code output."
+    }
+    private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace).apply {
+        toolTipText = "Remove extra spaces at the end of each line."
+    }
 
     init {
         title = "ClipCraft Options"
-        // Main
-        panel.add(includeLineNumbersCheckBox)
-        panel.add(showPreviewCheckBox)
-        panel.add(exportToFileCheckBox)
-        panel.add(JLabel("Export File Path:"))
-        panel.add(exportFilePathField)
-        panel.add(includeMetadataCheckBox)
-        panel.add(JLabel("Output Format:"))
-        panel.add(outputFormatComboBox)
-        panel.add(removeImportsCheckBox)
+        val basicPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent(JLabel("Include Line Numbers:"), includeLineNumbersCheckBox, 1, false)
+            .addLabeledComponent(JLabel("Show Preview:"), showPreviewCheckBox, 1, false)
+            .addLabeledComponent(JLabel("Export to File:"), exportToFileCheckBox, 1, false)
+            .addLabeledComponent(JLabel("Export File Path:"), exportFilePathField, 1, false)
+            .addLabeledComponent(JLabel("Include Metadata:"), includeMetadataCheckBox, 1, false)
+            .addLabeledComponent(JLabel("Output Format:"), outputFormatComboBox, 1, false)
+            .addLabeledComponent(JLabel("Remove Imports:"), removeImportsCheckBox, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Basic Options") }
 
-        // Advanced
-        val advancedPanel = JPanel(GridLayout(0, 2, 10, 10)).apply {
-            border = BorderFactory.createTitledBorder("Advanced Options")
-            add(JLabel("Ignore Folders (comma separated):"))
-            add(ignoreFoldersField)
-            add(JLabel("Ignore Files (comma separated):"))
-            add(ignoreFilesField)
-            add(JLabel("Ignore Patterns (regex, comma separated):"))
-            add(ignorePatternsField)
-            add(removeCommentsCheckBox)
-            add(trimLineWhitespaceCheckBox)
-        }
+        val advancedPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent(JLabel("Ignore Folders:"), ignoreFoldersField, 1, false)
+            .addLabeledComponent(JLabel("Ignore Files:"), ignoreFilesField, 1, false)
+            .addLabeledComponent(JLabel("Ignore Patterns:"), ignorePatternsField, 1, false)
+            .addLabeledComponent(JLabel("Remove Comments:"), removeCommentsCheckBox, 1, false)
+            .addLabeledComponent(JLabel("Trim Whitespace:"), trimLineWhitespaceCheckBox, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Advanced Options") }
 
-        panel.add(advancedPanel)
+        mainPanel = FormBuilder.createFormBuilder()
+            .addComponent(basicPanel)
+            .addVerticalGap(10)
+            .addComponent(advancedPanel)
+            .panel
+
         init()
     }
 
-    override fun createCenterPanel(): JComponent = panel
+    override fun createCenterPanel(): JComponent = mainPanel
 
-    /**
-     * Gather the new user-defined options from this dialog.
-     */
     fun getOptions(): ClipCraftOptions {
         return initialOptions.copy(
             includeLineNumbers = includeLineNumbersCheckBox.isSelected,

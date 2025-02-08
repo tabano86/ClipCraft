@@ -8,20 +8,16 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
 /**
- * An action to reset ClipCraft settings to default values.
+ * Resets ClipCraft settings to default values.
  */
-class ClipCraftResetDefaultsAction :
-    AnAction("ClipCraft: Reset to Defaults", "Restore ClipCraft default settings", null) {
-
+class ClipCraftResetDefaultsAction : AnAction("ClipCraft: Reset to Defaults", "Restore ClipCraft default settings", null) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project
-        val defaults = ClipCraftOptions() // brand-new instance => default values
+        val defaults = ClipCraftOptions()
         ClipCraftSettings.getInstance().loadState(defaults)
-
         if (defaults.perProjectConfig && project != null) {
             ClipCraftProjectProfileManager.getInstance(project).loadState(defaults)
         }
-
         ClipCraftNotificationCenter.notifyInfo("ClipCraft settings reset to defaults.", project)
     }
 }

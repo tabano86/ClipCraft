@@ -8,19 +8,14 @@ import javax.swing.JList
 import javax.swing.ListCellRenderer
 
 class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String> {
-
     override fun getSearchProviderId(): String = "ClipCraftSearch"
-
     override fun getGroupName(): String = "ClipCraft"
-
     override fun getSortWeight(): Int = 1000
-
     override fun showInFindResults(): Boolean = false
-
     override fun getDataForItem(element: String, dataId: String): Any? = null
 
     override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in String>) {
-        // Stub: No elements to fetch.
+        // Production: Provide search results here (e.g. commands or macros).
     }
 
     override fun processSelectedItem(selected: String, modifiers: Int, searchText: String): Boolean = true

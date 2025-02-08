@@ -11,7 +11,7 @@ import java.awt.BorderLayout
 import javax.swing.JPanel
 
 /**
- * A panel showing a live preview of the processed text using IntelliJ's EditorTextField.
+ * A live preview panel that uses IntelliJ's EditorTextField for syntax highlighting.
  */
 class ClipCraftPreviewPanel : JPanel(BorderLayout()) {
 
@@ -19,19 +19,16 @@ class ClipCraftPreviewPanel : JPanel(BorderLayout()) {
 
     init {
         val defaultFileType = FileTypeManager.getInstance().findFileTypeByName("TEXT")
-            ?: error("Expected default TEXT file type not found")
+            ?: error("Default TEXT file type not found")
         editorTextField = EditorTextField("", null, defaultFileType)
         add(editorTextField, BorderLayout.CENTER)
     }
 
-    /**
-     * Update the preview with the given content, applying macros and setting the file type based on languageHint.
-     */
     fun updatePreview(content: String, opts: ClipCraftOptions, languageHint: String = "txt") {
         val processed = ClipCraftMacroManager.applyMacros(content, opts.macros)
         val fileType = ClipCraftUtil.resolveFileType(languageHint)
-        val doc = EditorFactory.getInstance().createDocument(processed)
-        editorTextField.setNewDocumentAndFileType(fileType, doc)
+        val document = EditorFactory.getInstance().createDocument(processed)
+        editorTextField.setNewDocumentAndFileType(fileType, document)
         (editorTextField.editor as? EditorEx)?.isViewer = true
     }
 

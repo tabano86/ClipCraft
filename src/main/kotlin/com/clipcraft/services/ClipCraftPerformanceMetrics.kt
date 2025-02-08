@@ -1,9 +1,5 @@
 package com.clipcraft.services
 
-/**
- * Captures performance metrics, printing them to stdout.
- * Ideal for debugging or performance analysis.
- */
 object ClipCraftPerformanceMetrics {
     fun <T> measure(label: String, block: () -> T): T {
         val startNs = System.nanoTime()

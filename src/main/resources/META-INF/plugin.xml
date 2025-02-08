@@ -6,8 +6,8 @@
 
     <description><![CDATA[
         ClipCraft copies and formats code from multiple files/directories.
-        Now featuring a live preview, custom themes, macros,
-        Git metadata, multi-export, wizard, and more.
+        Features include a live preview, configurable options, macro support, Git metadata integration,
+        multi-format export, and quick settings – all seamlessly integrated into IntelliJ.
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -19,7 +19,7 @@
         <!-- Uncomment if using per-project configs:
              <projectService serviceImplementation="com.clipcraft.services.ClipCraftProjectProfileManager"/> -->
 
-        <!-- Settings/Configurable in IntelliJ's Preferences UI -->
+        <!-- Settings panel -->
         <applicationConfigurable
                 instance="com.clipcraft.ui.ClipCraftConfigurable"
                 displayName="ClipCraft"
@@ -30,7 +30,6 @@
     </extensions>
 
     <actions>
-        <!-- Main Action -->
         <action
                 id="ClipCraftAction"
                 class="com.clipcraft.actions.ClipCraftAction"
@@ -43,7 +42,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt X"/>
         </action>
 
-        <!-- Wizard Action -->
         <action
                 id="ClipCraftWizardAction"
                 class="com.clipcraft.actions.ClipCraftWizardAction"
@@ -52,7 +50,6 @@
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
 
-        <!-- Reset to Defaults Action -->
         <action
                 id="ClipCraftResetDefaultsAction"
                 class="com.clipcraft.actions.ClipCraftResetDefaultsAction"

@@ -7,10 +7,9 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
 /**
- * An action to open the ClipCraft Setup Wizard manually.
+ * Opens the ClipCraft Setup Wizard.
  */
 class ClipCraftWizardAction : AnAction("ClipCraft: Setup Wizard", "Open ClipCraft Setup Wizard", null) {
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project
         val currentOpts = ClipCraftSettings.getInstance().state

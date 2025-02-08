@@ -1,7 +1,7 @@
 package com.clipcraft.model
 
 /**
- * Possible output formats for code snippet.
+ * The output formats supported by ClipCraft.
  */
 enum class OutputFormat {
     MARKDOWN,
@@ -10,24 +10,7 @@ enum class OutputFormat {
 }
 
 /**
- * UI theme modes the user may select.
- */
-enum class ThemeMode {
-    SYSTEM_DEFAULT,
-    LIGHT,
-    DARK
-}
-
-/**
- * A user-defined template object (for advanced formatting).
- */
-data class CustomTemplate(
-    val templateName: String,
-    val templateContent: String
-)
-
-/**
- * The main configuration for ClipCraft, stored persistently and modifiable via UI.
+ * The main configuration for ClipCraft. (Theme settings have been removed; we always use the IDE’s theme.)
  */
 data class ClipCraftOptions(
     var includeLineNumbers: Boolean = false,
@@ -49,8 +32,9 @@ data class ClipCraftOptions(
     var removeImports: Boolean = false,
     var outputFormat: OutputFormat = OutputFormat.MARKDOWN,
 
-    var themeMode: ThemeMode = ThemeMode.SYSTEM_DEFAULT,
-    var customTemplates: List<CustomTemplate> = emptyList(),
+    // Removed themeMode (we use IntelliJ’s theme)
+    // Additional production fields:
+    var customTemplates: List<Any> = emptyList(), // placeholder for potential future use
     var enableDragAndDrop: Boolean = true,
     var filterRegex: String = "",
     var macros: Map<String, String> = emptyMap(), // user-defined macros for text substitution

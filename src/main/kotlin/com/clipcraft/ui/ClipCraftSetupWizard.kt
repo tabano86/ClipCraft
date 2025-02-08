@@ -1,10 +1,18 @@
 package com.clipcraft.ui
 
 import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.model.ThemeMode
 import com.intellij.openapi.ui.DialogWrapper
-import javax.swing.*
+import javax.swing.BoxLayout
+import javax.swing.JCheckBox
+import javax.swing.JComboBox
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JComponent
 
+/**
+ * A simple setup wizard that lets the user configure a few basic options.
+ * (Theme selection has been removed since we rely on the IDE’s theme.)
+ */
 class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
 
     private val stepPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
@@ -15,9 +23,6 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
         JLabel("Review and Finish")
     )
     private val lineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
-    private val themeComboBox = JComboBox(arrayOf("System Default", "Light", "Dark")).apply {
-        selectedIndex = initialOptions.themeMode.ordinal
-    }
 
     init {
         title = "ClipCraft Setup Wizard"
@@ -33,24 +38,19 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
         stepPanel.removeAll()
         stepPanel.add(stepLabels[currentStep])
         when (currentStep) {
-            0 -> {
-                stepPanel.add(lineNumbersCheckBox)
-                stepPanel.add(themeComboBox)
-            }
-
+            0 -> stepPanel.add(lineNumbersCheckBox)
             1 -> {
-                // Future controls can be added here.
+                // Future steps (e.g. filtering options) can be added here.
             }
-
-            2 -> {
-                stepPanel.add(JLabel("All set!"))
-            }
+            2 -> stepPanel.add(JLabel("All set!"))
         }
         stepPanel.revalidate()
         stepPanel.repaint()
     }
 
-    // Custom next action (not an override)
+    /**
+     * Manually advances the wizard. (Note: DialogWrapper does not provide built-in next/prev; this is custom.)
+     */
     fun doNextAction() {
         if (currentStep < stepLabels.size - 1) {
             currentStep++
@@ -62,12 +62,7 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
 
     fun getConfiguredOptions(): ClipCraftOptions {
         return initialOptions.copy(
-            includeLineNumbers = lineNumbersCheckBox.isSelected,
-            themeMode = when (themeComboBox.selectedIndex) {
-                1 -> ThemeMode.LIGHT
-                2 -> ThemeMode.DARK
-                else -> ThemeMode.SYSTEM_DEFAULT
-            }
+            includeLineNumbers = lineNumbersCheckBox.isSelected
         )
     }
 }

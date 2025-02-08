@@ -1,35 +1,54 @@
 package com.clipcraft.model
 
-/**
- * Supported output formats.
- */
 enum class OutputFormat {
     MARKDOWN, PLAIN, HTML
 }
 
-/**
- * Stores all user preferences for ClipCraft.
- *
- * Tooltips in the UI explain each field.
- */
+enum class ThemeMode {
+    SYSTEM_DEFAULT, LIGHT, DARK
+}
+
+data class CustomTemplate(
+    val templateName: String,
+    val templateContent: String
+)
+
 data class ClipCraftOptions(
-    // Output formatting options
     var includeLineNumbers: Boolean = false,
     var showPreview: Boolean = false,
     var exportToFile: Boolean = false,
     var exportFilePath: String = "",
     var includeMetadata: Boolean = false,
     var autoProcess: Boolean = true,
-    var largeFileThreshold: Long = 1_048_576, // 1 MB threshold for background loading
-    var singleCodeBlock: Boolean = false,     // Merge all output into a single code block
-    var minimizeWhitespace: Boolean = false,    // Remove consecutive blank lines
+    var largeFileThreshold: Long = 1_048_576, // 1 MB
+    var singleCodeBlock: Boolean = false,
+    var minimizeWhitespace: Boolean = false,
 
-    // Advanced options for excluding files/directories and cleaning code
+    // Ignoring logic
     var ignoreFolders: List<String> = listOf(".git", "build", "out", "node_modules"),
     var ignoreFiles: List<String> = emptyList(),
     var ignorePatterns: List<String> = emptyList(),
-    var removeComments: Boolean = false,       // Remove comment lines from source files
-    var trimLineWhitespace: Boolean = false,     // Remove trailing whitespace on each line
-    var removeImports: Boolean = false,          // Remove import statements from code
-    var outputFormat: OutputFormat = OutputFormat.MARKDOWN // Output format: Markdown, Plain, or HTML
+
+    var removeComments: Boolean = false,
+    var trimLineWhitespace: Boolean = false,
+    var removeImports: Boolean = false,
+    var outputFormat: OutputFormat = OutputFormat.MARKDOWN,
+
+    // NEW FIELDS
+    var themeMode: ThemeMode = ThemeMode.SYSTEM_DEFAULT,
+    var customTemplates: List<CustomTemplate> = emptyList(),
+    var enableDragAndDrop: Boolean = true, // allow drag-and-drop files
+    var filterRegex: String = "",
+    var macros: Map<String, String> = emptyMap(), // user-defined macros
+    var simultaneousExports: Set<OutputFormat> = emptySet(), // e.g., export multiple formats
+    var displayGitMetadata: Boolean = false,
+    var syntaxHighlightPreview: Boolean = true,
+    var showProgressInStatusBar: Boolean = true,
+    var shareToGistEnabled: Boolean = false,
+    var exportToCloudServices: Boolean = false, // e.g., Drive, Dropbox
+    var measurePerformance: Boolean = false,
+    var perProjectConfig: Boolean = false,
+    var locale: String = "en", // for localization
+    var enableFeedbackButton: Boolean = true,
+    var enableNotificationCenter: Boolean = true
 )

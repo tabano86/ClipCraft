@@ -94,6 +94,7 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
     }
 
     private fun handleOutput(combinedContent: String, opts: ClipCraftOptions, project: Project?) {
+
         if (opts.simultaneousExports.isNotEmpty()) {
             val basePath = opts.exportFilePath.ifEmpty { (project?.basePath ?: "") + "/clipcraft_output" }
             val exportedPaths =
@@ -279,4 +280,26 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
         val sample = file.contentsToByteArray().take(8000)
         return sample.none { it.toInt() == 0 }
     }
+
+    private fun buildDirectorySummary(files: Array<VirtualFile>, opts: ClipCraftOptions): String {
+        val builder = StringBuilder("Directory Structure Summary:\n")
+        // Optionally track visited paths to avoid duplication if multiple top-level selections overlap
+        files.forEach { file ->
+            buildDirectoryTree(file, 0, builder, opts)
+        }
+        return builder.toString()
+    }
+
+    private fun buildDirectoryTree(file: VirtualFile, depth: Int, builder: StringBuilder, opts: ClipCraftOptions) {
+        if (depth > opts.directorySummaryDepth) return
+        // Indent to visualize hierarchy
+        repeat(depth) { builder.append("  ") }
+        builder.append("• ").append(file.name).append("\n")
+        if (file.isDirectory) {
+            file.children.forEach {
+                buildDirectoryTree(it, depth + 1, builder, opts)
+            }
+        }
+    }
+
 }

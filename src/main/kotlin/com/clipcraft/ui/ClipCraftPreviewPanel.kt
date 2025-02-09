@@ -10,9 +10,6 @@ import com.intellij.ui.EditorTextField
 import java.awt.BorderLayout
 import javax.swing.JPanel
 
-/**
- * Basic panel that can show a preview of the final content.
- */
 class ClipCraftPreviewPanel : JPanel(BorderLayout()) {
 
     private val editorTextField: EditorTextField

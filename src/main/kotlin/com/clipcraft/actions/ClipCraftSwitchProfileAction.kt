@@ -6,9 +6,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import javax.swing.JOptionPane
 
-/**
- * Allows switching among multiple named profiles quickly from the Tools menu.
- */
 class ClipCraftSwitchProfileAction : AnAction(
     "ClipCraft: Switch Profile",
     "Switch among multiple named ClipCraft profiles",

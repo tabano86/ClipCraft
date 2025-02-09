@@ -7,10 +7,6 @@ import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.ListCellRenderer
 
-/**
- * Stub implementation of a Search Everywhere contributor that could be expanded
- * to list macros, profiles, or quick actions from ClipCraft.
- */
 class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String> {
     override fun getSearchProviderId(): String = "ClipCraftSearch"
     override fun getGroupName(): String = "ClipCraft"
@@ -19,7 +15,7 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String>
     override fun getDataForItem(element: String, dataId: String): Any? = null
 
     override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in String>) {
-        // Example: we could add "ClipCraft Profiles" or "ClipCraft Macros" here
+        // Potential expansions: search macros, profiles, etc.
     }
 
     override fun processSelectedItem(selected: String, modifiers: Int, searchText: String): Boolean = true

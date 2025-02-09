@@ -1,37 +1,33 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>3.0.0</version>
+    <version>1.0.0</version>
     <vendor email="support@clipcraft.com" url="https://clipcraft.com">ClipCraft Inc.</vendor>
 
     <description><![CDATA[
-        ClipCraft copies and formats code from multiple files/directories.
-        Now with next-generation features:
-         - multiple named profiles,
-         - directory summaries,
-         - advanced whitespace trimming/compression,
-         - GPT-friendly chunking,
-         - concurrency for faster processing,
-         - improved UI, and more!
+    ClipCraft copies and formats code from multiple files/directories.
+    Now with next-generation features:
+     - multiple named profiles,
+     - directory summaries,
+     - advanced compression,
+     - .gitignore integration,
+     - GPT-friendly chunking,
+     - concurrency for faster processing,
+     - improved UI, and more!
     ]]></description>
 
-    <!-- Make sure this depends on the IntelliJ platform modules. -->
     <depends>com.intellij.modules.platform</depends>
 
+    <!-- Specify the supported IDE build range (now updated to match JDK 17/IntelliJ 2022.3) -->
+    <idea-version since-build="223" until-build="243.*"/>
+
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Application-Level Persistent State -->
         <applicationService serviceImplementation="com.clipcraft.services.ClipCraftSettings"/>
-
-        <!-- If using per-project configs: -->
         <!-- <projectService serviceImplementation="com.clipcraft.services.ClipCraftProjectProfileManager"/> -->
-
-        <!-- Settings panel -->
         <applicationConfigurable
                 instance="com.clipcraft.ui.ClipCraftConfigurable"
                 displayName="ClipCraft"
                 id="ClipCraftConfigurable"/>
-
-        <!-- Search Everywhere Integration -->
         <searchEverywhereContributor implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributor"/>
     </extensions>
 
@@ -71,5 +67,26 @@
                 description="Switch among multiple named ClipCraft profiles.">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
+
+        <!-- Updated to use the public settings action -->
+        <action
+                id="OpenClipCraftSettings"
+                class="com.intellij.ide.actions.ShowSettingsAction"
+                text="Open ClipCraft Settings"
+                configurableId="ClipCraftConfigurable"/>
+
+        <!-- Define the Quick Access Action Group -->
+        <action
+                id="ClipCraftQuickAccessActionGroup"
+                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
+                text="ClipCraft Quick Access"
+                description="One-click ClipCraft settings and profiles"
+                popup="true"/>
+
+        <!-- Add the Quick Access group to the ToolsMenu -->
+        <add-to-group group-id="ToolsMenu" anchor="last" action-id="ClipCraftQuickAccessActionGroup"/>
+        <!-- Add child actions to the Quick Access group -->
+        <add-to-group group-id="ClipCraftQuickAccessActionGroup" anchor="last" action-id="OpenClipCraftSettings"/>
+        <add-to-group group-id="ClipCraftQuickAccessActionGroup" anchor="last" action-id="ClipCraftSwitchProfileAction"/>
     </actions>
 </idea-plugin>

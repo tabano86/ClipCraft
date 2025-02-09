@@ -8,10 +8,6 @@ import com.intellij.openapi.project.Project
 import java.awt.GridLayout
 import javax.swing.*
 
-/**
- * A "quick" panel that can appear in a pop-up for adjusting common settings.
- * Triggered, e.g., if the user ALT-clicks the main action.
- */
 class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val project: Project?) : JPanel() {
 
     private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(","), 30)
@@ -23,6 +19,7 @@ class ClipCraftQuickOptionsPanel(initialOptions: ClipCraftOptions, private val p
         selectedItem = initialOptions.outputFormat
     }
     private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
+
     private val openSettingsButton = JButton("Open Full Settings").apply {
         toolTipText = "Open the complete ClipCraft settings dialog."
         addActionListener {

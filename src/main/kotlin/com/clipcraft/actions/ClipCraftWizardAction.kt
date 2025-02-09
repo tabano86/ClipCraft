@@ -18,7 +18,6 @@ class ClipCraftWizardAction : AnAction(
         val wizard = ClipCraftSetupWizard(currentOpts)
         if (wizard.showAndGet()) {
             val newOpts = wizard.getConfiguredOptions()
-            // Save into the active profile
             settings.saveProfile(settings.state.activeProfileName, newOpts)
             ClipCraftNotificationCenter.notifyInfo("ClipCraft Wizard completed!", project)
         }

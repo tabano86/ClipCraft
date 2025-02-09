@@ -12,12 +12,13 @@ repositories {
 }
 
 intellij {
-    // Target IntelliJ IDEA 2022.3 (Community Edition).
     version.set("2022.3")
     type.set("IC")
-    // Declare the Git4Idea dependency here:
     plugins.set(listOf("Git4Idea"))
+    // Disable code instrumentation to produce a valid plugin descriptor.
+    instrumentCode.set(false)
 }
+
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
@@ -30,11 +31,14 @@ java {
     }
 }
 
+// Update the patchPluginXml task to match the new build range.
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
-    sinceBuild.set("182")
+    sinceBuild.set("223")
     untilBuild.set("243.*")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = "17"
+    // Disable the coroutines Java agent to avoid the missing agent error.
+    kotlinOptions.freeCompilerArgs += listOf("-Xdisable-coroutines-java-agent")
 }

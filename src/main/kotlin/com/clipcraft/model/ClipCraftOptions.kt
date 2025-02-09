@@ -10,8 +10,9 @@ enum class OutputFormat {
 }
 
 /**
- * A next-gen configuration data class for ClipCraft.
- * You can save multiple profiles with different combos of these settings.
+ * Next-gen configuration data class for ClipCraft,
+ * including .gitignore usage, advanced compression modes,
+ * and toggles for auto-apply, etc.
  */
 data class ClipCraftOptions(
     var includeLineNumbers: Boolean = false,
@@ -21,7 +22,7 @@ data class ClipCraftOptions(
     var includeMetadata: Boolean = false,
     var autoProcess: Boolean = true,
     var largeFileThreshold: Long = 1_048_576, // 1 MB
-    var singleCodeBlock: Boolean = false,     // (Unused in example, but left for future use)
+    var singleCodeBlock: Boolean = false,
     var minimizeWhitespace: Boolean = false,
 
     var ignoreFolders: List<String> = listOf(".git", "build", "out", "node_modules"),
@@ -34,7 +35,7 @@ data class ClipCraftOptions(
     var outputFormat: OutputFormat = OutputFormat.MARKDOWN,
     var filterRegex: String = "",
 
-    // New advanced macros, expansions
+    // Macros
     var macros: Map<String, String> = emptyMap(),
 
     // Multi-format export
@@ -62,7 +63,7 @@ data class ClipCraftOptions(
     var enableFeedbackButton: Boolean = true,
     var enableNotificationCenter: Boolean = true,
 
-    // Next-Gen features:
+    // Next-Gen features
     var includeDirectorySummary: Boolean = false,
     var directorySummaryDepth: Int = 999,
     var collapseBlankLines: Boolean = false,
@@ -71,5 +72,18 @@ data class ClipCraftOptions(
 
     // GPT chunking
     var enableChunkingForGPT: Boolean = false,
-    var maxChunkSize: Int = 3000
+    var maxChunkSize: Int = 3000,
+
+    // Theme mode
+    var themeMode: ThemeMode = ThemeMode.SYSTEM_DEFAULT,
+
+    // .gitignore usage
+    var useGitIgnore: Boolean = false,
+
+    // Advanced compression
+    var compressionMode: CompressionMode = CompressionMode.NONE,
+    var selectiveCompression: Boolean = false,
+
+    // If true, the UI automatically applies changes on each toggle without needing "Apply"
+    var autoApplyOnChange: Boolean = false
 )

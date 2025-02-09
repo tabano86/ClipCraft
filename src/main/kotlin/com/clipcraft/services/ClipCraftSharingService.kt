@@ -7,7 +7,7 @@ import java.io.File
 object ClipCraftSharingService {
     fun shareToGist(content: String, project: Project?): Boolean {
         return try {
-            // Fake gist share, success assumed
+            // Fake gist share
             true
         } catch (e: Exception) {
             false
@@ -16,7 +16,7 @@ object ClipCraftSharingService {
 
     fun exportToCloud(content: String, provider: String, project: Project?): Boolean {
         return try {
-            // Fake cloud share, success assumed
+            // Fake cloud share
             true
         } catch (e: Exception) {
             false

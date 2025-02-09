@@ -27,7 +27,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
     private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace)
 
-    // Some next-gen fields
+    // Next-gen
     private val chunkingCheckBox = JCheckBox("Enable GPT Chunking", initialOptions.enableChunkingForGPT)
     private val chunkSizeField = JTextField(initialOptions.maxChunkSize.toString(), 5)
     private val directorySummaryCheckBox = JCheckBox("Include Directory Summary", initialOptions.includeDirectorySummary)
@@ -37,6 +37,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
 
     init {
         title = "ClipCraft Options"
+
         val basicPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JLabel("Include Line Numbers:"), includeLineNumbersCheckBox, 1, false)
             .addLabeledComponent(JLabel("Show Preview:"), showPreviewCheckBox, 1, false)
@@ -85,6 +86,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     override fun createCenterPanel(): JComponent = mainPanel
 
     fun getOptions(): ClipCraftOptions {
+        val chunk = chunkSizeField.text.toIntOrNull() ?: initialOptions.maxChunkSize
         return initialOptions.copy(
             includeLineNumbers = includeLineNumbersCheckBox.isSelected,
             showPreview = showPreviewCheckBox.isSelected,
@@ -100,7 +102,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             trimLineWhitespace = trimLineWhitespaceCheckBox.isSelected,
 
             enableChunkingForGPT = chunkingCheckBox.isSelected,
-            maxChunkSize = chunkSizeField.text.toIntOrNull() ?: initialOptions.maxChunkSize,
+            maxChunkSize = if (chunk <= 0) 3000 else chunk,
             includeDirectorySummary = directorySummaryCheckBox.isSelected,
             collapseBlankLines = collapseBlankLinesCheckBox.isSelected,
             removeLeadingBlankLines = removeLeadingBlankCheckBox.isSelected,

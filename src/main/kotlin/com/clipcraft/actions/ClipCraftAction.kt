@@ -1,8 +1,7 @@
 package com.clipcraft.actions
 
 import com.clipcraft.integration.ClipCraftGitIntegration
-import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.model.OutputFormat
+import com.clipcraft.model.*
 import com.clipcraft.services.*
 import com.clipcraft.ui.ClipCraftOptionsDialog
 import com.clipcraft.ui.ClipCraftQuickOptionsPanel
@@ -30,12 +29,14 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project
         val settings = ClipCraftSettings.getInstance()
+        val activeProfileName = settings.state.activeProfileName
         var opts = settings.getActiveOptions()
 
         if (opts.perProjectConfig && project != null) {
             opts = ClipCraftProjectProfileManager.getInstance(project).state
         }
 
+        // If user ALT-clicks, show quick config
         if (e.inputEvent is MouseEvent && (e.inputEvent as MouseEvent).isAltDown) {
             val quickPanel = ClipCraftQuickOptionsPanel(opts, project)
             val result = JOptionPane.showConfirmDialog(
@@ -49,32 +50,81 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
                 opts = quickPanel.getOptions()
             }
         } else if (!opts.autoProcess) {
+            // Show full dialog if autoProcess is off
             val dialog = ClipCraftOptionsDialog(opts)
             if (dialog.showAndGet()) {
                 opts = dialog.getOptions()
             }
         }
 
-        settings.saveProfile(settings.state.activeProfileName, opts)
+        // Save updated options
+        settings.saveProfile(activeProfileName, opts)
         if (opts.perProjectConfig && project != null) {
             ClipCraftProjectProfileManager.getInstance(project).loadState(opts)
         }
 
+        // Gather files
         val selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
         if (selectedFiles.isNullOrEmpty()) {
             ClipCraftNotificationCenter.notifyInfo("No files or directories selected.", project)
             return
         }
 
-        val finalContent = if (opts.measurePerformance) {
-            ClipCraftPerformanceMetrics.measure("ClipCraft Processing") {
-                processAllFiles(selectedFiles, opts, project)
+        // Merge .gitignore if needed
+        if (opts.useGitIgnore && project != null) {
+            try {
+                mergeGitIgnoreRules(opts, project)
+            } catch (ex: Exception) {
+                ClipCraftNotificationCenter.notifyError("Failed to parse .gitignore: ${ex.message}", project)
             }
-        } else {
-            processAllFiles(selectedFiles, opts, project)
         }
 
-        handleOutput(finalContent, opts, project, selectedFiles)
+        // Process
+        val finalContent = try {
+            if (opts.measurePerformance) {
+                ClipCraftPerformanceMetrics.measure("ClipCraft Processing") {
+                    processAllFiles(selectedFiles, opts, project)
+                }
+            } else {
+                processAllFiles(selectedFiles, opts, project)
+            }
+        } catch (ex: Exception) {
+            ClipCraftNotificationCenter.notifyError("Processing error: ${ex.message}", project)
+            return
+        }
+
+        // Output
+        val stats = handleOutput(finalContent, opts, project, selectedFiles, activeProfileName)
+        // Show final stats notification
+        ClipCraftNotificationCenter.notifyInfo(
+            "Profile: $activeProfileName | Processed ${stats.files} file(s), ${stats.lines} line(s).",
+            project
+        )
+    }
+
+    /**
+     * Merges .gitignore patterns into the ignore lists, with error handling.
+     */
+    private fun mergeGitIgnoreRules(opts: ClipCraftOptions, project: Project) {
+        val baseDir = project.basePath ?: return
+        val gitIgnoreFile = File(baseDir, ".gitignore")
+        if (!gitIgnoreFile.exists()) return
+
+        val lines = gitIgnoreFile.readLines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
+        val newFolders = mutableListOf<String>()
+        val newFiles = mutableListOf<String>()
+        val newPatterns = mutableListOf<String>()
+
+        for (line in lines) {
+            when {
+                line.startsWith("/") -> newFolders += line.removePrefix("/")
+                line.contains("*") -> newPatterns += line
+                else -> newFiles += line
+            }
+        }
+        opts.ignoreFolders = (opts.ignoreFolders + newFolders).distinct()
+        opts.ignoreFiles = (opts.ignoreFiles + newFiles).distinct()
+        opts.ignorePatterns = (opts.ignorePatterns + newPatterns).distinct()
     }
 
     private fun processAllFiles(files: Array<VirtualFile>, opts: ClipCraftOptions, project: Project?): String {
@@ -88,76 +138,96 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
         return if (opts.minimizeWhitespace) minimizeWhitespace(joined) else joined
     }
 
+    /**
+     * Return stats (files & lines processed) after output is handled.
+     */
     private fun handleOutput(
         combinedContent: String,
         opts: ClipCraftOptions,
         project: Project?,
-        selectedFiles: Array<VirtualFile>
-    ) {
+        selectedFiles: Array<VirtualFile>,
+        profileName: String
+    ): ProcessStats {
         var finalContent = combinedContent
 
+        // Possibly add summary
         if (opts.includeDirectorySummary) {
             val summary = buildDirectorySummary(selectedFiles, opts)
             finalContent = "$summary\n\n$finalContent"
         }
 
-        if (opts.enableChunkingForGPT) {
-            val chunks = chunkContent(finalContent, opts.maxChunkSize)
-            chunks.forEachIndexed { index, chunk ->
-                if (opts.exportToFile) {
-                    val outBase = if (opts.exportFilePath.isNotEmpty()) opts.exportFilePath
-                    else (project?.basePath ?: "") + "/clipcraft_output_chunk${index + 1}.txt"
-                    try {
-                        File(outBase).writeText(chunk, Charsets.UTF_8)
-                    } catch (ex: Exception) {
-                        ClipCraftNotificationCenter.notifyError("Export failed: ${ex.message}", project)
-                    }
-                } else {
-                    if (index == chunks.size - 1) {
-                        CopyPasteManager.getInstance().setContents(StringSelection(chunk))
+        // Count lines in final
+        val totalLines = finalContent.lines().size
+        val totalFiles = selectedFiles.size
+
+        try {
+            if (opts.enableChunkingForGPT) {
+                val chunks = chunkContent(finalContent, opts.maxChunkSize)
+                chunks.forEachIndexed { index, chunk ->
+                    if (opts.exportToFile) {
+                        val outBase = if (opts.exportFilePath.isNotEmpty()) {
+                            opts.exportFilePath
+                        } else {
+                            (project?.basePath ?: "") + "/clipcraft_output_chunk${index + 1}.txt"
+                        }
+                        try {
+                            File(outBase).writeText(chunk, Charsets.UTF_8)
+                        } catch (ex: Exception) {
+                            ClipCraftNotificationCenter.notifyError("Export failed: ${ex.message}", project)
+                        }
+                    } else {
+                        if (index == chunks.size - 1) {
+                            CopyPasteManager.getInstance().setContents(StringSelection(chunk))
+                        }
                     }
                 }
-            }
-            ClipCraftNotificationCenter.notifyInfo("Output was split into ${chunks.size} chunks.", project)
-        } else {
-            if (opts.simultaneousExports.isNotEmpty()) {
-                val basePath = opts.exportFilePath.ifEmpty { (project?.basePath ?: "") + "/clipcraft_output" }
-                val exportedPaths =
-                    ClipCraftSharingService.exportMultipleFormats(basePath, opts.simultaneousExports, finalContent)
-                ClipCraftNotificationCenter.notifyInfo("Simultaneously exported: ${exportedPaths.joinToString()}", project)
-            } else if (opts.exportToFile) {
-                val outPath = if (opts.exportFilePath.isNotEmpty()) {
-                    opts.exportFilePath
-                } else {
-                    (project?.basePath ?: "") + "/clipcraft_output.txt"
-                }
-                try {
+                ClipCraftNotificationCenter.notifyInfo("Output was split into ${chunks.size} chunks.", project)
+            } else {
+                if (opts.simultaneousExports.isNotEmpty()) {
+                    val basePath = opts.exportFilePath.ifEmpty { (project?.basePath ?: "") + "/clipcraft_output" }
+                    val exportedPaths = ClipCraftSharingService.exportMultipleFormats(basePath, opts.simultaneousExports, finalContent)
+                    ClipCraftNotificationCenter.notifyInfo("Simultaneously exported: ${exportedPaths.joinToString()}", project)
+                } else if (opts.exportToFile) {
+                    val outPath = if (opts.exportFilePath.isNotEmpty()) {
+                        opts.exportFilePath
+                    } else {
+                        (project?.basePath ?: "") + "/clipcraft_output.txt"
+                    }
                     File(outPath).writeText(finalContent, Charsets.UTF_8)
                     ClipCraftNotificationCenter.notifyInfo("Output exported to $outPath", project)
-                } catch (ex: Exception) {
-                    ClipCraftNotificationCenter.notifyError("Export failed: ${ex.message}", project)
+                } else {
+                    CopyPasteManager.getInstance().setContents(StringSelection(finalContent))
+                    ClipCraftNotificationCenter.notifyInfo("Code copied to clipboard.", project)
                 }
-            } else {
-                CopyPasteManager.getInstance().setContents(StringSelection(finalContent))
-                ClipCraftNotificationCenter.notifyInfo("Code copied to clipboard.", project)
             }
+
+            // Gist share
+            if (opts.shareToGistEnabled) {
+                val success = ClipCraftSharingService.shareToGist(finalContent, project)
+                if (success) {
+                    ClipCraftNotificationCenter.notifyInfo("Shared to Gist!", project)
+                } else {
+                    ClipCraftNotificationCenter.notifyError("Failed to share to Gist", project)
+                }
+            }
+            // Cloud share
+            if (opts.exportToCloudServices) {
+                ClipCraftSharingService.exportToCloud(finalContent, "GoogleDrive", project)
+            }
+
+        } catch (ex: Exception) {
+            ClipCraftNotificationCenter.notifyError("Error handling output: ${ex.message}", project)
         }
 
-        if (opts.shareToGistEnabled) {
-            val success = ClipCraftSharingService.shareToGist(finalContent, project)
-            if (success) {
-                ClipCraftNotificationCenter.notifyInfo("Shared to Gist!", project)
-            } else {
-                ClipCraftNotificationCenter.notifyError("Failed to share to Gist", project)
-            }
-        }
-        if (opts.exportToCloudServices) {
-            ClipCraftSharingService.exportToCloud(finalContent, "GoogleDrive", project)
-        }
+        return ProcessStats(files = totalFiles, lines = totalLines)
     }
 
+    /**
+     * Stats for notification: file count, line count, etc.
+     */
+    data class ProcessStats(val files: Int, val lines: Int)
+
     private fun processVirtualFile(file: VirtualFile, opts: ClipCraftOptions, project: Project?): String {
-        // Use filterRegex from options (make sure it exists in ClipCraftOptions)
         if (opts.filterRegex.isNotBlank() && !Regex(opts.filterRegex).containsMatchIn(file.path)) {
             return ""
         }
@@ -202,12 +272,11 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
 
     private fun loadFileWithProgress(file: VirtualFile, project: Project?): String {
         var text = ""
-        ProgressManager.getInstance()
-            .run(object : Task.Backgroundable(project, "Loading large file: ${file.name}", false) {
-                override fun run(indicator: ProgressIndicator) {
-                    text = readFileBytes(file)
-                }
-            })
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading large file: ${file.name}", false) {
+            override fun run(indicator: ProgressIndicator) {
+                text = readFileBytes(file)
+            }
+        })
         return text
     }
 
@@ -250,35 +319,71 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
     }
 
     fun processContent(text: String, opts: ClipCraftOptions, language: String): String {
+        var sb = StringBuilder()
+        var started = false
         val lines = text.lines()
-        val sb = StringBuilder()
-        var lineNumber = 1
-        for (rawLine in lines) {
-            if (opts.removeLeadingBlankLines && sb.isEmpty() && rawLine.isBlank()) {
-                continue
+
+        // Remove leading blank lines if requested
+        lines.forEach { raw ->
+            if (!started && opts.removeLeadingBlankLines && raw.isBlank()) {
+                // skip
+            } else {
+                started = true
+                sb.append(raw).append("\n")
             }
-            val line = if (opts.trimLineWhitespace) rawLine.trimEnd() else rawLine
-            val finalLine = if (opts.includeLineNumbers) "%4d: %s".format(lineNumber, line) else line
-            sb.append(finalLine).append("\n")
-            lineNumber++
         }
 
         var processed = sb.toString()
-
+        // Trim trailing whitespace
+        if (opts.trimLineWhitespace) {
+            processed = processed.lines().joinToString("\n") { it.rstrip() }
+        }
+        // Remove comments
         if (opts.removeComments) {
             processed = removeComments(processed, language)
         }
+        // Remove imports
         if (opts.removeImports) {
             processed = removeImports(processed, language)
         }
+        // Advanced compression
+        processed = applyAdvancedCompression(processed, language, opts)
+        // Collapse blank lines
         if (opts.collapseBlankLines) {
             processed = collapseConsecutiveBlankLines(processed)
         }
+        // Single line
         if (opts.singleLineOutput) {
             processed = processed.replace("\n", " ")
         }
+        // Macros
         processed = ClipCraftMacroManager.applyMacros(processed, opts.macros)
+        // Line numbers
+        if (opts.includeLineNumbers) {
+            processed = processed.lines()
+                .mapIndexed { idx, line -> "%4d: %s".format(idx + 1, line) }
+                .joinToString("\n")
+        }
         return processed.trimEnd()
+    }
+
+    private fun applyAdvancedCompression(input: String, language: String, opts: ClipCraftOptions): String {
+        return when (opts.compressionMode) {
+            CompressionMode.NONE -> input
+            CompressionMode.MINIMAL -> {
+                input.replace(Regex("\\s{2,}"), " ")
+            }
+            CompressionMode.ULTRA -> {
+                var result = input.replace(Regex("\\n{3,}"), "\n\n")
+                if (opts.selectiveCompression) {
+                    result = result.lines()
+                        .filter { !it.contains("TODO") && !it.contains("debug log") }
+                        .joinToString("\n")
+                }
+                result = result.replace(Regex("\\s{2,}"), " ")
+                result.trim()
+            }
+        }
     }
 
     private fun removeComments(input: String, language: String): String {
@@ -299,8 +404,10 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
             "java", "kotlin", "javascript", "typescript", "csharp", "cpp" ->
                 input.lines().filter { !it.trim().startsWith("import ") }.joinToString("\n")
             "python" ->
-                input.lines().filter { !it.trim().startsWith("import ") && !it.trim().startsWith("from ") }
-                    .joinToString("\n")
+                input.lines().filter {
+                    val trimmed = it.trim()
+                    !trimmed.startsWith("import ") && !trimmed.startsWith("from ")
+                }.joinToString("\n")
             else -> input
         }
     }
@@ -315,7 +422,7 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
 
     private fun minimizeWhitespace(input: String): String {
         val result = mutableListOf<String>()
-        input.lines().forEach { line ->
+        for (line in input.lines()) {
             if (line.isBlank() && result.lastOrNull()?.isBlank() == true) {
                 // skip repeated blank lines
             } else {
@@ -331,10 +438,11 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
     }
 
     fun chunkContent(text: String, chunkSize: Int): List<String> {
+        val safeChunk = if (chunkSize <= 0) 3000 else chunkSize
         val chunks = mutableListOf<String>()
         var index = 0
         while (index < text.length) {
-            val end = minOf(index + chunkSize, text.length)
+            val end = minOf(index + safeChunk, text.length)
             chunks.add(text.substring(index, end))
             index = end
         }
@@ -358,7 +466,6 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
         }
     }
 
-    // Added missing function to collapse consecutive blank lines
     private fun collapseConsecutiveBlankLines(text: String): String {
         val lines = text.lines()
         val sb = StringBuilder()
@@ -376,4 +483,6 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
         }
         return sb.toString().trimEnd()
     }
+
+    private fun String.rstrip() = this.replace(Regex("\\s+$"), "")
 }

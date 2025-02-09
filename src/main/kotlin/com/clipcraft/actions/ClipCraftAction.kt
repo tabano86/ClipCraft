@@ -33,12 +33,10 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
         val activeProfileName = settings.state.activeProfileName
         var opts = settings.getActiveOptions()
 
-        // If per-project config is enabled
         if (opts.perProjectConfig && project != null) {
             opts = ClipCraftProjectProfileManager.getInstance(project).state
         }
 
-        // Check if user ALT-clicked => quick config
         val mouseEvent = e.inputEvent as? MouseEvent
         if (mouseEvent?.isAltDown == true) {
             val quickPanel = ClipCraftQuickOptionsPanel(opts, project)
@@ -53,14 +51,12 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
                 opts = quickPanel.getOptions()
             }
         } else if (!opts.autoProcess) {
-            // Show full config dialog
             val dialog = ClipCraftOptionsDialog(opts)
             if (dialog.showAndGet()) {
                 opts = dialog.getOptions()
             }
         }
 
-        // Save updated profile
         settings.saveProfile(activeProfileName, opts)
         if (opts.perProjectConfig && project != null) {
             ClipCraftProjectProfileManager.getInstance(project).loadState(opts)
@@ -72,7 +68,6 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
             return
         }
 
-        // If user wants .gitignore usage
         if (opts.useGitIgnore && project != null) {
             try {
                 ClipCraftIgnoreUtil.mergeGitIgnoreRules(opts, project)
@@ -81,7 +76,6 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
             }
         }
 
-        // Process in a coroutine
         val finalContent = try {
             if (opts.measurePerformance) {
                 ClipCraftPerformanceMetrics.measure("ClipCraft Processing") {
@@ -95,7 +89,6 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
             return
         }
 
-        // Output
         val stats = handleOutput(finalContent, opts, project, selectedFiles, activeProfileName)
         ClipCraftNotificationCenter.notifyInfo(
             "Profile: $activeProfileName | Processed ${stats.files} file(s), ${stats.lines} line(s).",
@@ -103,32 +96,20 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
         )
     }
 
-    /**
-     * Processes all files concurrently, collecting each result into a single joined string.
-     */
     private suspend fun processAllFiles(
         files: Array<out com.intellij.openapi.vfs.VirtualFile>,
         opts: ClipCraftOptions,
         project: Project?
     ): String = coroutineScope {
-        // We specify <String> to avoid "cannot infer type" in some IDEs:
         val blocks = files.map { file ->
             async<String>(Dispatchers.IO) {
                 processVirtualFile(file, opts, project)
             }
         }.awaitAll().filter { it.isNotBlank() }
-
         val joined = blocks.joinToString("\n\n")
-        return@coroutineScope if (opts.minimizeWhitespace) {
-            ClipCraftFormatter.minimizeWhitespace(joined)
-        } else {
-            joined
-        }
+        if (opts.minimizeWhitespace) ClipCraftFormatter.minimizeWhitespace(joined) else joined
     }
 
-    /**
-     * Processes a single VirtualFile. If it's a directory, recurses.
-     */
     private suspend fun processVirtualFile(
         file: com.intellij.openapi.vfs.VirtualFile,
         opts: ClipCraftOptions,
@@ -136,11 +117,8 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
     ): String {
         if (opts.filterRegex.isNotBlank() && !Regex(opts.filterRegex).containsMatchIn(file.path)) return ""
         if (project != null && ClipCraftIgnoreUtil.shouldIgnore(file, opts, project)) return ""
-
         return if (file.isDirectory) {
-            file.children.joinToString("\n") {
-                runBlocking { processVirtualFile(it, opts, project) }
-            }.trim()
+            file.children.joinToString("\n") { runBlocking { processVirtualFile(it, opts, project) } }.trim()
         } else {
             if (!isProbablyTextFile(file)) return ""
             val content = if (file.length > opts.largeFileThreshold && opts.showProgressInStatusBar) {
@@ -165,9 +143,8 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
         text
     }
 
-    private suspend fun readFileContent(file: com.intellij.openapi.vfs.VirtualFile): String = withContext(Dispatchers.IO) {
-        String(file.contentsToByteArray(), Charsets.UTF_8)
-    }
+    private suspend fun readFileContent(file: com.intellij.openapi.vfs.VirtualFile): String =
+        withContext(Dispatchers.IO) { String(file.contentsToByteArray(), Charsets.UTF_8) }
 
     private fun buildFileBlock(
         content: String,
@@ -243,17 +220,11 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
                         }
                         File(outBase).writeText(chunk, Charsets.UTF_8)
                     }
-                    ClipCraftNotificationCenter.notifyInfo(
-                        "Split into ${chunks.size} chunks and exported to files.",
-                        project
-                    )
+                    ClipCraftNotificationCenter.notifyInfo("Split into ${chunks.size} chunks and exported to files.", project)
                 } else {
                     if (chunks.isNotEmpty()) {
                         CopyPasteManager.getInstance().setContents(StringSelection(chunks.last()))
-                        ClipCraftNotificationCenter.notifyInfo(
-                            "Split into ${chunks.size} chunks. Last chunk copied to clipboard.",
-                            project
-                        )
+                        ClipCraftNotificationCenter.notifyInfo("Split into ${chunks.size} chunks. Last chunk copied to clipboard.", project)
                     }
                 }
             } else {
@@ -265,10 +236,7 @@ class ClipCraftAction : AnAction("ClipCraft: Copy Formatted Code") {
                             (project?.basePath ?: "") + "/clipcraft_output"
                         }
                         val exportedPaths = ClipCraftSharingService.exportMultipleFormats(basePath, opts.simultaneousExports, finalContent)
-                        ClipCraftNotificationCenter.notifyInfo(
-                            "Simultaneously exported: ${exportedPaths.joinToString()}",
-                            project
-                        )
+                        ClipCraftNotificationCenter.notifyInfo("Simultaneously exported: ${exportedPaths.joinToString()}", project)
                     }
                     opts.exportToFile -> {
                         val outPath = if (opts.exportFilePath.isNotEmpty()) {

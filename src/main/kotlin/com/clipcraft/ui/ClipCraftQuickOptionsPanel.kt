@@ -11,10 +11,6 @@ import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-/**
- * Compact UI for quick changes to a subset of plugin settings,
- * with local logging for clarity.
- */
 class ClipCraftQuickOptionsPanel(
     initialOptions: ClipCraftOptions,
     private val project: Project?
@@ -22,7 +18,6 @@ class ClipCraftQuickOptionsPanel(
 
     private val log = LoggerFactory.getLogger(ClipCraftQuickOptionsPanel::class.java)
 
-    // Basic
     val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(", "))
     val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(", "))
     val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(", "))
@@ -45,40 +40,34 @@ class ClipCraftQuickOptionsPanel(
 
     init {
         border = BorderFactory.createTitledBorder("Quick Options")
-
         add(JLabel("Ignore Folders:"))
         add(ignoreFoldersField)
-
         add(JLabel("Ignore Files:"))
         add(ignoreFilesField)
-
         add(JLabel("Ignore Patterns:"))
         add(ignorePatternsField)
-
         add(removeCommentsCheckBox)
         add(trimLineWhitespaceCheckBox)
-
         add(JLabel("Output Format:"))
         add(outputFormatComboBox)
-
         add(removeImportsCheckBox)
         add(openSettingsButton)
 
-        val textFields = listOf(ignoreFoldersField, ignoreFilesField, ignorePatternsField)
-        textFields.forEach { field ->
+        listOf(ignoreFoldersField, ignoreFilesField, ignorePatternsField).forEach { field ->
             field.document.addDocumentListener(object : DocumentListener {
                 override fun insertUpdate(e: DocumentEvent?) = notifyChange()
                 override fun removeUpdate(e: DocumentEvent?) = notifyChange()
                 override fun changedUpdate(e: DocumentEvent?) = notifyChange()
             })
         }
-        val checkBoxes = listOf(removeCommentsCheckBox, trimLineWhitespaceCheckBox, removeImportsCheckBox)
-        checkBoxes.forEach { cb -> cb.addActionListener { notifyChange() } }
+        listOf(removeCommentsCheckBox, trimLineWhitespaceCheckBox, removeImportsCheckBox).forEach { cb ->
+            cb.addActionListener { notifyChange() }
+        }
         outputFormatComboBox.addActionListener { notifyChange() }
     }
 
     fun getOptions(): ClipCraftOptions {
-        log.debug("Gathering options from QuickOptionsPanel")
+        log.debug("Quick options gathered.")
         val currentOpts = ClipCraftSettings.getInstance().getActiveOptions()
         return currentOpts.copy(
             ignoreFolders = parseCommaList(ignoreFoldersField.text),

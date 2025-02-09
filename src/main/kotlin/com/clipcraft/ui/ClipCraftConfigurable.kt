@@ -11,19 +11,11 @@ import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-/**
- * An IntelliJ settings UI panel implementing [Configurable] for ClipCraft.
- * This panel uses asynchronous preview updates (via SwingWorker) to avoid UI hangs.
- */
 class ClipCraftConfigurable : Configurable {
 
     private val log = LoggerFactory.getLogger(ClipCraftConfigurable::class.java)
-
     private val mainPanel = JPanel(BorderLayout())
-
-    private val settingsPanel = JPanel().apply {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-    }
+    private val settingsPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     private val previewArea = JTextArea(10, 50).apply {
         isEditable = false
         lineWrap = true
@@ -63,9 +55,7 @@ class ClipCraftConfigurable : Configurable {
     private val autoApplyOnChangeCheckBox = JCheckBox("Auto Apply on Change")
 
     private val quickSettingsPanel = ClipCraftQuickOptionsPanel(ClipCraftSettings.getInstance().getActiveOptions(), null)
-    private val resetButton = JButton("Reset to Defaults").apply {
-        addActionListener { resetDefaultsFields() }
-    }
+    private val resetButton = JButton("Reset to Defaults").apply { addActionListener { resetDefaultsFields() } }
 
     init {
         val options = ClipCraftSettings.getInstance().getActiveOptions()
@@ -97,7 +87,7 @@ class ClipCraftConfigurable : Configurable {
         selectiveCompressionCheckBox.isSelected = options.selectiveCompression
         autoApplyOnChangeCheckBox.isSelected = options.autoApplyOnChange
 
-        // Build UI panels.
+        // Build panels.
         val basicPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JLabel("Filter Regex:"), filterRegexField, 1, false)
             .addComponent(shareGistCheckBox)
@@ -166,9 +156,6 @@ class ClipCraftConfigurable : Configurable {
 
     override fun createComponent(): JComponent = mainPanel
 
-    /**
-     * Asynchronously updates the preview using SwingWorker to avoid blocking the EDT.
-     */
     private fun updatePreviewAsync() {
         object : SwingWorker<String, Void>() {
             override fun doInBackground(): String {
@@ -218,9 +205,6 @@ class ClipCraftConfigurable : Configurable {
     private fun parseCommaList(input: String): List<String> =
         input.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
-    /**
-     * Resets the UI fields to a new instance of default ClipCraftOptions.
-     */
     private fun resetDefaultsFields() {
         val defaults = ClipCraftOptions()
         filterRegexField.text = defaults.filterRegex
@@ -360,6 +344,6 @@ class ClipCraftConfigurable : Configurable {
     }
 
     override fun disposeUIResources() {
-        // Nothing special to dispose.
+        // No special disposal needed.
     }
 }

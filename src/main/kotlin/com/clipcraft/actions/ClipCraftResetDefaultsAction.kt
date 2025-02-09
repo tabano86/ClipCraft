@@ -12,9 +12,8 @@ class ClipCraftResetDefaultsAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val settings = ClipCraftSettings.getInstance()
-        val currentState = settings.state
-        val currentProfileName = currentState.activeProfileName
-        val updatedProfiles = HashMap(currentState.profiles)
+        val currentProfileName = settings.state.activeProfileName
+        val updatedProfiles = HashMap(settings.state.profiles)
         updatedProfiles[currentProfileName] = ClipCraftOptions()
         val newState = ClipCraftSettings.State().apply {
             activeProfileName = currentProfileName

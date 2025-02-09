@@ -14,14 +14,12 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String>
     override fun getDataForItem(element: String, dataId: String): Any? = null
 
     override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in String>) {
-        // Could list macros, profile names, etc.  For now, do nothing.
+        // No elements to fetch for now.
     }
 
     override fun processSelectedItem(selected: String, modifiers: Int, searchText: String): Boolean = true
 
     override fun getElementsRenderer(): ListCellRenderer<in String> {
-        return ListCellRenderer { _, value, _, _, _ ->
-            JLabel(value ?: "")
-        }
+        return ListCellRenderer { _, value, _, _, _ -> JLabel(value ?: "") }
     }
 }

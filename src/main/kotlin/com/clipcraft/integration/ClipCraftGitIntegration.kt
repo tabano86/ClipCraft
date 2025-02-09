@@ -5,7 +5,6 @@ import git4idea.repo.GitRepositoryManager
 import org.slf4j.LoggerFactory
 
 object ClipCraftGitIntegration {
-
     private val log = LoggerFactory.getLogger(ClipCraftGitIntegration::class.java)
 
     fun getGitMetadata(project: Project, filePath: String): String {

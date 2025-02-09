@@ -31,7 +31,6 @@ class ClipCraftSwitchProfileAction : AnAction(
             profileNames.toTypedArray(),
             settings.state.activeProfileName
         ) as String?
-
         if (!selected.isNullOrEmpty()) {
             settings.setActiveProfile(selected)
             ClipCraftNotificationCenter.notifyInfo("Switched to profile: $selected", project)

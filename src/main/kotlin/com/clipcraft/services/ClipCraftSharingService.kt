@@ -11,7 +11,6 @@ object ClipCraftSharingService {
 
     fun shareToGist(content: String, project: Project?): Boolean {
         return try {
-            // Fake gist share
             log.debug("Pretending to upload to Gist. Content length: ${content.length}")
             true
         } catch (e: Exception) {

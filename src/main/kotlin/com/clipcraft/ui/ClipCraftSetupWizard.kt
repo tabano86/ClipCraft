@@ -43,9 +43,8 @@ class ClipCraftSetupWizard(
 
     init {
         title = "ClipCraft Setup Wizard"
-        // Only initialize UI if not headless.
         if (!headless) {
-            init() // Builds the dialog peer.
+            init()
             updateStep()
         } else {
             log.warn("Headless mode enabled; skipping UI peer initialization.")
@@ -93,9 +92,6 @@ class ClipCraftSetupWizard(
         stepPanel.add(JLabel("All set! Click OK to save your preferences."))
     }
 
-    /**
-     * Advances the wizard by one step or closes it if at the final step.
-     */
     fun doNextAction() {
         if (currentStep < stepLabels.size - 1) {
             currentStep++
@@ -105,9 +101,6 @@ class ClipCraftSetupWizard(
         }
     }
 
-    /**
-     * Returns a copy of the configured options.
-     */
     fun getConfiguredOptions(): ClipCraftOptions {
         val chunkSize = chunkSizeField.text.toIntOrNull() ?: initialOptions.maxChunkSize
         log.info("Wizard final chunk size input: $chunkSize")

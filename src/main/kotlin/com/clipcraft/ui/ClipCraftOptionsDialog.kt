@@ -7,13 +7,9 @@ import org.slf4j.LoggerFactory
 import com.intellij.util.ui.FormBuilder
 import javax.swing.*
 
-/**
- * A straightforward options dialog, refactored for clarity/purity.
- */
 class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
 
     private val log = LoggerFactory.getLogger(ClipCraftOptionsDialog::class.java)
-
     private val mainPanel: JPanel
 
     private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
@@ -26,7 +22,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     }
     private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
 
-    // Next-gen
+    // Next-gen options
     private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(", "), 30)
     private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(", "), 30)
     private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(", "), 30)
@@ -42,7 +38,6 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
 
     init {
         title = "ClipCraft Options"
-
         val basicPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JLabel("Include Line Numbers:"), includeLineNumbersCheckBox)
             .addLabeledComponent(JLabel("Show Preview:"), showPreviewCheckBox)
@@ -51,9 +46,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             .addLabeledComponent(JLabel("Include Metadata:"), includeMetadataCheckBox)
             .addLabeledComponent(JLabel("Output Format:"), outputFormatComboBox)
             .addLabeledComponent(JLabel("Remove Imports:"), removeImportsCheckBox)
-            .panel.apply {
-                border = BorderFactory.createTitledBorder("Basic Options")
-            }
+            .panel.apply { border = BorderFactory.createTitledBorder("Basic Options") }
 
         val advancedPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JLabel("Ignore Folders:"), ignoreFoldersField)
@@ -61,9 +54,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             .addLabeledComponent(JLabel("Ignore Patterns:"), ignorePatternsField)
             .addLabeledComponent(JLabel("Remove Comments:"), removeCommentsCheckBox)
             .addLabeledComponent(JLabel("Trim Whitespace:"), trimLineWhitespaceCheckBox)
-            .panel.apply {
-                border = BorderFactory.createTitledBorder("Advanced Options")
-            }
+            .panel.apply { border = BorderFactory.createTitledBorder("Advanced Options") }
 
         val nextGenPanel = FormBuilder.createFormBuilder()
             .addComponent(JLabel("Next-Gen Settings:"))
@@ -73,9 +64,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             .addComponent(collapseBlankLinesCheckBox)
             .addComponent(removeLeadingBlankCheckBox)
             .addComponent(singleLineCheckBox)
-            .panel.apply {
-                border = BorderFactory.createTitledBorder("Next-Gen Features")
-            }
+            .panel.apply { border = BorderFactory.createTitledBorder("Next-Gen Features") }
 
         mainPanel = FormBuilder.createFormBuilder()
             .addComponent(basicPanel)
@@ -93,7 +82,6 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     fun getOptions(): ClipCraftOptions {
         val chunk = chunkSizeField.text.toIntOrNull() ?: initialOptions.maxChunkSize
         log.info("User selected chunk size: $chunk")
-
         return initialOptions.copy(
             includeLineNumbers = includeLineNumbersCheckBox.isSelected,
             showPreview = showPreviewCheckBox.isSelected,
@@ -102,13 +90,11 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             includeMetadata = includeMetadataCheckBox.isSelected,
             outputFormat = outputFormatComboBox.selectedItem as OutputFormat,
             removeImports = removeImportsCheckBox.isSelected,
-
             ignoreFolders = parseCommaList(ignoreFoldersField.text),
             ignoreFiles = parseCommaList(ignoreFilesField.text),
             ignorePatterns = parseCommaList(ignorePatternsField.text),
             removeComments = removeCommentsCheckBox.isSelected,
             trimLineWhitespace = trimLineWhitespaceCheckBox.isSelected,
-
             enableChunkingForGPT = chunkingCheckBox.isSelected,
             maxChunkSize = if (chunk <= 0) 3000 else chunk,
             includeDirectorySummary = directorySummaryCheckBox.isSelected,

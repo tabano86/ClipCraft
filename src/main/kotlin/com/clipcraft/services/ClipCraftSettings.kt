@@ -4,23 +4,16 @@ import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.*
 
-/**
- * Higher-level settings service storing multiple ClipCraft profiles,
- * improved with logging for better observability.
- */
 @State(name = "ClipCraftSettings", storages = [Storage("ClipCraftSettings.xml")])
 @Service(Service.Level.APP)
 class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
 
     data class State(
         var activeProfileName: String = "Default",
-        var profiles: MutableMap<String, ClipCraftOptions> = mutableMapOf()
+        var profiles: MutableMap<String, ClipCraftOptions> = mutableMapOf("Default" to ClipCraftOptions())
     )
 
-    private var myState: State = State(
-        activeProfileName = "Default",
-        profiles = mutableMapOf("Default" to ClipCraftOptions())
-    )
+    private var myState: State = State()
 
     override fun getState(): State = myState
 
@@ -28,9 +21,8 @@ class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
         myState = state
     }
 
-    fun getActiveOptions(): ClipCraftOptions {
-        return myState.profiles[myState.activeProfileName] ?: ClipCraftOptions()
-    }
+    fun getActiveOptions(): ClipCraftOptions =
+        myState.profiles[myState.activeProfileName] ?: ClipCraftOptions()
 
     fun saveProfile(name: String, options: ClipCraftOptions) {
         myState.profiles[name] = options

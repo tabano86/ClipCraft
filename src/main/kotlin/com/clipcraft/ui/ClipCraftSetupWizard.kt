@@ -3,18 +3,24 @@ package com.clipcraft.ui
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.ui.DialogWrapper
 import org.slf4j.LoggerFactory
+import java.awt.GraphicsEnvironment
 import javax.swing.*
 
 /**
- * ClipCraft Setup Wizard with improved structure and pure utility methods for steps.
+ * ClipCraft Setup Wizard.
+ *
+ * This wizard guides the user through configuration steps.
+ * For production use, run with full UI (headless = false).
+ * In headless environments (e.g. during tests) pass headless = true
+ * to avoid AWT/IDE initialization errors.
  */
-class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
+class ClipCraftSetupWizard(
+    private val initialOptions: ClipCraftOptions,
+    private val headless: Boolean = GraphicsEnvironment.isHeadless()
+) : DialogWrapper(null, true) {
 
     private val log = LoggerFactory.getLogger(ClipCraftSetupWizard::class.java)
-
-    private val stepPanel = JPanel().apply {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-    }
+    private val stepPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     private var currentStep = 0
 
     private val stepLabels = listOf(
@@ -24,21 +30,26 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
     )
 
     // Step 1 controls
-    private val lineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
-    private val chunkingCheckBox = JCheckBox("Enable Chunking for GPT", initialOptions.enableChunkingForGPT)
-    private val chunkSizeField = JTextField(initialOptions.maxChunkSize.toString(), 5)
-    private val skipAdvancedCheckBox = JCheckBox("Skip Advanced Step If Unneeded", false)
+    val lineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
+    val chunkingCheckBox = JCheckBox("Enable Chunking for GPT", initialOptions.enableChunkingForGPT)
+    val chunkSizeField = JTextField(initialOptions.maxChunkSize.toString(), 5)
+    val skipAdvancedCheckBox = JCheckBox("Skip Advanced Step If Unneeded", false)
 
     // Step 2 controls
-    private val directorySummaryCheckBox = JCheckBox("Include Directory Summary", initialOptions.includeDirectorySummary)
-    private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
-    private val removeLeadingBlankLinesCheckBox = JCheckBox("Remove Leading Blank Lines", initialOptions.removeLeadingBlankLines)
-    private val useGitIgnoreCheckBox = JCheckBox("Use .gitignore", initialOptions.useGitIgnore)
+    val directorySummaryCheckBox = JCheckBox("Include Directory Summary", initialOptions.includeDirectorySummary)
+    val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
+    val removeLeadingBlankLinesCheckBox = JCheckBox("Remove Leading Blank Lines", initialOptions.removeLeadingBlankLines)
+    val useGitIgnoreCheckBox = JCheckBox("Use .gitignore", initialOptions.useGitIgnore)
 
     init {
         title = "ClipCraft Setup Wizard"
-        init()
-        updateStep()
+        // Only initialize UI if not headless.
+        if (!headless) {
+            init() // Builds the dialog peer.
+            updateStep()
+        } else {
+            log.warn("Headless mode enabled; skipping UI peer initialization.")
+        }
     }
 
     override fun createCenterPanel(): JComponent = stepPanel
@@ -48,13 +59,11 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
     private fun updateStep() {
         stepPanel.removeAll()
         stepPanel.add(stepLabels[currentStep])
-
         when (currentStep) {
             0 -> buildBasicStep()
             1 -> buildAdvancedStepOrSkip()
             2 -> buildReviewStep()
         }
-
         stepPanel.revalidate()
         stepPanel.repaint()
     }
@@ -84,6 +93,9 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
         stepPanel.add(JLabel("All set! Click OK to save your preferences."))
     }
 
+    /**
+     * Advances the wizard by one step or closes it if at the final step.
+     */
     fun doNextAction() {
         if (currentStep < stepLabels.size - 1) {
             currentStep++
@@ -93,9 +105,11 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
         }
     }
 
+    /**
+     * Returns a copy of the configured options.
+     */
     fun getConfiguredOptions(): ClipCraftOptions {
         val chunkSize = chunkSizeField.text.toIntOrNull() ?: initialOptions.maxChunkSize
-        // Logging for observability
         log.info("Wizard final chunk size input: $chunkSize")
         return initialOptions.copy(
             includeLineNumbers = lineNumbersCheckBox.isSelected,

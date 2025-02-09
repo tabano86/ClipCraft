@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.clipcraft"
-version = "2.0.1"
+version = System.getenv("PLUGIN_VERSION") ?: "1.0.0"
 
 repositories {
     mavenCentral()

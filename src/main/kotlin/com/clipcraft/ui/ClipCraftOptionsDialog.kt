@@ -3,11 +3,16 @@ package com.clipcraft.ui
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.ui.DialogWrapper
+import org.slf4j.LoggerFactory
 import com.intellij.util.ui.FormBuilder
-import java.awt.BorderLayout
 import javax.swing.*
 
+/**
+ * A straightforward options dialog, refactored for clarity/purity.
+ */
 class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
+
+    private val log = LoggerFactory.getLogger(ClipCraftOptionsDialog::class.java)
 
     private val mainPanel: JPanel
 
@@ -21,13 +26,13 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     }
     private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
 
-    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(","), 30)
-    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(","), 30)
-    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(","), 30)
+    // Next-gen
+    private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(", "), 30)
+    private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(", "), 30)
+    private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(", "), 30)
     private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
     private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace)
 
-    // Next-gen
     private val chunkingCheckBox = JCheckBox("Enable GPT Chunking", initialOptions.enableChunkingForGPT)
     private val chunkSizeField = JTextField(initialOptions.maxChunkSize.toString(), 5)
     private val directorySummaryCheckBox = JCheckBox("Include Directory Summary", initialOptions.includeDirectorySummary)
@@ -39,23 +44,23 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
         title = "ClipCraft Options"
 
         val basicPanel = FormBuilder.createFormBuilder()
-            .addLabeledComponent(JLabel("Include Line Numbers:"), includeLineNumbersCheckBox, 1, false)
-            .addLabeledComponent(JLabel("Show Preview:"), showPreviewCheckBox, 1, false)
-            .addLabeledComponent(JLabel("Export to File:"), exportToFileCheckBox, 1, false)
-            .addLabeledComponent(JLabel("Export File Path:"), exportFilePathField, 1, false)
-            .addLabeledComponent(JLabel("Include Metadata:"), includeMetadataCheckBox, 1, false)
-            .addLabeledComponent(JLabel("Output Format:"), outputFormatComboBox, 1, false)
-            .addLabeledComponent(JLabel("Remove Imports:"), removeImportsCheckBox, 1, false)
+            .addLabeledComponent(JLabel("Include Line Numbers:"), includeLineNumbersCheckBox)
+            .addLabeledComponent(JLabel("Show Preview:"), showPreviewCheckBox)
+            .addLabeledComponent(JLabel("Export to File:"), exportToFileCheckBox)
+            .addLabeledComponent(JLabel("Export File Path:"), exportFilePathField)
+            .addLabeledComponent(JLabel("Include Metadata:"), includeMetadataCheckBox)
+            .addLabeledComponent(JLabel("Output Format:"), outputFormatComboBox)
+            .addLabeledComponent(JLabel("Remove Imports:"), removeImportsCheckBox)
             .panel.apply {
                 border = BorderFactory.createTitledBorder("Basic Options")
             }
 
         val advancedPanel = FormBuilder.createFormBuilder()
-            .addLabeledComponent(JLabel("Ignore Folders:"), ignoreFoldersField, 1, false)
-            .addLabeledComponent(JLabel("Ignore Files:"), ignoreFilesField, 1, false)
-            .addLabeledComponent(JLabel("Ignore Patterns:"), ignorePatternsField, 1, false)
-            .addLabeledComponent(JLabel("Remove Comments:"), removeCommentsCheckBox, 1, false)
-            .addLabeledComponent(JLabel("Trim Whitespace:"), trimLineWhitespaceCheckBox, 1, false)
+            .addLabeledComponent(JLabel("Ignore Folders:"), ignoreFoldersField)
+            .addLabeledComponent(JLabel("Ignore Files:"), ignoreFilesField)
+            .addLabeledComponent(JLabel("Ignore Patterns:"), ignorePatternsField)
+            .addLabeledComponent(JLabel("Remove Comments:"), removeCommentsCheckBox)
+            .addLabeledComponent(JLabel("Trim Whitespace:"), trimLineWhitespaceCheckBox)
             .panel.apply {
                 border = BorderFactory.createTitledBorder("Advanced Options")
             }
@@ -87,6 +92,8 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
 
     fun getOptions(): ClipCraftOptions {
         val chunk = chunkSizeField.text.toIntOrNull() ?: initialOptions.maxChunkSize
+        log.info("User selected chunk size: $chunk")
+
         return initialOptions.copy(
             includeLineNumbers = includeLineNumbersCheckBox.isSelected,
             showPreview = showPreviewCheckBox.isSelected,
@@ -95,9 +102,10 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             includeMetadata = includeMetadataCheckBox.isSelected,
             outputFormat = outputFormatComboBox.selectedItem as OutputFormat,
             removeImports = removeImportsCheckBox.isSelected,
-            ignoreFolders = ignoreFoldersField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
-            ignoreFiles = ignoreFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
-            ignorePatterns = ignorePatternsField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+
+            ignoreFolders = parseCommaList(ignoreFoldersField.text),
+            ignoreFiles = parseCommaList(ignoreFilesField.text),
+            ignorePatterns = parseCommaList(ignorePatternsField.text),
             removeComments = removeCommentsCheckBox.isSelected,
             trimLineWhitespace = trimLineWhitespaceCheckBox.isSelected,
 
@@ -109,4 +117,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             singleLineOutput = singleLineCheckBox.isSelected
         )
     }
+
+    private fun parseCommaList(input: String): List<String> =
+        input.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 }

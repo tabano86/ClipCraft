@@ -4,6 +4,7 @@ import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftSettings
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import org.slf4j.LoggerFactory
 import javax.swing.JOptionPane
 
 class ClipCraftSwitchProfileAction : AnAction(
@@ -11,6 +12,8 @@ class ClipCraftSwitchProfileAction : AnAction(
     "Switch among multiple named ClipCraft profiles",
     null
 ) {
+    private val log = LoggerFactory.getLogger(ClipCraftSwitchProfileAction::class.java)
+
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project
         val settings = ClipCraftSettings.getInstance()
@@ -32,6 +35,7 @@ class ClipCraftSwitchProfileAction : AnAction(
         if (!selected.isNullOrEmpty()) {
             settings.setActiveProfile(selected)
             ClipCraftNotificationCenter.notifyInfo("Switched to profile: $selected", project)
+            log.info("User switched to profile $selected")
         }
     }
 }

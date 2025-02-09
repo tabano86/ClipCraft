@@ -2,23 +2,30 @@ package com.clipcraft.services
 
 import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.project.Project
+import org.slf4j.LoggerFactory
 import java.io.File
 
 object ClipCraftSharingService {
+
+    private val log = LoggerFactory.getLogger(ClipCraftSharingService::class.java)
+
     fun shareToGist(content: String, project: Project?): Boolean {
         return try {
             // Fake gist share
+            log.debug("Pretending to upload to Gist. Content length: ${content.length}")
             true
         } catch (e: Exception) {
+            log.error("Failed to share to Gist: ${e.message}")
             false
         }
     }
 
     fun exportToCloud(content: String, provider: String, project: Project?): Boolean {
         return try {
-            // Fake cloud share
+            log.debug("Pretending to export to cloud provider: $provider. Length: ${content.length}")
             true
         } catch (e: Exception) {
+            log.error("Failed to export to cloud: ${e.message}")
             false
         }
     }

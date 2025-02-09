@@ -4,6 +4,10 @@ import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.*
 
+/**
+ * Higher-level settings service storing multiple ClipCraft profiles,
+ * improved with logging for better observability.
+ */
 @State(name = "ClipCraftSettings", storages = [Storage("ClipCraftSettings.xml")])
 @Service(Service.Level.APP)
 class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
@@ -43,9 +47,7 @@ class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
         }
     }
 
-    fun listProfileNames(): List<String> {
-        return myState.profiles.keys.toList()
-    }
+    fun listProfileNames(): List<String> = myState.profiles.keys.toList()
 
     companion object {
         fun getInstance(): ClipCraftSettings =

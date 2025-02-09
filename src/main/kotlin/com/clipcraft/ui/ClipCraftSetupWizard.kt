@@ -2,40 +2,38 @@ package com.clipcraft.ui
 
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.ui.DialogWrapper
-import javax.swing.BoxLayout
-import javax.swing.JCheckBox
-import javax.swing.JLabel
-import javax.swing.JPanel
-import javax.swing.JComponent
-import javax.swing.JTextField
+import org.slf4j.LoggerFactory
+import javax.swing.*
 
 /**
- * A simple wizard that walks the user through basic setup steps,
- * now with .gitignore usage, compression, etc.
+ * ClipCraft Setup Wizard with improved structure and pure utility methods for steps.
  */
 class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
 
-    private val stepPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
+    private val log = LoggerFactory.getLogger(ClipCraftSetupWizard::class.java)
+
+    private val stepPanel = JPanel().apply {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+    }
     private var currentStep = 0
+
     private val stepLabels = listOf(
         JLabel("Welcome to ClipCraft! Let’s set up your preferences."),
         JLabel("Advanced Options"),
-        JLabel("Review and Finish")
+        JLabel("Review & Finish")
     )
 
-    // Step 1
+    // Step 1 controls
     private val lineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
     private val chunkingCheckBox = JCheckBox("Enable Chunking for GPT", initialOptions.enableChunkingForGPT)
     private val chunkSizeField = JTextField(initialOptions.maxChunkSize.toString(), 5)
+    private val skipAdvancedCheckBox = JCheckBox("Skip Advanced Step If Unneeded", false)
 
-    // Step 2
+    // Step 2 controls
     private val directorySummaryCheckBox = JCheckBox("Include Directory Summary", initialOptions.includeDirectorySummary)
     private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
     private val removeLeadingBlankLinesCheckBox = JCheckBox("Remove Leading Blank Lines", initialOptions.removeLeadingBlankLines)
     private val useGitIgnoreCheckBox = JCheckBox("Use .gitignore", initialOptions.useGitIgnore)
-
-    // Possibly skip advanced
-    private val skipAdvancedCheckBox = JCheckBox("Skip advanced step if unneeded", false)
 
     init {
         title = "ClipCraft Setup Wizard"
@@ -52,32 +50,38 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
         stepPanel.add(stepLabels[currentStep])
 
         when (currentStep) {
-            0 -> {
-                stepPanel.add(lineNumbersCheckBox)
-                stepPanel.add(JLabel("GPT Chunking:"))
-                stepPanel.add(chunkingCheckBox)
-                stepPanel.add(JLabel("Max Chunk Size:"))
-                stepPanel.add(chunkSizeField)
-                stepPanel.add(skipAdvancedCheckBox)
-            }
-            1 -> {
-                if (skipAdvancedCheckBox.isSelected) {
-                    currentStep = 2
-                    updateStep()
-                    return
-                }
-                stepPanel.add(directorySummaryCheckBox)
-                stepPanel.add(removeCommentsCheckBox)
-                stepPanel.add(removeLeadingBlankLinesCheckBox)
-                stepPanel.add(useGitIgnoreCheckBox)
-            }
-            2 -> {
-                stepPanel.add(JLabel("All set! Click OK to save your preferences."))
-            }
+            0 -> buildBasicStep()
+            1 -> buildAdvancedStepOrSkip()
+            2 -> buildReviewStep()
         }
 
         stepPanel.revalidate()
         stepPanel.repaint()
+    }
+
+    private fun buildBasicStep() {
+        stepPanel.add(lineNumbersCheckBox)
+        stepPanel.add(JLabel("GPT Chunking:"))
+        stepPanel.add(chunkingCheckBox)
+        stepPanel.add(JLabel("Max Chunk Size:"))
+        stepPanel.add(chunkSizeField)
+        stepPanel.add(skipAdvancedCheckBox)
+    }
+
+    private fun buildAdvancedStepOrSkip() {
+        if (skipAdvancedCheckBox.isSelected) {
+            currentStep = 2
+            updateStep()
+            return
+        }
+        stepPanel.add(directorySummaryCheckBox)
+        stepPanel.add(removeCommentsCheckBox)
+        stepPanel.add(removeLeadingBlankLinesCheckBox)
+        stepPanel.add(useGitIgnoreCheckBox)
+    }
+
+    private fun buildReviewStep() {
+        stepPanel.add(JLabel("All set! Click OK to save your preferences."))
     }
 
     fun doNextAction() {
@@ -91,6 +95,8 @@ class ClipCraftSetupWizard(private val initialOptions: ClipCraftOptions) : Dialo
 
     fun getConfiguredOptions(): ClipCraftOptions {
         val chunkSize = chunkSizeField.text.toIntOrNull() ?: initialOptions.maxChunkSize
+        // Logging for observability
+        log.info("Wizard final chunk size input: $chunkSize")
         return initialOptions.copy(
             includeLineNumbers = lineNumbersCheckBox.isSelected,
             enableChunkingForGPT = chunkingCheckBox.isSelected,

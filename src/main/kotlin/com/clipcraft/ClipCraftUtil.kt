@@ -3,6 +3,9 @@ package com.clipcraft
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.FileTypeManager
 
+/**
+ * Demonstrates how we might unify detection of file types in a single place.
+ */
 object ClipCraftUtil {
     fun resolveFileType(languageHint: String): FileType {
         return when (languageHint.lowercase()) {

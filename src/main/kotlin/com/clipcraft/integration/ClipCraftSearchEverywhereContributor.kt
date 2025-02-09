@@ -4,7 +4,6 @@ import com.intellij.ide.actions.searcheverywhere.SearchEverywhereContributor
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.util.Processor
 import javax.swing.JLabel
-import javax.swing.JList
 import javax.swing.ListCellRenderer
 
 class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String> {
@@ -15,21 +14,14 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<String>
     override fun getDataForItem(element: String, dataId: String): Any? = null
 
     override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in String>) {
-        // Potential expansions: search macros, profiles, etc.
+        // Could list macros, profile names, etc.  For now, do nothing.
     }
 
     override fun processSelectedItem(selected: String, modifiers: Int, searchText: String): Boolean = true
 
     override fun getElementsRenderer(): ListCellRenderer<in String> {
-        return object : ListCellRenderer<String> {
-            private val label = JLabel()
-            override fun getListCellRendererComponent(
-                list: JList<out String>?,
-                value: String?,
-                index: Int,
-                isSelected: Boolean,
-                cellHasFocus: Boolean
-            ) = label.apply { text = value ?: "" }
+        return ListCellRenderer { _, value, _, _, _ ->
+            JLabel(value ?: "")
         }
     }
 }

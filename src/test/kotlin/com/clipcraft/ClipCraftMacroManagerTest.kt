@@ -20,4 +20,12 @@ class ClipCraftMacroManagerTest {
         val result = ClipCraftMacroManager.applyMacros(text, emptyMap())
         assertEquals(text, result)
     }
+
+    @Test
+    fun testMultipleOccurrencesOfSameMacro() {
+        val text = "\${WORD} \${WORD} \${WORD}!"
+        val macros = mapOf("WORD" to "echo")
+        val result = ClipCraftMacroManager.applyMacros(text, macros)
+        assertEquals("echo echo echo!", result)
+    }
 }

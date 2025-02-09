@@ -1,25 +1,36 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>1.0.0</version>
+    <version>2.0.1</version>
     <vendor email="support@clipcraft.com" url="https://clipcraft.com">ClipCraft Inc.</vendor>
 
     <description><![CDATA[
     ClipCraft copies and formats code from multiple files/directories.
     Now with next-generation features:
-     - multiple named profiles,
-     - directory summaries,
-     - advanced compression,
-     - .gitignore integration,
-     - GPT-friendly chunking,
-     - concurrency for faster processing,
-     - improved UI, and more!
+      - multiple named profiles,
+      - directory summaries,
+      - advanced compression,
+      - .gitignore integration,
+      - GPT-friendly chunking,
+      - concurrency for faster processing,
+      - external code formatting (Google Java Format / Prettier),
+      - robust logging & observability,
+      - improved UI, and more!
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
     <idea-version since-build="223" until-build="243.*"/>
 
     <extensions defaultExtensionNs="com.intellij">
+
+        <!-- Ensure the ClipCraft notification group is recognized by IntelliJ. -->
+        <notificationGroup
+                id="ClipCraft"
+                displayName="ClipCraft Notifications"
+                toolWindowCapable="true"
+                parentGroup="Tools"
+                logByDefault="true" />
+
         <applicationService serviceImplementation="com.clipcraft.services.ClipCraftSettings"/>
         <applicationConfigurable
                 instance="com.clipcraft.ui.ClipCraftConfigurable"

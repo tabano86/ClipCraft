@@ -5,26 +5,27 @@ plugins {
 }
 
 group = "com.clipcraft"
-version = "1.0.0"
+version = "2.0.1"
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://jitpack.io") }
+    maven("https://jitpack.io")
 }
 
 intellij {
     version.set("2022.3")
     type.set("IC")
     plugins.set(listOf("Git4Idea"))
-    // Disable code instrumentation
     instrumentCode.set(false)
 }
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
-    // For robust .gitignore parsing:
-    implementation("com.github.onelenyk:gitignore-parser:v1.0.0")
+    implementation("org.slf4j:slf4j-api:2.0.7")
+    implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
+
+    implementation("com.google.googlejavaformat:google-java-format:1.15.0")
 }
 
 java {

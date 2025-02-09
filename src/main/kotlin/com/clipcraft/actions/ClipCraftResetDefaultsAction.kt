@@ -4,8 +4,12 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.services.ClipCraftSettings
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import org.slf4j.LoggerFactory
 
 class ClipCraftResetDefaultsAction : AnAction() {
+
+    private val log = LoggerFactory.getLogger(ClipCraftResetDefaultsAction::class.java)
+
     override fun actionPerformed(e: AnActionEvent) {
         val settings = ClipCraftSettings.getInstance()
         val currentState = settings.state
@@ -17,5 +21,6 @@ class ClipCraftResetDefaultsAction : AnAction() {
             profiles = updatedProfiles
         }
         settings.loadState(newState)
+        log.info("Reset defaults on profile $currentProfileName")
     }
 }

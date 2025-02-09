@@ -9,20 +9,22 @@ version = "1.0.0"
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
 }
 
 intellij {
     version.set("2022.3")
     type.set("IC")
     plugins.set(listOf("Git4Idea"))
-    // Disable code instrumentation to produce a valid plugin descriptor.
+    // Disable code instrumentation
     instrumentCode.set(false)
 }
-
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
+    // For robust .gitignore parsing:
+    implementation("com.github.onelenyk:gitignore-parser:v1.0.0")
 }
 
 java {
@@ -31,7 +33,6 @@ java {
     }
 }
 
-// Update the patchPluginXml task to match the new build range.
 tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
     sinceBuild.set("223")
     untilBuild.set("243.*")
@@ -39,6 +40,5 @@ tasks.withType<org.jetbrains.intellij.tasks.PatchPluginXmlTask> {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = "17"
-    // Disable the coroutines Java agent to avoid the missing agent error.
     kotlinOptions.freeCompilerArgs += listOf("-Xdisable-coroutines-java-agent")
 }

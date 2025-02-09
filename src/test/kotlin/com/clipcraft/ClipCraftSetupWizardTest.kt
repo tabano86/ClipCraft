@@ -12,7 +12,7 @@ class ClipCraftWizardTest {
     fun testWizardDefaultTheme() {
         val initial = ClipCraftOptions()
         val wizard = ClipCraftSetupWizard(initial)
-        // We do not actually show the wizard in test, we just verify the default state
+        // We do not actually show the wizard, just verify default state
         val finalOpts = wizard.getConfiguredOptions()
         assertEquals(ThemeMode.SYSTEM_DEFAULT, finalOpts.themeMode)
     }

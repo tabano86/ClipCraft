@@ -17,13 +17,10 @@
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
-
-    <!-- Specify the supported IDE build range (now updated to match JDK 17/IntelliJ 2022.3) -->
     <idea-version since-build="223" until-build="243.*"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.clipcraft.services.ClipCraftSettings"/>
-        <!-- <projectService serviceImplementation="com.clipcraft.services.ClipCraftProjectProfileManager"/> -->
         <applicationConfigurable
                 instance="com.clipcraft.ui.ClipCraftConfigurable"
                 displayName="ClipCraft"
@@ -68,14 +65,12 @@
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
 
-        <!-- Updated to use the public settings action -->
         <action
                 id="OpenClipCraftSettings"
                 class="com.intellij.ide.actions.ShowSettingsAction"
                 text="Open ClipCraft Settings"
                 configurableId="ClipCraftConfigurable"/>
 
-        <!-- Define the Quick Access Action Group -->
         <action
                 id="ClipCraftQuickAccessActionGroup"
                 class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -83,9 +78,7 @@
                 description="One-click ClipCraft settings and profiles"
                 popup="true"/>
 
-        <!-- Add the Quick Access group to the ToolsMenu -->
         <add-to-group group-id="ToolsMenu" anchor="last" action-id="ClipCraftQuickAccessActionGroup"/>
-        <!-- Add child actions to the Quick Access group -->
         <add-to-group group-id="ClipCraftQuickAccessActionGroup" anchor="last" action-id="OpenClipCraftSettings"/>
         <add-to-group group-id="ClipCraftQuickAccessActionGroup" anchor="last" action-id="ClipCraftSwitchProfileAction"/>
     </actions>

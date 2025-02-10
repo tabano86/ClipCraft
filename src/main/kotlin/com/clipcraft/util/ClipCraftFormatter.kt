@@ -57,10 +57,10 @@ object ClipCraftFormatter {
             .trim()
 
     private fun externalFormatJavaIfAvailable(text: String): String =
-        runCatching { GoogleJavaFormatter().formatSource(text) }
+        runCatching { GoogleJavaFormatter().formatSource(text).trim() }
             .getOrElse {
                 log.warn("Google Java Format failed; returning original text. Reason: ${it.message}")
-                text
+                text.trim()
             }
 
     private fun externalFormatJsIfAvailable(text: String, language: String): String {
@@ -68,7 +68,7 @@ object ClipCraftFormatter {
         return text
     }
 
-    private fun addLineNumbers(text: String): String =
+    fun addLineNumbers(text: String): String =
         text.lines().mapIndexed { idx, line -> "%4d: %s".format(idx + 1, line) }.joinToString("\n")
 
     fun collapseConsecutiveBlankLines(text: String): String =
@@ -120,7 +120,9 @@ object ClipCraftFormatter {
                         .joinToString("\n")
                 }
                 result.lineSequence()
-                    .joinToString("\n") { it.replace(regexHorizontalWhitespace, " ") }
+                    .map { it.replace(regexHorizontalWhitespace, " ") }
+                    .filter { it.isNotBlank() }
+                    .joinToString("\n")
                     .trim()
             }
         }
@@ -173,6 +175,41 @@ object ClipCraftFormatter {
         return filePaths
     }
 
-    fun matchesGlob(glob: String, fullPath: String): Boolean =
-        FileSystems.getDefault().getPathMatcher("glob:$glob").matches(Paths.get(fullPath))
+    /**
+     * Returns true if [fullPath] matches the given glob [pattern].
+     * This implementation converts the glob to a regex.
+     */
+    fun matchesGlob(glob: String, fullPath: String): Boolean {
+        return globToRegex(glob).matches(fullPath)
+    }
+
+    private fun globToRegex(glob: String): Regex {
+        val sb = StringBuilder("^")
+        var i = 0
+        while (i < glob.length) {
+            when (val c = glob[i]) {
+                '*' -> {
+                    // Check if the next character is also a '*'
+                    if (i + 1 < glob.length && glob[i + 1] == '*') {
+                        sb.append(".*")
+                        i += 2
+                        continue
+                    } else {
+                        sb.append(".*")
+                    }
+                }
+                '?' -> sb.append(".")
+                else -> {
+                    // Escape regex-special characters
+                    if ("\\.[]{}()+-^$|".indexOf(c) != -1) {
+                        sb.append("\\")
+                    }
+                    sb.append(c)
+                }
+            }
+            i++
+        }
+        sb.append("$")
+        return Regex(sb.toString())
+    }
 }

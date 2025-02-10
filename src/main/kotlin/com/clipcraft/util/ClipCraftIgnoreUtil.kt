@@ -23,19 +23,27 @@ object ClipCraftIgnoreUtil {
     }
 
     fun shouldIgnore(file: VirtualFile, opts: ClipCraftOptions, project: Project): Boolean {
+        // Check explicit file/folder ignore lists (by file name).
         if (file.isDirectory && opts.ignoreFolders.any { file.name.equals(it, ignoreCase = true) }) return true
         if (!file.isDirectory && opts.ignoreFiles.any { file.name.equals(it, ignoreCase = true) }) return true
 
+        // For ignorePatterns (non-gitignore), match against the file name.
+        val fileName = file.name
         val positiveGlobs = opts.ignorePatterns.filter { !it.startsWith("!") }
         val negativeGlobs = opts.ignorePatterns.filter { it.startsWith("!") }.map { it.removePrefix("!") }
-        val filePathStr = file.path
-        val matchesPositive = positiveGlobs.any { matchesGlob(it, filePathStr) }
-        val matchesNegative = negativeGlobs.any { matchesGlob(it, filePathStr) }
+        val matchesPositive = positiveGlobs.any { matchesGlob(it, fileName) }
+        val matchesNegative = negativeGlobs.any { matchesGlob(it, fileName) }
         if (matchesPositive && !matchesNegative) return true
 
+        // If useGitIgnore is enabled, match against the file's relative path.
         if (opts.useGitIgnore) {
             val baseDir = project.basePath ?: return false
-            val relativePath = file.path.removePrefix(baseDir).trimStart('/', '\\')
+            val relativePath = try {
+                File(baseDir).toPath().relativize(File(file.path).toPath())
+                    .toString().replace(File.separatorChar, '/')
+            } catch (e: Exception) {
+                file.path
+            }
             if (relativePath.isNotEmpty()) {
                 val gitIgnoreFile = File(baseDir, ".gitignore")
                 if (gitIgnoreFile.exists() && gitIgnoreFile.isFile) {
@@ -66,28 +74,32 @@ object ClipCraftIgnoreUtil {
             .filter { it.isNotEmpty() && !it.startsWith("#") }
     }
 
+    /**
+     * If the pattern ends with '/', treat it as a directory pattern.
+     * The relative path is a match if it equals the pattern (without the trailing slash)
+     * or starts with that pattern followed by '/'.
+     * Otherwise, convert the glob to a regex.
+     */
     private fun matchGitignorePattern(pattern: String, relativePath: String, isDirectory: Boolean): Boolean {
         if (pattern.endsWith("/")) {
-            if (!isDirectory) return false
+            val trimmedPattern = pattern.dropLast(1)
+            return relativePath == trimmedPattern || relativePath.startsWith("$trimmedPattern/")
         }
-        val trimmedPattern = if (pattern.endsWith("/")) pattern.dropLast(1) else pattern
-        val regexPattern = if (trimmedPattern.startsWith("/")) {
-            "^" + globToRegex(trimmedPattern.removePrefix("/")) + "$"
+        val regexPattern = if (pattern.startsWith("/")) {
+            "^" + globToRegex(pattern.removePrefix("/")) + "$"
         } else {
-            ".*" + globToRegex(trimmedPattern) + "$"
+            ".*" + globToRegex(pattern) + "$"
         }
         return Regex(regexPattern).matches(relativePath)
     }
 
     private fun globToRegex(glob: String): String {
-        return glob
-            .replace(".", "\\.")
-            .replace("*", ".*")
-            .replace("?", ".?")
+        // Replace only '*' and '?' without escaping dots.
+        return glob.replace("*", ".*").replace("?", ".?")
     }
 
-    private fun matchesGlob(glob: String, fullPath: String): Boolean {
+    private fun matchesGlob(glob: String, target: String): Boolean {
         val regexPattern = "^" + globToRegex(glob) + "$"
-        return Regex(regexPattern).containsMatchIn(fullPath)
+        return Regex(regexPattern).containsMatchIn(target)
     }
 }

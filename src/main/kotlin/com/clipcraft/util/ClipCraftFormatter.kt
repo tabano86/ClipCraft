@@ -125,28 +125,41 @@ object ClipCraftFormatter {
             }
         }
 
-    fun chunkContent(text: String, chunkSize: Int, respectLineBoundaries: Boolean): List<String> {
-        val effectiveSize = if (chunkSize <= 0) 3000 else chunkSize
-        return if (!respectLineBoundaries) {
-            text.chunked(effectiveSize)
-        } else {
-            val normalizedText = if (text.endsWith("\n")) text else "$text\n"
-            val lines = normalizedText.lines().filter { it.isNotEmpty() }
-            val chunks = mutableListOf<String>()
-            val currentChunk = StringBuilder()
-            for (line in lines) {
-                val lineWithNewline = "$line\n"
-                if (currentChunk.length + lineWithNewline.length > effectiveSize && currentChunk.isNotEmpty()) {
-                    chunks.add(currentChunk.toString())
-                    currentChunk.clear()
+    /**
+     * Splits the given content into chunks of at most [maxChunkSize] characters.
+     * When [preserveWords] is true the algorithm will try to break at a newline or space.
+     *
+     * @param content the content to split.
+     * @param maxChunkSize maximum size (in characters) of each chunk.
+     * @param preserveWords if true, attempts to break at a whitespace boundary.
+     * @return list of chunks that together form the original content.
+     * @throws IllegalArgumentException if maxChunkSize is not positive.
+     */
+    fun chunkContent(content: String, maxChunkSize: Int, preserveWords: Boolean = true): List<String> {
+        require(maxChunkSize > 0) { "maxChunkSize must be positive" }
+        if (content.length <= maxChunkSize) return listOf(content)
+
+        val chunks = mutableListOf<String>()
+        var start = 0
+        val length = content.length
+
+        while (start < length) {
+            var end = (start + maxChunkSize).coerceAtMost(length)
+            if (preserveWords && end < length) {
+                // Attempt to find a newline or space to break on (if any exists between start and end)
+                val breakPoint = content.lastIndexOfAny(charArrayOf('\n', ' '), startIndex = end)
+                if (breakPoint > start) {
+                    end = breakPoint
                 }
-                currentChunk.append(lineWithNewline)
             }
-            if (currentChunk.isNotEmpty()) {
-                chunks.add(currentChunk.toString())
+            // Ensure progress even if no good breakpoint was found.
+            if (end == start) {
+                end = (start + maxChunkSize).coerceAtMost(length)
             }
-            chunks
+            chunks.add(content.substring(start, end))
+            start = end
         }
+        return chunks
     }
 
     fun formatBlock(content: String, language: String, format: OutputFormat): String = when (format) {

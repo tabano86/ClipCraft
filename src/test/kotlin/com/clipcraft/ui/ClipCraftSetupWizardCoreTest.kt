@@ -1,7 +1,6 @@
-package com.clipcraft
+package com.clipcraft.ui
 
 import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.ui.ClipCraftSetupWizardCore
 import org.junit.Assert.*
 import org.junit.Test
 

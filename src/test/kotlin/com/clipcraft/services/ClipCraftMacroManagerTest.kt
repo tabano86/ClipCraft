@@ -1,6 +1,5 @@
-package com.clipcraft
+package com.clipcraft.services
 
-import com.clipcraft.services.ClipCraftMacroManager
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

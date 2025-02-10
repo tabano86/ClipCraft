@@ -20,11 +20,15 @@ intellij {
 }
 
 dependencies {
-    testImplementation("junit:junit:4.13.2")
-    testImplementation(kotlin("test"))
-    implementation("org.slf4j:slf4j-api:2.0.7")
-    implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.9.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
     implementation("com.google.googlejavaformat:google-java-format:1.15.0")
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 java {

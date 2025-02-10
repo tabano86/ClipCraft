@@ -56,4 +56,5 @@ jobs:
         env:
           JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
           PLUGIN_VERSION: ${{ env.PLUGIN_VERSION }}
-        run: ./gradlew publishPlugin --no-daemon --stacktrace
+        run: |
+          ./gradlew publishPlugin -PpublishToken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace

@@ -93,9 +93,9 @@ jobs:
       - name: Publish Plugin with Retry
         uses: nick-fields/retry@v3
         with:
-          timeout_seconds: 15
-          max_attempts: 3
+          timeout_seconds: 60
+          max_attempts: 1
           shell: bash
-          command: ./gradlew release publishPlugin --no-daemon --stacktrace --parallel
+          command: bash -c "set -x; ./gradlew release publishPlugin --no-daemon --stacktrace --parallel"
         env:
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}

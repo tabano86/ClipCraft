@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  id-token: write
+
 #env:
 #   Global environment variables (if needed) can be defined here.
 #   Note: GITHUB_TOKEN is automatically injected.

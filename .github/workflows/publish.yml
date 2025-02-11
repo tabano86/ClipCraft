@@ -52,7 +52,8 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout (Full History)
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -60,9 +61,9 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
-      - name: Make gradlew Executable
+      - name: Ensure gradlew is Executable
         run: chmod +x ./gradlew
 
       - name: Cache Gradle Directories
@@ -78,6 +79,7 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
+          # Reset the remote URL to use the built-in GITHUB_TOKEN for authentication.
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
       - name: Sync Repository with Remote
@@ -85,19 +87,13 @@ jobs:
           git fetch --prune --tags
           git reset --hard origin/main
 
-      - name: Run Release and Publish Plugin with Retry
+      - name: Publish Plugin with Retry
+        # Uses the action-retry action to automatically retry the publish command up to 3 times.
+        uses: dawidd6/action-retry@v2
+        with:
+          max_attempts: 3
+          sleep: 10
+          command: bash ./gradlew release publishPlugin --no-daemon --stacktrace --parallel
         env:
-          # Supply the JetBrains token as an environment variable for Gradle
+          # Provide your JetBrains token via the environment variable so Gradle sets the property
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-        run: |
-          max_attempts=3
-          attempt=1
-          until bash ./gradlew release publishPlugin --no-daemon --stacktrace --parallel; do
-            if [ $attempt -ge $max_attempts ]; then
-              echo "Release and publish failed after $attempt attempts."
-              exit 1
-            fi
-            echo "Attempt $attempt failed, retrying in 10 seconds..."
-            sleep 10
-            attempt=$((attempt + 1))
-          done

@@ -32,11 +32,11 @@ jobs:
 
       - name: Run Build Tasks
         run: |
-          # Combine tasks to reduce configuration overhead and use parallel execution
+          # Combine tasks to reduce repeated configuration overhead.
           bash ./gradlew clean test buildPlugin patchPluginXml --parallel --stacktrace
 
       - name: Upload Plugin Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: plugin-artifact
           path: build/distributions/
@@ -66,12 +66,14 @@ jobs:
             .gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
 
-      - name: Set up Git config
+      - name: Set up Git config with PAT for Release
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          # Ensure the remote uses token-based HTTPS auth
-          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/tabano86/ClipCraft.git
+          # Use the dedicated RELEASE_TOKEN to ensure push (tag creation) is permitted.
+          git remote set-url origin https://${{ secrets.RELEASE_TOKEN }}@github.com/tabano86/ClipCraft.git
 
       - name: Fetch and Sync Remote Tags
         run: |
@@ -80,10 +82,10 @@ jobs:
 
       - name: Run Release and Publish Plugin
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
-          # Run both release and publish tasks together to minimize startup overhead.
+          # Run both tasks in one Gradle invocation to minimize overhead.
           bash ./gradlew release publishPlugin \
             -Dorg.jetbrains.intellij.pluginRepository.publish.token=$JB_PLUGIN_REPOSITORY_TOKEN \
             --parallel --stacktrace

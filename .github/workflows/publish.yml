@@ -1,9 +1,9 @@
-name: Build and Publish Plugin
+name: Build, Test, and Publish Plugin
 
 on:
-  pull_request:
-    branches: [main]
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
 
 permissions:
@@ -11,20 +11,50 @@ permissions:
   id-token: write
 
 jobs:
+#  build:
+#    runs-on: ubuntu-latest
+#    steps:
+#      # Fetch full history (required for tag-based versioning)
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v3
+#        with:
+#          distribution: temurin
+#          java-version: '17'
+#
+#      - name: Make gradlew Executable
+#        run: chmod +x ./gradlew
+#
+#      - name: Cache Gradle Directories
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            ~/.gradle/caches
+#            ~/.gradle/wrapper
+#            .gradle
+#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+#
+#      - name: Run Tests and Build Plugin
+#        run: |
+#          ./gradlew clean test buildPlugin patchPluginXml --no-daemon --stacktrace --parallel
+#
+#      - name: Upload Plugin Artifact
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: plugin-distribution
+#          path: build/distributions/*.zip
+
   release:
+#    needs: build
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Verify JB_PLUGIN_REPOSITORY_TOKEN is Set
-        run: |
-          if [ -z "$JB_PLUGIN_REPOSITORY_TOKEN" ]; then
-            echo "Error: JB_PLUGIN_REPOSITORY_TOKEN is not set."
-            exit 1
-          fi
-        env:
-          JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -48,7 +78,6 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          # Use the built-in GITHUB_TOKEN (which now has contents: write permission)
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
       - name: Sync Repository with Remote
@@ -57,13 +86,13 @@ jobs:
           git reset --hard origin/main
 
       - name: Run Release and Publish Plugin with Retry
-        # Set the environment variable expected by the Gradle plugin
         env:
+          # Supply the JetBrains token as an environment variable for Gradle
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
           max_attempts=3
           attempt=1
-          until ./gradlew release publishPlugin --no-daemon --stacktrace --parallel; do
+          until bash ./gradlew release publishPlugin --no-daemon --stacktrace --parallel; do
             if [ $attempt -ge $max_attempts ]; then
               echo "Release and publish failed after $attempt attempts."
               exit 1

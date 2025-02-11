@@ -1,187 +1,25 @@
 package com.clipcraft.util
 
 import com.clipcraft.model.*
-import matchesGlob
 import org.apache.commons.lang3.StringEscapeUtils
-import java.io.File
 import kotlin.math.min
 
 object CodeFormatter {
-
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
         options.resolveConflicts()
-        val combined = snippets.joinToString("\n\n") { snippet ->
-            formatSingleSnippet(snippet, options)
-        }
-        val processed = combined.trim()
-
+        val merged = snippets.joinToString("\n\n") { formatSingleSnippet(it, options) }.trim()
         return when (options.chunkStrategy) {
-            ChunkStrategy.NONE -> listOf(processed)
-            ChunkStrategy.BY_SIZE -> chunkBySize(processed, options.chunkSize, preserveWords = true)
-            ChunkStrategy.BY_METHODS -> chunkByMethods(processed)
+            ChunkStrategy.NONE -> listOf(merged)
+            ChunkStrategy.BY_SIZE -> chunkBySize(merged, options.chunkSize, preserveWords = true)
+            ChunkStrategy.BY_METHODS -> chunkByMethods(merged)
         }
     }
 
-    private fun formatSingleSnippet(snippet: Snippet, options: ClipCraftOptions): String {
-        val language = if (options.autoDetectLanguage && snippet.language.isNullOrBlank()) {
-            guessLanguageByExtension(snippet.fileName) ?: "java"
-        } else {
-            snippet.language ?: "java"
-        }
-
-        var content = snippet.content
-
-        if (options.removeImports) content = removeImports(content, language)
-        if (options.removeComments) content = removeComments(content, language)
-        if (options.trimWhitespace) {
-            content = trimWhitespace(content, options.collapseBlankLines, options.removeLeadingBlankLines)
-        }
-        if (options.removeEmptyLines) content = collapseConsecutiveBlankLines(content)
-        if (options.singleLineOutput) content = singleLineOutput(content)
-
-        content = applyCompression(content, options)
-        if (options.includeLineNumbers) content = addLineNumbers(content)
-
-        val finalText = if (options.includeMetadata) {
-            val metadata = buildString {
-                append("**File:** ${snippet.relativePath ?: snippet.fileName}")
-                append(" | **Size:** ${snippet.fileSizeBytes} bytes")
-                append(" | **Modified:** ${snippet.lastModified}")
-                if (options.includeGitInfo && !snippet.gitCommitHash.isNullOrBlank()) {
-                    append(" | **GitCommit:** ${snippet.gitCommitHash}")
-                }
-            }
-            "$metadata\n\n$content"
-        } else {
-            content
-        }
-
-        return wrapOutputForFormat(finalText, options.outputFormat, language)
-    }
-
-    private fun guessLanguageByExtension(fileName: String): String? {
-        return when (fileName.substringAfterLast('.', "").lowercase()) {
-            "java" -> "java"
-            "kt", "kts" -> "kotlin"
-            "js" -> "javascript"
-            "ts" -> "typescript"
-            "py" -> "python"
-            "cpp", "cxx", "cc" -> "cpp"
-            else -> null
-        }
-    }
-
-    fun removeImports(text: String, language: String): String {
-        return when (language.lowercase()) {
-            "python" -> text.lineSequence()
-                .filterNot { it.trimStart().startsWith("import ") || it.trimStart().startsWith("from ") }
-                .joinToString("\n")
-
-            else -> text.lineSequence()
-                .filterNot { it.trimStart().startsWith("import ") || it.trimStart().startsWith("#include ") }
-                .joinToString("\n")
-        }
-    }
-
-    fun removeComments(text: String, language: String): String {
-        return when (language.lowercase()) {
-            "python" -> {
-                text.lineSequence()
-                    .filterNot { it.trimStart().startsWith("#") }
-                    .joinToString("\n")
-            }
-
-            else -> {
-                val withoutBlock = text.replace(Regex("(?s)/\\*.*?\\*/"), "")
-                val lines = withoutBlock.lineSequence()
-                    .map { line ->
-                        val noLineComment = line.replace(Regex("//.*$"), "")
-                        noLineComment.trimEnd()
-                    }
-                    .filterNot { it.isBlank() }
-                    .toList()
-                lines.joinToString("\n")
-            }
-        }
-    }
-
-    fun trimWhitespace(
-        text: String,
-        collapseBlankLines: Boolean,
-        removeLeadingBlankLines: Boolean
-    ): String {
-        val trimmedLines = text.lines().map { it.replace("\u200B", "").trim() }
-        val processedLines = if (removeLeadingBlankLines) {
-            trimmedLines.dropWhile { it.isEmpty() }
-        } else trimmedLines
-
-        return if (collapseBlankLines)
-            collapseConsecutiveBlankLines(processedLines.joinToString("\n"))
-        else
-            processedLines.joinToString("\n")
-    }
-
-    fun collapseConsecutiveBlankLines(text: String): String {
-        return text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
-    }
-
-    fun singleLineOutput(text: String): String {
-        return text.replace(Regex("\\s+"), " ").trim()
-    }
-
-    fun applyCompression(input: String, options: ClipCraftOptions): String {
-        return when (options.compressionMode) {
-            CompressionMode.NONE -> input
-            CompressionMode.MINIMAL -> input.lineSequence().joinToString("\n") { line ->
-                line.replace("\u200B", " ").replace(Regex("\\s+"), " ")
-            }
-
-            CompressionMode.ULTRA -> {
-                input.lineSequence()
-                    .map { line ->
-                        val sanitized = line.replace("\uFEFF", "")
-                            .replace("\u200B", "")
-                            .replace(Regex("\\p{C}+"), "")
-                            .trim()
-                        sanitized
-                    }
-                    .filter { cleanLine ->
-                        if (options.selectiveCompression) {
-                            val upper = cleanLine.uppercase()
-                            !upper.contains("TODO") && !upper.contains("DEBUG") && cleanLine.isNotBlank()
-                        } else {
-                            cleanLine.isNotBlank()
-                        }
-                    }
-                    .joinToString(" ") {
-                        it.replace(Regex("\\s+"), " ")
-                    }
-            }
-        }
-    }
-
-    fun addLineNumbers(text: String): String {
-        return text.lines().mapIndexed { index, line -> "${index + 1}: $line" }
-            .joinToString("\n")
-    }
-
-    fun wrapOutputForFormat(snippetText: String, format: OutputFormat, language: String?): String {
-        return when (format) {
-            OutputFormat.MARKDOWN -> {
-                val lang = language ?: ""
-                "```$lang\n$snippetText\n```"
-            }
-
-            OutputFormat.HTML -> {
-                val langClass = language?.let { " class=\"$it\"" } ?: ""
-                "<pre><code$langClass>${StringEscapeUtils.escapeHtml4(snippetText)}</code></pre>"
-            }
-
-            OutputFormat.PLAIN -> snippetText
-        }
-    }
-
-    fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean = false): List<String> {
+    /**
+     * Updated to keep the trailing space if the chunk ends on whitespace,
+     * so that chunk boundaries do not remove spaces between words.
+     */
+    fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
         require(maxChunkSize > 0) { "maxChunkSize must be positive" }
         if (text.length <= maxChunkSize) return listOf(text)
         if (!preserveWords) {
@@ -194,21 +32,22 @@ object CodeFormatter {
             }
             return chunks
         }
-        val chunks = mutableListOf<String>()
-        var index = 0
-        while (index < text.length) {
-            var end = min(index + maxChunkSize, text.length)
+
+        val result = mutableListOf<String>()
+        var idx = 0
+        while (idx < text.length) {
+            var end = min(idx + maxChunkSize, text.length)
             if (end < text.length) {
-                val lastDelimiter = text.lastIndexOfAny(charArrayOf(' ', '\n', '\t'), end)
-                if (lastDelimiter > index) {
-                    end = lastDelimiter
+                val lastSpace = text.lastIndexOf(' ', end - 1)
+                if (lastSpace >= idx) {
+                    // Include that space in the chunk
+                    end = lastSpace + 1
                 }
             }
-            chunks.add(text.substring(index, end))
-            index = end
-            while (index < text.length && text[index].isWhitespace()) index++
+            result.add(text.substring(idx, end))
+            idx = end
         }
-        return chunks
+        return result
     }
 
     fun chunkByMethods(text: String): List<String> {
@@ -217,31 +56,129 @@ object CodeFormatter {
         return if (parts.size <= 1) listOf(text) else parts.filter { it.isNotBlank() }
     }
 
-    fun filterFilesByGitIgnore(fileList: List<String>, gitIgnoreFile: File): List<String> {
-        if (!gitIgnoreFile.exists() || !gitIgnoreFile.isFile) return fileList
-        val patterns = gitIgnoreFile.readLines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("#") }
+    fun formatSingleSnippet(snippet: Snippet, o: ClipCraftOptions): String {
+        val lang = if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
+        var content = snippet.content
+        if (o.removeImports) content = removeImports(content, lang)
+        if (o.removeComments) content = removeComments(content, lang)
+        if (o.trimWhitespace) {
+            content = trimWhitespace(
+                content,
+                collapse = o.collapseBlankLines,
+                removeLeading = o.removeLeadingBlankLines
+            )
+        }
+        if (o.removeEmptyLines) content = collapseConsecutiveBlankLines(content)
+        if (o.singleLineOutput) content = singleLineOutput(content)
+        content = applyCompression(content, o)
+        if (o.includeLineNumbers) content = addLineNumbers(content)
+        val final = formatMetadata(snippet, content, o)
+        return wrap(final, o.outputFormat, lang)
+    }
 
-        return fileList.filter { file ->
-            val normalized = file.replace('\\', '/')
-            patterns.none { pattern -> matchesGlob(pattern, normalized) }
+    fun guessLang(filename: String?): String {
+        if (filename == null) return "java"
+        val ext = filename.substringAfterLast('.', "").lowercase()
+        return when (ext) {
+            "java" -> "java"
+            "kt", "kts" -> "kotlin"
+            "js" -> "javascript"
+            "ts" -> "typescript"
+            "py" -> "python"
+            "cpp", "cxx", "cc" -> "cpp"
+            else -> "java"
         }
     }
 
-    fun removeLeadingBlankLines(input: String): String {
-        return input.lines().dropWhile { it.isBlank() }.joinToString("\n")
+    fun removeImports(text: String, lang: String?): String {
+        if (lang == null) return text
+        val l = lang.lowercase()
+        return if (l.contains("python")) {
+            text.lineSequence().filterNot {
+                val trimmed = it.trimStart()
+                trimmed.startsWith("import ") || trimmed.startsWith("from ")
+            }.joinToString("\n")
+        } else {
+            text.lineSequence().filterNot {
+                val trimmed = it.trimStart()
+                trimmed.startsWith("import ") || trimmed.startsWith("#include ")
+            }.joinToString("\n")
+        }
     }
 
-    fun minimizeWhitespace(input: String): String {
-        return input.lines().joinToString("\n") { it.replace("\u200B", "").trim() }.trimEnd()
+    fun removeComments(text: String, lang: String?): String {
+        if (lang == null) return text
+        val l = lang.lowercase()
+        if (l.contains("python")) {
+            return text.lineSequence().filterNot { it.trimStart().startsWith("#") }.joinToString("\n")
+        }
+        val noBlock = text.replace(Regex("(?s)/\\*.*?\\*/"), "")
+        return noBlock.lineSequence()
+            .map { it.replace(Regex("//.*$"), "").trimEnd() }
+            .filterNot { it.isBlank() }
+            .joinToString("\n")
     }
 
-    fun formatBlock(code: String, language: String, format: OutputFormat): String {
+    fun trimWhitespace(text: String, collapse: Boolean, removeLeading: Boolean): String {
+        val lines = text.lines().map { it.replace("\u200B", "").trim() }
+        val final = if (removeLeading) lines.dropWhile { it.isEmpty() } else lines
+        return if (collapse) collapseConsecutiveBlankLines(final.joinToString("\n")) else final.joinToString("\n")
+    }
+
+    fun collapseConsecutiveBlankLines(text: String): String {
+        return text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
+    }
+
+    fun singleLineOutput(text: String): String {
+        return text.replace(Regex("\\s+"), " ").trim()
+    }
+
+    fun applyCompression(input: String, o: ClipCraftOptions): String {
+        return when (o.compressionMode) {
+            CompressionMode.NONE -> input
+            CompressionMode.MINIMAL -> input.lineSequence().joinToString("\n") {
+                it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
+            }
+            CompressionMode.ULTRA -> input.lineSequence().map { line ->
+                line.replace("\uFEFF", "")
+                    .replace("\u200B", "")
+                    .replace(Regex("\\p{C}+"), "")
+                    .trim()
+            }.filter { line ->
+                if (!o.selectiveCompression) line.isNotBlank()
+                else {
+                    val up = line.uppercase()
+                    line.isNotBlank() && !up.contains("TODO") && !up.contains("DEBUG")
+                }
+            }.joinToString(" ") {
+                it.replace(Regex("\\s+"), " ")
+            }
+        }
+    }
+
+    fun addLineNumbers(text: String): String {
+        return text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
+    }
+
+    fun wrap(content: String, format: OutputFormat, lang: String?): String {
+        val l = lang ?: "none"
         return when (format) {
-            OutputFormat.MARKDOWN -> "```$language\n$code\n```"
-            OutputFormat.HTML -> "<pre><code class=\"$language\">${StringEscapeUtils.escapeHtml4(code)}</code></pre>"
-            OutputFormat.PLAIN -> code
+            OutputFormat.MARKDOWN -> "```$l\n$content\n```"
+            OutputFormat.HTML -> "<pre><code class=\"$l\">${StringEscapeUtils.escapeHtml4(content)}</code></pre>"
+            OutputFormat.PLAIN -> content
         }
+    }
+
+    fun formatMetadata(snippet: Snippet, content: String, o: ClipCraftOptions): String {
+        if (!o.includeMetadata) return content
+        val b = StringBuilder()
+        b.append("**File:** ").append(snippet.relativePath ?: snippet.fileName)
+            .append(" | **Size:** ").append(snippet.fileSizeBytes).append(" bytes")
+            .append(" | **Modified:** ").append(snippet.lastModified)
+        if (o.includeGitInfo && !snippet.gitCommitHash.isNullOrEmpty()) {
+            b.append(" | **GitCommit:** ").append(snippet.gitCommitHash)
+        }
+        b.append("\n\n").append(content)
+        return b.toString()
     }
 }

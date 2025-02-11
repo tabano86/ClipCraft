@@ -3,7 +3,6 @@ package com.clipcraft.util
 import com.clipcraft.FakeProject
 import com.clipcraft.FakeVirtualFile
 import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.util.IgnoreUtil.mergeGitIgnoreRules
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -15,150 +14,132 @@ import java.util.stream.Stream
 class ClipCraftIgnoreUtilTest {
 
     @Test
-    fun `negative pattern overrides positive match`() {
-        val opts = ClipCraftOptions(ignorePatterns = mutableListOf(".*\\.txt", "!important\\.txt"))
-        val fakeFile = FakeVirtualFile("/project/important.txt", "data", isDir = false)
-        // Convert FakeVirtualFile to java.io.File using its path.
-        val file = File(fakeFile.path)
-        val project = FakeProject("/project")
-        assertFalse(IgnoreUtil.shouldIgnore(file, opts, project.basePath))
+    fun negativePatternOverridesPositiveMatch() {
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf(".*\\.txt", "!special\\.txt"))
+        val file = File(FakeVirtualFile("/project/special.txt", "data", false).path)
+        val proj = FakeProject("/project")
+        assertFalse(IgnoreUtil.shouldIgnore(file, opts, proj.basePath))
     }
 
     @Test
-    fun `ignore based on gitignore when useGitIgnore is enabled`() {
-        val tempProjectDir = createTempDir()
-        val gitIgnore = File(tempProjectDir, ".gitignore")
-        gitIgnore.writeText("secret/\n*.bak")
+    fun ignoreBasedOnGitignoreEnabled() {
+        val d = createTempDir()
+        val f = File(d, ".gitignore")
+        f.writeText("secrets/\n*.bak")
         val opts = ClipCraftOptions(useGitIgnore = true)
-        val project = FakeProject(tempProjectDir.absolutePath)
-
-        val secretFake = FakeVirtualFile(File(tempProjectDir, "secret/info.txt").absolutePath, "data")
-        val secretFile = File(secretFake.path)
-        assertTrue(IgnoreUtil.shouldIgnore(secretFile, opts, project.basePath))
-
-        val bakFake = FakeVirtualFile(File(tempProjectDir, "backup.bak").absolutePath, "data")
-        val bakFile = File(bakFake.path)
-        assertTrue(IgnoreUtil.shouldIgnore(bakFile, opts, project.basePath))
-
-        gitIgnore.delete()
-        tempProjectDir.deleteRecursively()
+        val proj = FakeProject(d.absolutePath)
+        val secretFile = File(FakeVirtualFile(File(d, "secrets/info.txt").absolutePath, "data").path)
+        val bakFile = File(FakeVirtualFile(File(d, "notmp.bak").absolutePath, "data").path)
+        assertTrue(IgnoreUtil.shouldIgnore(secretFile, opts, proj.basePath))
+        assertTrue(IgnoreUtil.shouldIgnore(bakFile, opts, proj.basePath))
+        f.delete()
+        d.deleteRecursively()
     }
 
-    @ParameterizedTest(name = "File \"{0}\" with patterns {1} should be ignored: {2}")
-    @MethodSource("ignorePatternTestProvider")
-    fun `shouldIgnore based on ignorePatterns`(fileName: String, patterns: List<String>, expected: Boolean) {
-        val opts =
-            ClipCraftOptions(ignorePatterns = mutableListOf<String>().apply { addAll(patterns) }, useGitIgnore = false)
-        val fakeFile = FakeVirtualFile("/project/$fileName", "dummy", isDir = false)
-        val file = File(fakeFile.path)
-        val project = FakeProject("/project")
-        assertEquals(
-            expected,
-            IgnoreUtil.shouldIgnore(file, opts, project.basePath),
-            "File: $fileName, Patterns: $patterns"
-        )
+    @ParameterizedTest
+    @MethodSource("ignorePatternData")
+    fun shouldIgnoreBasedOnIgnorePatterns(name: String, patterns: List<String>, expected: Boolean) {
+        val opts = ClipCraftOptions(ignorePatterns = patterns.toMutableList())
+        val file = File(FakeVirtualFile("/project/$name", "dummy", false).path)
+        val proj = FakeProject("/project")
+        assertEquals(expected, IgnoreUtil.shouldIgnore(file, opts, proj.basePath))
     }
 
     companion object {
         @JvmStatic
-        fun ignorePatternTestProvider(): Stream<Arguments> = Stream.of(
+        fun ignorePatternData(): Stream<Arguments> = Stream.of(
             Arguments.of("log.txt", listOf("*.txt"), true),
-            Arguments.of("important.txt", listOf("*.txt", "!important.txt"), false),
+            Arguments.of("focus.txt", listOf("*.txt", "!focus.txt"), false),
             Arguments.of("readme.md", listOf("*.txt"), false),
-            Arguments.of("error.log", listOf("e*or.???"), true),
-            Arguments.of("debug.txt", listOf("*.txt", "!debug.txt"), false)
+            Arguments.of("error.log", listOf("er*or.???"), true),
+            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false)
         )
     }
 
     @Test
-    fun `shouldIgnore returns true if file is in ignoreFiles list`() {
-        val opts = ClipCraftOptions(
-            ignorePatterns = mutableListOf(),
-            useGitIgnore = false,
-            ignoreFiles = listOf("ignoreme.txt")
-        )
-        val fakeFile = FakeVirtualFile("/project/ignoreme.txt", "dummy", isDir = false)
-        val file = File(fakeFile.path)
-        val project = FakeProject("/project")
-        assertTrue(IgnoreUtil.shouldIgnore(file, opts, project.basePath))
+    fun ignoreBasedOnIgnoreFiles() {
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf(), ignoreFiles = listOf("killme.txt"))
+        val file = File(FakeVirtualFile("/project/killme.txt", "dummy", false).path)
+        val proj = FakeProject("/project")
+        assertTrue(IgnoreUtil.shouldIgnore(file, opts, proj.basePath))
     }
 
     @Test
-    fun `shouldIgnore returns true if directory is in ignoreFolders list`() {
-        val opts =
-            ClipCraftOptions(ignorePatterns = mutableListOf(), useGitIgnore = false, ignoreFolders = listOf("build"))
-        val fakeFolder = FakeVirtualFile("/project/build", "dummy", isDir = true)
-        val folder = File(fakeFolder.path)
-        val project = FakeProject("/project")
-        assertTrue(IgnoreUtil.shouldIgnore(folder, opts, project.basePath))
+    fun ignoreBasedOnIgnoreFolders() {
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf(), ignoreFolders = listOf("bin"))
+        val folder = File(FakeVirtualFile("/project/bin", "dummy", true).path)
+        val proj = FakeProject("/project")
+        assertTrue(IgnoreUtil.shouldIgnore(folder, opts, proj.basePath))
     }
 
     @Test
-    fun `mergeGitIgnoreRules adds gitignore patterns to options`() {
-        val tempDir = createTempDir()
-        val gitIgnoreFile = File(tempDir, ".gitignore")
-        gitIgnoreFile.writeText("secret/\n*.bak")
-        val opts = ClipCraftOptions(ignorePatterns = mutableListOf("initial"), useGitIgnore = true)
-        val project = FakeProject(tempDir.absolutePath)
-        mergeGitIgnoreRules(opts, project)
-        assertTrue(opts.ignorePatterns.contains("secret/"))
-        assertTrue(opts.ignorePatterns.contains("*.bak"))
-        gitIgnoreFile.delete()
-        tempDir.deleteRecursively()
+    fun mergeGitignoreRulesAddsPatterns() {
+        val dir = createTempDir()
+        val gf = File(dir, ".gitignore")
+        gf.writeText("vendor/\n*.cache")
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf("init"), useGitIgnore = true)
+        val pr = FakeProject(dir.absolutePath)
+        IgnoreUtil.mergeGitIgnoreRules(opts, pr)
+        assertTrue("vendor/" in opts.ignorePatterns)
+        assertTrue("*.cache" in opts.ignorePatterns)
+        gf.delete()
+        dir.deleteRecursively()
     }
 
     @Test
-    fun `complex scenario with mixed ignore patterns and gitignore merging`() {
-        val tempProjectDir = createTempDir()
-        val gitIgnoreFile = File(tempProjectDir, ".gitignore")
-        gitIgnoreFile.writeText("private/\n*.secret\n!public.secret")
-        val opts = ClipCraftOptions(
-            ignorePatterns = mutableListOf("*.log", "!debug.log"),
-            useGitIgnore = true
-        )
-        val project = FakeProject(tempProjectDir.absolutePath)
-        mergeGitIgnoreRules(opts, project)
+    fun complexScenarioGitignore() {
+        val d = createTempDir()
+        val gf = File(d, ".gitignore")
+        gf.writeText("private/\n*.secret\n!public.secret")
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf("*.log", "!debug.log"), useGitIgnore = true)
+        val proj = FakeProject(d.absolutePath)
+        IgnoreUtil.mergeGitIgnoreRules(opts, proj)
 
-        val file1 = File(FakeVirtualFile(File(tempProjectDir, "private/data.txt").absolutePath, "data").path)
-        val file2 = File(FakeVirtualFile(File(tempProjectDir, "notes.secret").absolutePath, "data").path)
-        val file3 = File(FakeVirtualFile(File(tempProjectDir, "public.secret").absolutePath, "data").path)
-        val file4 = File(FakeVirtualFile(File(tempProjectDir, "app.log").absolutePath, "data").path)
-        val file5 = File(FakeVirtualFile(File(tempProjectDir, "debug.log").absolutePath, "data").path)
-        val file6 = File(FakeVirtualFile(File(tempProjectDir, "readme.txt").absolutePath, "data").path)
+        val f1 = File(FakeVirtualFile(File(d, "private/a.txt").absolutePath, "data").path)
+        val f2 = File(FakeVirtualFile(File(d, "notes.secret").absolutePath, "data").path)
+        val f3 = File(FakeVirtualFile(File(d, "public.secret").absolutePath, "data").path)
+        val f4 = File(FakeVirtualFile(File(d, "doom.log").absolutePath, "data").path)
+        val f5 = File(FakeVirtualFile(File(d, "debug.log").absolutePath, "data").path)
+        val f6 = File(FakeVirtualFile(File(d, "readme.txt").absolutePath, "data").path)
 
-        assertTrue(
-            IgnoreUtil.shouldIgnore(file1, opts, project.basePath),
-            "File in private folder should be ignored"
-        )
-        assertTrue(
-            IgnoreUtil.shouldIgnore(file2, opts, project.basePath),
-            "File with .secret extension should be ignored"
-        )
-        assertFalse(
-            IgnoreUtil.shouldIgnore(file3, opts, project.basePath),
-            "File public.secret should not be ignored"
-        )
-        assertTrue(
-            IgnoreUtil.shouldIgnore(file4, opts, project.basePath),
-            "File with .log extension should be ignored"
-        )
-        assertFalse(IgnoreUtil.shouldIgnore(file5, opts, project.basePath), "debug.log should not be ignored")
-        assertFalse(IgnoreUtil.shouldIgnore(file6, opts, project.basePath), "readme.txt should not be ignored")
+        assertTrue(IgnoreUtil.shouldIgnore(f1, opts, proj.basePath))
+        assertTrue(IgnoreUtil.shouldIgnore(f2, opts, proj.basePath))
+        assertFalse(IgnoreUtil.shouldIgnore(f3, opts, proj.basePath))
+        assertTrue(IgnoreUtil.shouldIgnore(f4, opts, proj.basePath))
+        assertFalse(IgnoreUtil.shouldIgnore(f5, opts, proj.basePath))
+        assertFalse(IgnoreUtil.shouldIgnore(f6, opts, proj.basePath))
 
-        gitIgnoreFile.delete()
-        tempProjectDir.deleteRecursively()
+        gf.delete()
+        d.deleteRecursively()
     }
 
     @Test
-    fun `complex scenario with relative paths and windows style separators`() {
-        val tempProjectDir = createTempDir()
-        val gitIgnoreFile = File(tempProjectDir, ".gitignore")
-        gitIgnoreFile.writeText("bin/")
-        val opts = ClipCraftOptions(ignorePatterns = mutableListOf("*.tmp"), useGitIgnore = true)
-        val fakeProject = FakeProject(tempProjectDir.absolutePath)
-        val file = File(FakeVirtualFile(File(tempProjectDir, "bin\\helper.tmp").absolutePath, "data").path)
-        assertTrue(IgnoreUtil.shouldIgnore(file, opts, fakeProject.basePath))
-        gitIgnoreFile.delete()
-        tempProjectDir.deleteRecursively()
+    fun windowsStyleSeparators() {
+        val d = createTempDir()
+        val f = File(d, ".gitignore")
+        f.writeText("dist/")
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf("*.temp"), useGitIgnore = true)
+        val pr = FakeProject(d.absolutePath)
+        val file = File(FakeVirtualFile(File(d, "dist\\subdir\\helper.temp").absolutePath, "data").path)
+        assertTrue(IgnoreUtil.shouldIgnore(file, opts, pr.basePath))
+        f.delete()
+        d.deleteRecursively()
+    }
+
+    @Test
+    fun invertIgnorePattern() {
+        val p = FakeProject("/project")
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf("*.txt"), invertIgnorePatterns = true)
+        val file = File(FakeVirtualFile("/project/test.txt", "data").path)
+        // Without inversion, a txt would be ignored
+        // With inversion, it's the opposite
+        assertFalse(IgnoreUtil.shouldIgnore(file, opts, p.basePath))
+    }
+
+    @Test
+    fun noProjectBasePath() {
+        val file = File(FakeVirtualFile("/something/bin/test.log", "data", false).path)
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf("*.log"))
+        assertTrue(IgnoreUtil.shouldIgnore(file, opts, ""))
     }
 }

@@ -1,88 +1,100 @@
 package com.clipcraft.util
 
 import com.clipcraft.model.ClipCraftOptions
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import matchesGlob
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.nio.file.Paths
 
 object IgnoreUtil {
+    private val logger = Logger.getInstance(IgnoreUtil::class.java)
 
-    fun parseGitIgnoreIfEnabled(options: ClipCraftOptions, projectBasePath: String) {
-        if (!options.useGitIgnore) return
-        val gitIgnoreFile = Paths.get(projectBasePath, ".gitignore").toFile()
-        if (!gitIgnoreFile.exists() || !gitIgnoreFile.isFile) return
+    /**
+     * Called automatically inside [shouldIgnore] if [ClipCraftOptions.useGitIgnore] is true.
+     */
+    private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
+        if (!opts.useGitIgnore) return
+        loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
+    }
+
+    fun mergeGitIgnoreRules(opts: ClipCraftOptions, project: Project) {
+        val base = project.basePath
+        if (!base.isNullOrEmpty()) loadIgnoreFile(Paths.get(base, ".gitignore"), opts)
+    }
+
+    fun parseCustomIgnoreFiles(opts: ClipCraftOptions, projectBase: String, files: List<String>) {
+        files.forEach { loadIgnoreFile(Paths.get(projectBase, it), opts) }
+    }
+
+    fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
+        parseGitIgnoreIfNeeded(opts, projectBase)
+
+        if (file.name.startsWith(".")) return true
+        if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
+        if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
+
+        var rel = toRelative(file.absolutePath, projectBase).replace('\\', '/')
+        if (rel.startsWith("/")) rel = rel.removePrefix("/")
+
+        val patterns = gatherAllPatterns(opts)
+        var ignored = false
+        for (pattern in patterns) {
+            if (pattern.isBlank()) continue
+            val neg = pattern.startsWith("!")
+            val raw = pattern.removePrefix("!")
+            var adj = raw
+            if (adj.startsWith("/")) adj = adj.removePrefix("/")
+            if (adj.endsWith("/") && !adj.endsWith("/**")) adj += "**"
+            if (matchesGlob(adj, rel)) ignored = !neg
+        }
+
+        return if (opts.invertIgnorePatterns) !ignored else ignored
+    }
+
+    private fun fileInIgnoreFiles(f: File, ignoreFiles: List<String>?): Boolean {
+        if (ignoreFiles.isNullOrEmpty()) return false
+        return ignoreFiles.any { it.equals(f.name, ignoreCase = true) }
+    }
+
+    private fun folderInIgnoreFolders(f: File, ignoreFolders: List<String>?, basePath: String): Boolean {
+        if (ignoreFolders.isNullOrEmpty()) return false
+        val rel = toRelative(f.absolutePath, basePath).replace('\\', '/').removePrefix("/")
+        val lastSegment = rel.substringAfterLast('/')
+        return ignoreFolders.any { it.equals(lastSegment, ignoreCase = true) }
+    }
+
+    private fun gatherAllPatterns(opts: ClipCraftOptions): List<String> {
+        val main = opts.ignorePatterns
+        val addl = opts.additionalIgnorePatterns
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() } ?: emptyList()
+        return (main + addl).filter { it.isNotBlank() }
+    }
+
+    private fun toRelative(absPath: String, basePath: String): String {
+        val absBase = File(basePath).absolutePath
+        if (!absPath.startsWith(absBase)) return absPath
+        return absPath.substring(absBase.length).trimStart(File.separatorChar)
+    }
+
+    private fun loadIgnoreFile(p: Path, opts: ClipCraftOptions) {
+        val f = p.toFile()
+        if (!f.exists() || !f.isFile) return
         try {
-            gitIgnoreFile.readLines()
+            f.readLines()
                 .map { it.trim() }
                 .filter { it.isNotEmpty() && !it.startsWith("#") }
-                .forEach { pattern ->
-                    if (pattern !in options.ignorePatterns) {
-                        options.ignorePatterns.add(pattern)
+                .forEach { line ->
+                    if (line !in opts.ignorePatterns) {
+                        opts.ignorePatterns.add(line)
                     }
                 }
         } catch (e: IOException) {
-            println("Error reading .gitignore: ${e.message}")
+            logger.warn("Error reading ignore file: ${f.absolutePath}", e)
         }
-    }
-
-    fun mergeGitIgnoreRules(options: ClipCraftOptions, project: Project) {
-        parseGitIgnoreIfEnabled(options, project.basePath ?: "")
-    }
-
-    fun shouldIgnore(file: File, options: ClipCraftOptions, projectBasePath: String): Boolean {
-        // Skip dotfiles/folders
-        if (file.name.startsWith(".")) return true
-
-        // If file name is in ignoreFiles
-        options.ignoreFiles?.let { files ->
-            if (!file.isDirectory && files.any { it.equals(file.name, ignoreCase = true) }) {
-                return true
-            }
-        }
-
-        // If folder name is in ignoreFolders
-        options.ignoreFolders?.let { folders ->
-            if (file.isDirectory && folders.any { it.equals(file.name, ignoreCase = true) }) {
-                return true
-            }
-        }
-
-        val relPath = toRelativePath(file.absolutePath, projectBasePath).replace('\\', '/')
-
-        // Combine base ignorePatterns with additionalIgnorePatterns
-        val additional = options.additionalIgnorePatterns
-            ?.split(",")
-            ?.map { it.trim() }
-            ?.filter { it.isNotEmpty() }
-            ?: emptyList()
-        val allPatterns = (options.ignorePatterns + additional)
-
-        var isIgnored = false
-        for (pattern in allPatterns) {
-            if (pattern.isBlank()) continue
-            val isNegation = pattern.startsWith("!")
-            val rawPattern = if (isNegation) pattern.substring(1) else pattern
-            if (matchesGlob(adjustGitIgnoreDirPattern(rawPattern), relPath)) {
-                isIgnored = !isNegation
-            }
-        }
-
-        val finalIgnored = if (options.invertIgnorePatterns) !isIgnored else isIgnored
-        return finalIgnored
-    }
-
-    private fun toRelativePath(filePath: String, projectBasePath: String): String {
-        val basePath = File(projectBasePath).absolutePath
-        return if (filePath.startsWith(basePath)) {
-            filePath.substring(basePath.length).trimStart(File.separatorChar)
-        } else filePath
-    }
-
-    private fun adjustGitIgnoreDirPattern(glob: String): String {
-        return if (glob.endsWith("/") && !glob.endsWith("/**")) {
-            "$glob**"
-        } else glob
     }
 }

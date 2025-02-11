@@ -24,6 +24,12 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Disable file mode changes
+        run: git config core.fileMode false
+
+      - name: Reset repository to clean state
+        run: git reset --hard
+
       - name: Cache Gradle Files
         uses: actions/cache@v3
         with:

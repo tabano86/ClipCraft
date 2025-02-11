@@ -36,7 +36,7 @@ jobs:
           bash ./gradlew clean test buildPlugin patchPluginXml --parallel --stacktrace
 
       - name: Upload Plugin Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: plugin-artifact
           path: build/distributions/

@@ -87,12 +87,11 @@ jobs:
           git reset --hard origin/main
 
       - name: Publish Plugin with Retry
-        uses: dawidd6/action-download-artifact@v8
+        uses: nick-fields/retry@v3
         with:
+          timeout_minutes: 10
           max_attempts: 3
-          sleep: 10
-          command: bash ./gradlew release publishPlugin --no-daemon --stacktrace --parallel
+          shell: bash
+          command: ./gradlew release publishPlugin --no-daemon --stacktrace --parallel
         env:
-          # The environment variable ORG_GRADLE_PROJECT_intellijPlatformPublishingToken is the Gradle convention;
-          # it will automatically set the property intellijPlatformPublishingToken as defined in your build file.
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}

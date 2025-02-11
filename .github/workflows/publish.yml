@@ -8,8 +8,6 @@ on:
 
 jobs:
   build:
-    permissions:
-      contents: write  # Needed for pushing tags/commits
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,19 +21,56 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Cache Gradle Files
+      - name: Cache Gradle Directories
         uses: actions/cache@v3
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
+            .gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: Run Build Tasks
+        run: |
+          # Combine tasks to reduce configuration overhead and use parallel execution
+          bash ./gradlew clean test buildPlugin patchPluginXml --parallel --stacktrace
+
+      - name: Upload Plugin Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: plugin-artifact
+          path: build/distributions/
+
+  release:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle Directories
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
 
       - name: Set up Git config
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          # Ensure remote uses token-based HTTPS auth
+          # Ensure the remote uses token-based HTTPS auth
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/tabano86/ClipCraft.git
 
       - name: Fetch and Sync Remote Tags
@@ -43,41 +78,12 @@ jobs:
           git fetch --prune --tags
           git reset --hard origin/main
 
-      - name: Run Release with Retry
-        if: github.event_name == 'push'
+      - name: Run Release and Publish Plugin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
-          max_attempts=3
-          attempt=1
-          until bash ./gradlew release --no-daemon --stacktrace; do
-            if [ $attempt -ge $max_attempts ]; then
-              echo "Release failed after $attempt attempts."
-              exit 1
-            fi
-            echo "Release attempt $attempt failed, retrying in 10 seconds..."
-            sleep 10
-            attempt=$((attempt + 1))
-          done
-
-      - name: Debug Plugin Token
-        run: echo "JB_PLUGIN_REPOSITORY_TOKEN = '${JB_PLUGIN_REPOSITORY_TOKEN}'"
-        env:
-          JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-
-      - name: Run Tests
-        run: bash ./gradlew clean test --no-daemon --stacktrace
-
-      - name: Build Plugin
-        run: bash ./gradlew clean buildPlugin --no-daemon --stacktrace
-
-      - name: Patch Plugin XML
-        run: bash ./gradlew patchPluginXml --no-daemon --stacktrace
-
-      - name: Publish Plugin
-        if: github.event_name == 'push'
-        env:
-          JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-        run: bash ./gradlew publishPlugin \
-          -Dorg.jetbrains.intellij.pluginRepository.publish.token=$JB_PLUGIN_REPOSITORY_TOKEN \
-          --no-daemon --stacktrace
+          # Run both release and publish tasks together to minimize startup overhead.
+          bash ./gradlew release publishPlugin \
+            -Dorg.jetbrains.intellij.pluginRepository.publish.token=$JB_PLUGIN_REPOSITORY_TOKEN \
+            --parallel --stacktrace

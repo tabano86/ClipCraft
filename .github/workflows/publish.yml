@@ -28,7 +28,9 @@ jobs:
         run: git config core.fileMode false
 
       - name: Reset repository to clean state
-        run: git reset --hard
+        run: |
+          git reset --hard
+          git clean -fdx
 
       - name: Cache Gradle Files
         uses: actions/cache@v3

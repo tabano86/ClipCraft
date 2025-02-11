@@ -15,7 +15,7 @@ repositories {
 intellij {
     version.set("2022.3")
     type.set("IC") // IntelliJ Community
-    plugins.set(listOf("Git4Idea"))
+    plugins.set(listOf("Git4Idea", "java"))
     instrumentCode.set(false)
 }
 

@@ -1,4 +1,4 @@
-package com.clipcraft.integration
+package com.clipcraft.ui
 
 import com.clipcraft.model.Snippet
 import com.clipcraft.services.ClipCraftNotificationCenter

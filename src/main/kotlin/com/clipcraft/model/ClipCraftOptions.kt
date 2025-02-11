@@ -27,7 +27,16 @@ data class ClipCraftOptions(
     var autoDetectLanguage: Boolean = false,
     var overlapStrategy: OverlapStrategy = OverlapStrategy.SINGLE_LINE,
     var chunkStrategy: ChunkStrategy = ChunkStrategy.NONE,
-    var concurrencyMode: ConcurrencyMode = ConcurrencyMode.DISABLED
+    var concurrencyMode: ConcurrencyMode = ConcurrencyMode.DISABLED,
+    /**
+     * User-defined text that will be prepended to snippet output.
+     */
+    var gptHeaderText: String? = null,
+
+    /**
+     * User-defined text that will be appended to snippet output.
+     */
+    var gptFooterText: String? = null
 ) {
     /**
      * Called to reconcile contradictory or legacy settings fields.

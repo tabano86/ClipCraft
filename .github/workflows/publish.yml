@@ -6,7 +6,9 @@ on:
   push:
     branches: [main]
 
+# Grant write permissions so that the built-in GITHUB_TOKEN can push tags/commits.
 permissions:
+  contents: write
   id-token: write
 
 #env:

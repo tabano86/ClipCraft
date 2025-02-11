@@ -24,14 +24,6 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Determine Plugin Version
-        id: version
-        run: |
-          # Retrieve the latest tag (or commit SHA if no tag found)
-          PLUGIN_VERSION=$(git describe --tags --always)
-          echo "PLUGIN_VERSION=$PLUGIN_VERSION" >> $GITHUB_ENV
-          echo "Plugin version determined as: $PLUGIN_VERSION"
-
       - name: Cache Gradle Files
         uses: actions/cache@v3
         with:
@@ -40,21 +32,23 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
 
-#      - name: Run Tests
-#        run: ./gradlew clean test --no-daemon --stacktrace
+      - name: Run Release (Bump version and tag)
+        if: github.event_name == 'push'
+        run: ./gradlew release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      #      - name: Run Tests
+      #        run: ./gradlew clean test --no-daemon --stacktrace
 
       - name: Build Plugin
         run: ./gradlew clean buildPlugin --no-daemon --stacktrace
 
       - name: Patch Plugin XML
         run: ./gradlew patchPluginXml --no-daemon --stacktrace
-        env:
-          PLUGIN_VERSION: ${{ env.PLUGIN_VERSION }}
 
       - name: Publish Plugin
         if: github.event_name == 'push'
         env:
           JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-          PLUGIN_VERSION: ${{ env.PLUGIN_VERSION }}
-        run: |
-          ./gradlew publishPlugin -PpublishToken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace
+        run: ./gradlew publishPlugin -PpublishToken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace

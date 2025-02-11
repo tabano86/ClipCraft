@@ -46,6 +46,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Debug token
+        run: echo "JB_PLUGIN_REPOSITORY_TOKEN = '${JB_PLUGIN_REPOSITORY_TOKEN}'"
+        env:
+          JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
+
       - name: Run Tests
         run: ./gradlew clean test --no-daemon --stacktrace
 
@@ -59,4 +64,6 @@ jobs:
         if: github.event_name == 'push'
         env:
           JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-        run: ./gradlew publishPlugin -Ptoken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace
+        run: ./gradlew publishPlugin \
+          -Dorg.jetbrains.intellij.pluginRepository.publish.token=$JB_PLUGIN_REPOSITORY_TOKEN \
+          --no-daemon --stacktrace

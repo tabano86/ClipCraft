@@ -10,11 +10,6 @@
     <option name="usage" path="ActionManager" hit="Check Component Functions Usage Search" />
     <option name="clear" path="ActionManager" hit="Clear results" />
     <option name="results" path="ActionManager" hit="Clear results" />
-    <option name="configure" path="ActionManager" hit="Configure Kotlin (JavaScript) in Project" />
-    <option name="in" path="ActionManager" hit="Configure Kotlin (JavaScript) in Project" />
-    <option name="javascript" path="ActionManager" hit="Configure Kotlin (JavaScript) in Project" />
-    <option name="kotlin" path="ActionManager" hit="Configure Kotlin (JavaScript) in Project" />
-    <option name="project" path="ActionManager" hit="Configure Kotlin (JavaScript) in Project" />
     <option name="configure" path="ActionManager" hit="Configure Kotlin Plugin Updates" />
     <option name="kotlin" path="ActionManager" hit="Configure Kotlin Plugin Updates" />
     <option name="plugin" path="ActionManager" hit="Configure Kotlin Plugin Updates" />
@@ -54,20 +49,18 @@
     <option name="for" path="ActionManager" hit="Create backup for debugging Kotlin incremental compilation" />
     <option name="incremental" path="ActionManager" hit="Create backup for debugging Kotlin incremental compilation" />
     <option name="kotlin" path="ActionManager" hit="Create backup for debugging Kotlin incremental compilation" />
-    <option name="creates" path="ActionManager" hit="Creates new Kotlin Worksheet" />
-    <option name="kotlin" path="ActionManager" hit="Creates new Kotlin Worksheet" />
-    <option name="new" path="ActionManager" hit="Creates new Kotlin Worksheet" />
-    <option name="worksheet" path="ActionManager" hit="Creates new Kotlin Worksheet" />
     <option name="class" path="ActionManager" hit="Creates new Kotlin class or file" />
     <option name="creates" path="ActionManager" hit="Creates new Kotlin class or file" />
     <option name="file" path="ActionManager" hit="Creates new Kotlin class or file" />
     <option name="kotlin" path="ActionManager" hit="Creates new Kotlin class or file" />
     <option name="new" path="ActionManager" hit="Creates new Kotlin class or file" />
     <option name="or" path="ActionManager" hit="Creates new Kotlin class or file" />
-    <option name="creates" path="ActionManager" hit="Creates new Kotlin script" />
-    <option name="kotlin" path="ActionManager" hit="Creates new Kotlin script" />
-    <option name="new" path="ActionManager" hit="Creates new Kotlin script" />
-    <option name="script" path="ActionManager" hit="Creates new Kotlin script" />
+    <option name="creates" path="ActionManager" hit="Creates new Kotlin script or worksheet" />
+    <option name="kotlin" path="ActionManager" hit="Creates new Kotlin script or worksheet" />
+    <option name="new" path="ActionManager" hit="Creates new Kotlin script or worksheet" />
+    <option name="or" path="ActionManager" hit="Creates new Kotlin script or worksheet" />
+    <option name="script" path="ActionManager" hit="Creates new Kotlin script or worksheet" />
+    <option name="worksheet" path="ActionManager" hit="Creates new Kotlin script or worksheet" />
     <option name="at" path="ActionManager" hit="Debug Resolution of Type at Caret" />
     <option name="caret" path="ActionManager" hit="Debug Resolution of Type at Caret" />
     <option name="debug" path="ActionManager" hit="Debug Resolution of Type at Caret" />
@@ -126,16 +119,13 @@
     <option name="kotlin" path="ActionManager" hit="Kotlin Class/File" />
     <option name="activity" path="ActionManager" hit="Kotlin Project Post-Open Activity" />
     <option name="kotlin" path="ActionManager" hit="Kotlin Project Post-Open Activity" />
-    <option name="open" path="ActionManager" hit="Kotlin Project Post-Open Activity" />
-    <option name="post" path="ActionManager" hit="Kotlin Project Post-Open Activity" />
+    <option name="post-open" path="ActionManager" hit="Kotlin Project Post-Open Activity" />
     <option name="project" path="ActionManager" hit="Kotlin Project Post-Open Activity" />
     <option name="experimental" path="ActionManager" hit="Kotlin REPL (Experimental)" />
     <option name="kotlin" path="ActionManager" hit="Kotlin REPL (Experimental)" />
     <option name="repl" path="ActionManager" hit="Kotlin REPL (Experimental)" />
     <option name="kotlin" path="ActionManager" hit="Kotlin Script" />
     <option name="script" path="ActionManager" hit="Kotlin Script" />
-    <option name="kotlin" path="ActionManager" hit="Kotlin Worksheet" />
-    <option name="worksheet" path="ActionManager" hit="Kotlin Worksheet" />
     <option name="configurations" path="ActionManager" hit="Load Script Configurations" />
     <option name="load" path="ActionManager" hit="Load Script Configurations" />
     <option name="script" path="ActionManager" hit="Load Script Configurations" />
@@ -230,9 +220,8 @@
     <option name="support" path="ActionManager" hit="Toggle Library To Source Dependency Support" />
     <option name="to" path="ActionManager" hit="Toggle Library To Source Dependency Support" />
     <option name="toggle" path="ActionManager" hit="Toggle Library To Source Dependency Support" />
-    <option name="level" path="ActionManager" hit="Top-Level Scenario" />
     <option name="scenario" path="ActionManager" hit="Top-Level Scenario" />
-    <option name="top" path="ActionManager" hit="Top-Level Scenario" />
+    <option name="top-level" path="ActionManager" hit="Top-Level Scenario" />
     <option name="dumb" path="ActionManager" hit="Tremble Dumb Mode" />
     <option name="mode" path="ActionManager" hit="Tremble Dumb Mode" />
     <option name="tremble" path="ActionManager" hit="Tremble Dumb Mode" />
@@ -243,14 +232,8 @@
     <option name="and" path="ActionManager" hit="equals() and hashCode()" />
     <option name="equals" path="ActionManager" hit="equals() and hashCode()" />
     <option name="hashcode" path="ActionManager" hit="equals() and hashCode()" />
-    <option name="execution" path="ActionManager" hit="kotlin-maven-execution-provider" />
-    <option name="kotlin" path="ActionManager" hit="kotlin-maven-execution-provider" />
-    <option name="maven" path="ActionManager" hit="kotlin-maven-execution-provider" />
-    <option name="provider" path="ActionManager" hit="kotlin-maven-execution-provider" />
-    <option name="kotlin" path="ActionManager" hit="kotlin-maven-plugin-provider" />
-    <option name="maven" path="ActionManager" hit="kotlin-maven-plugin-provider" />
-    <option name="plugin" path="ActionManager" hit="kotlin-maven-plugin-provider" />
-    <option name="provider" path="ActionManager" hit="kotlin-maven-plugin-provider" />
+    <option name="kotlin-maven-execution-provider" path="ActionManager" hit="kotlin-maven-execution-provider" />
+    <option name="kotlin-maven-plugin-provider" path="ActionManager" hit="kotlin-maven-plugin-provider" />
     <option name="tostring" path="ActionManager" hit="toString()" />
   </configurable>
   <configurable id="editor.breadcrumbs" configurable_name="Breadcrumbs">
@@ -300,8 +283,7 @@
     <option name="and" hit="Braces and Operators//Non-null assertion" />
     <option name="assertion" hit="Braces and Operators//Non-null assertion" />
     <option name="braces" hit="Braces and Operators//Non-null assertion" />
-    <option name="non" hit="Braces and Operators//Non-null assertion" />
-    <option name="null" hit="Braces and Operators//Non-null assertion" />
+    <option name="non-null" hit="Braces and Operators//Non-null assertion" />
     <option name="operators" hit="Braces and Operators//Non-null assertion" />
     <option name="and" hit="Braces and Operators//Operator sign" />
     <option name="braces" hit="Braces and Operators//Operator sign" />
@@ -376,14 +358,18 @@
     <option name="comment" hit="Comments//Line comment" />
     <option name="comments" hit="Comments//Line comment" />
     <option name="line" hit="Comments//Line comment" />
-    <option name="dsl" hit="Dsl//Style1" />
-    <option name="style" hit="Dsl//Style1" />
-    <option name="dsl" hit="Dsl//Style2" />
-    <option name="style" hit="Dsl//Style2" />
-    <option name="dsl" hit="Dsl//Style3" />
-    <option name="style" hit="Dsl//Style3" />
-    <option name="dsl" hit="Dsl//Style4" />
-    <option name="style" hit="Dsl//Style4" />
+    <option name="1" hit="Dsl//Style 1" />
+    <option name="dsl" hit="Dsl//Style 1" />
+    <option name="style" hit="Dsl//Style 1" />
+    <option name="2" hit="Dsl//Style 2" />
+    <option name="dsl" hit="Dsl//Style 2" />
+    <option name="style" hit="Dsl//Style 2" />
+    <option name="3" hit="Dsl//Style 3" />
+    <option name="dsl" hit="Dsl//Style 3" />
+    <option name="style" hit="Dsl//Style 3" />
+    <option name="4" hit="Dsl//Style 4" />
+    <option name="dsl" hit="Dsl//Style 4" />
+    <option name="style" hit="Dsl//Style 4" />
     <option name="call" hit="Functions//Constructor call" />
     <option name="constructor" hit="Functions//Constructor call" />
     <option name="functions" hit="Functions//Constructor call" />
@@ -404,8 +390,7 @@
     <option name="call" hit="Functions//Package-level function call" />
     <option name="function" hit="Functions//Package-level function call" />
     <option name="functions" hit="Functions//Package-level function call" />
-    <option name="level" hit="Functions//Package-level function call" />
-    <option name="package" hit="Functions//Package-level function call" />
+    <option name="package-level" hit="Functions//Package-level function call" />
     <option name="call" hit="Functions//Suspend function call" />
     <option name="function" hit="Functions//Suspend function call" />
     <option name="functions" hit="Functions//Suspend function call" />
@@ -475,16 +460,14 @@
     <option name="variable" hit="Properties and Variables//Local variable or value" />
     <option name="variables" hit="Properties and Variables//Local variable or value" />
     <option name="and" hit="Properties and Variables//Package-level property" />
-    <option name="level" hit="Properties and Variables//Package-level property" />
-    <option name="package" hit="Properties and Variables//Package-level property" />
+    <option name="package-level" hit="Properties and Variables//Package-level property" />
     <option name="properties" hit="Properties and Variables//Package-level property" />
     <option name="property" hit="Properties and Variables//Package-level property" />
     <option name="variables" hit="Properties and Variables//Package-level property" />
     <option name="and" hit="Properties and Variables//Package-level property with custom property declarations" />
     <option name="custom" hit="Properties and Variables//Package-level property with custom property declarations" />
     <option name="declarations" hit="Properties and Variables//Package-level property with custom property declarations" />
-    <option name="level" hit="Properties and Variables//Package-level property with custom property declarations" />
-    <option name="package" hit="Properties and Variables//Package-level property with custom property declarations" />
+    <option name="package-level" hit="Properties and Variables//Package-level property with custom property declarations" />
     <option name="properties" hit="Properties and Variables//Package-level property with custom property declarations" />
     <option name="property" hit="Properties and Variables//Package-level property with custom property declarations" />
     <option name="variables" hit="Properties and Variables//Package-level property with custom property declarations" />
@@ -514,8 +497,7 @@
     <option name="and" hit="Properties and Variables//Variable as function-like call" />
     <option name="as" hit="Properties and Variables//Variable as function-like call" />
     <option name="call" hit="Properties and Variables//Variable as function-like call" />
-    <option name="function" hit="Properties and Variables//Variable as function-like call" />
-    <option name="like" hit="Properties and Variables//Variable as function-like call" />
+    <option name="function-like" hit="Properties and Variables//Variable as function-like call" />
     <option name="properties" hit="Properties and Variables//Variable as function-like call" />
     <option name="variable" hit="Properties and Variables//Variable as function-like call" />
     <option name="variables" hit="Properties and Variables//Variable as function-like call" />
@@ -529,17 +511,15 @@
     <option name="variables" hit="Properties and Variables//Variables and values captured in a closure" />
     <option name="highlighting" hit="Semantic highlighting" />
     <option name="semantic" hit="Semantic highlighting" />
-    <option name="casts" hit="Smart-casts//Smart constant" />
     <option name="constant" hit="Smart-casts//Smart constant" />
     <option name="smart" hit="Smart-casts//Smart constant" />
-    <option name="cast" hit="Smart-casts//Smart-cast implicit receiver" />
-    <option name="casts" hit="Smart-casts//Smart-cast implicit receiver" />
+    <option name="smart-casts" hit="Smart-casts//Smart constant" />
     <option name="implicit" hit="Smart-casts//Smart-cast implicit receiver" />
     <option name="receiver" hit="Smart-casts//Smart-cast implicit receiver" />
-    <option name="smart" hit="Smart-casts//Smart-cast implicit receiver" />
-    <option name="cast" hit="Smart-casts//Smart-cast value" />
-    <option name="casts" hit="Smart-casts//Smart-cast value" />
-    <option name="smart" hit="Smart-casts//Smart-cast value" />
+    <option name="smart-cast" hit="Smart-casts//Smart-cast implicit receiver" />
+    <option name="smart-casts" hit="Smart-casts//Smart-cast implicit receiver" />
+    <option name="smart-cast" hit="Smart-casts//Smart-cast value" />
+    <option name="smart-casts" hit="Smart-casts//Smart-cast value" />
     <option name="value" hit="Smart-casts//Smart-cast value" />
     <option name="escape" hit="String//Escape Sequence//Invalid" />
     <option name="invalid" hit="String//Escape Sequence//Invalid" />
@@ -729,9 +709,8 @@
     <option name="and" path="Tabs and Indents" hit="Tabs and Indents" />
     <option name="indents" path="Tabs and Indents" hit="Tabs and Indents" />
     <option name="tabs" path="Tabs and Indents" hit="Tabs and Indents" />
-    <option name="level" path="Imports" hit="Top-Level Symbols" />
     <option name="symbols" path="Imports" hit="Top-Level Symbols" />
-    <option name="top" path="Imports" hit="Top-Level Symbols" />
+    <option name="top-level" path="Imports" hit="Top-Level Symbols" />
     <option name="comma" path="Other" hit="Trailing Comma" />
     <option name="trailing" path="Other" hit="Trailing Comma" />
     <option name="defaults" path="Load/Save" hit="Use defaults from:" />
@@ -811,9 +790,7 @@
     <option name="statement" path="Wrapping and Braces" hit="'try' statement" />
     <option name="try" path="Wrapping and Braces" hit="'try' statement" />
     <option name="" path="Wrapping and Braces" hit="'try-with-resources'" />
-    <option name="resources" path="Wrapping and Braces" hit="'try-with-resources'" />
-    <option name="try" path="Wrapping and Braces" hit="'try-with-resources'" />
-    <option name="with" path="Wrapping and Braces" hit="'try-with-resources'" />
+    <option name="try-with-resources" path="Wrapping and Braces" hit="'try-with-resources'" />
     <option name="" path="Spaces" hit="'when' parentheses" />
     <option name="parentheses" path="Spaces" hit="'when' parentheses" />
     <option name="when" path="Spaces" hit="'when' parentheses" />
@@ -828,6 +805,7 @@
     <option name="" path="Wrapping and Braces" hit="'while()' statement" />
     <option name="statement" path="Wrapping and Braces" hit="'while()' statement" />
     <option name="while" path="Wrapping and Braces" hit="'while()' statement" />
+    <option name="-" path="Spaces" hit="Additive operators (+, -)" />
     <option name="additive" path="Spaces" hit="Additive operators (+, -)" />
     <option name="operators" path="Spaces" hit="Additive operators (+, -)" />
     <option name="after" path="Spaces" hit="After colon in new type definition" />
@@ -1106,6 +1084,8 @@
     <option name="throws" path="Wrapping and Braces" hit="Throws keyword" />
     <option name="list" path="Wrapping and Braces" hit="Throws list" />
     <option name="throws" path="Wrapping and Braces" hit="Throws list" />
+    <option name="-" path="Spaces" hit="Unary operators (!, -, +, ++, --)" />
+    <option name="--" path="Spaces" hit="Unary operators (!, -, +, ++, --)" />
     <option name="operators" path="Spaces" hit="Unary operators (!, -, +, ++, --)" />
     <option name="unary" path="Spaces" hit="Unary operators (!, -, +, ++, --)" />
     <option name="continuation" path="Wrapping and Braces" hit="Use continuation indent" />
@@ -1184,14 +1164,38 @@
     <option name="use" hit="Use line comment" />
   </configurable>
   <configurable id="project.kotlinCompiler" configurable_name="Kotlin Compiler">
-    <option name="" hit="1.3 (deprecated)" />
-    <option name="deprecated" hit="1.3 (deprecated)" />
-    <option name="" hit="1.4 (deprecated)" />
+    <option name="1" hit="1.4 (deprecated)" />
+    <option name="4" hit="1.4 (deprecated)" />
     <option name="deprecated" hit="1.4 (deprecated)" />
-    <option name="" hit="1.6 (deprecated)" />
+    <option name="1" hit="1.5 (deprecated)" />
+    <option name="5" hit="1.5 (deprecated)" />
+    <option name="deprecated" hit="1.5 (deprecated)" />
+    <option name="1" hit="1.6" />
+    <option name="6" hit="1.6" />
+    <option name="1" hit="1.6 (deprecated)" />
+    <option name="6" hit="1.6 (deprecated)" />
     <option name="deprecated" hit="1.6 (deprecated)" />
-    <option name="" hit="1.9 (experimental)" />
-    <option name="experimental" hit="1.9 (experimental)" />
+    <option name="1" hit="1.7" />
+    <option name="7" hit="1.7" />
+    <option name="1" hit="1.8" />
+    <option name="8" hit="1.8" />
+    <option name="1" hit="1.9" />
+    <option name="9" hit="1.9" />
+    <option name="10" hit="10" />
+    <option name="11" hit="11" />
+    <option name="12" hit="12" />
+    <option name="13" hit="13" />
+    <option name="14" hit="14" />
+    <option name="15" hit="15" />
+    <option name="16" hit="16" />
+    <option name="17" hit="17" />
+    <option name="18" hit="18" />
+    <option name="19" hit="19" />
+    <option name="0" hit="2.0 (experimental)" />
+    <option name="2" hit="2.0 (experimental)" />
+    <option name="experimental" hit="2.0 (experimental)" />
+    <option name="20" hit="20" />
+    <option name="9" hit="9" />
     <option name="amd" hit="AMD" />
     <option name="api" hit="API version" />
     <option name="version" hit="API version" />
@@ -1200,8 +1204,10 @@
     <option name="line" hit="Additional command line parameters:" />
     <option name="parameters" hit="Additional command line parameters:" />
     <option name="always" hit="Always" />
-    <option name="bundled" hit="Bundled (1.7.20-release-201)" />
-    <option name="release" hit="Bundled (1.7.20-release-201)" />
+    <option name="0-release-358" hit="Bundled (1.9.0-release-358)" />
+    <option name="1" hit="Bundled (1.9.0-release-358)" />
+    <option name="9" hit="Bundled (1.9.0-release-358)" />
+    <option name="bundled" hit="Bundled (1.9.0-release-358)" />
     <option name="commonjs" hit="CommonJS" />
     <option name="copy" hit="Copy library runtime files" />
     <option name="files" hit="Copy library runtime files" />
@@ -1252,8 +1258,10 @@
     <option name="to" hit="Kotlin to JavaScript" />
     <option name="language" hit="Language version" />
     <option name="version" hit="Language version" />
-    <option name="latest" hit="Latest stable (1.8)" />
-    <option name="stable" hit="Latest stable (1.8)" />
+    <option name="1" hit="Latest stable (1.9)" />
+    <option name="9" hit="Latest stable (1.9)" />
+    <option name="latest" hit="Latest stable (1.9)" />
+    <option name="stable" hit="Latest stable (1.9)" />
     <option name="available" hit="Loading available versions from Maven..." />
     <option name="from" hit="Loading available versions from Maven..." />
     <option name="loading" hit="Loading available versions from Maven..." />

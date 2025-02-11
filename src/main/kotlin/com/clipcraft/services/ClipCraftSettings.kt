@@ -41,6 +41,7 @@ class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
     fun getAllProfiles(): List<ClipCraftProfile> = myState.allProfiles
 
     fun addProfile(profile: ClipCraftProfile) {
+        removeProfile(profile.profileName)
         myState.allProfiles.add(profile)
     }
 

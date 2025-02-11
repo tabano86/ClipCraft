@@ -1,19 +1,22 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>2.0.1</version>
+    <version>3.0.0</version>
     <vendor email="support@clipcraft.com" url="https://clipcraft.com">ClipCraft Inc.</vendor>
     <description><![CDATA[
       ClipCraft copies and formats code snippets from multiple files and directories.
-      Includes snippet queue, advanced chunking, GPT integration placeholders, and more!
+      Includes snippet queue, advanced chunking, concurrency, GPT integration placeholders, and more!
     ]]></description>
     <change-notes><![CDATA[
-      Version 2.0.1:
-      - Complete refactor for improved concurrency and configuration management.
-      - Added a snippet queue tool window and GPT placeholders.
+      Version 3.0.0:
+      - Unified data models, removing duplicates
+      - Improved concurrency with thread pools
+      - Enhanced ignore logic for .gitignore and custom patterns
+      - Advanced code formatting with GPT-friendly chunking
+      - Enhanced UI dialogs and tool windows
     ]]></change-notes>
 
-    <!-- Dependencies -->
+    <!-- Must depend on IntelliJ platform modules -->
     <depends>com.intellij.modules.platform</depends>
     <idea-version since-build="223" until-build="243.*"/>
 
@@ -21,7 +24,7 @@
         <!-- Notification group for balloon messages -->
         <notificationGroup id="ClipCraft" displayType="BALLOON"/>
 
-        <!-- Persistent application-level settings service -->
+        <!-- Application-level settings (ClipCraftSettings) -->
         <applicationService serviceImplementation="com.clipcraft.services.ClipCraftSettings"/>
 
         <!-- Configuration panel for "File | Settings..." -->
@@ -37,10 +40,10 @@
         <!-- Tool Window (Snippet Queue) -->
         <toolWindow
                 id="ClipCraft.SnippetQueue"
-                factoryClass="com.clipcraft.ui.ClipCraftToolWindowFactory"
+                factoryClass="com.clipcraft.integration.ClipCraftGPTChatToolWindowFactory"
                 anchor="left"
                 secondary="true"
-                icon="com.clipcraft.icons.ClipCraftIcons#CLIPCRAFT"/>
+                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT"/>
     </extensions>
 
     <actions>
@@ -50,7 +53,7 @@
                 class="com.clipcraft.actions.ClipCraftAction"
                 text="ClipCraft: Copy Formatted Code"
                 description="Copies and formats code from selected files and directories."
-                icon="com.clipcraft.icons.ClipCraftIcons#CLIPCRAFT">
+                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT">
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt X"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
@@ -86,7 +89,7 @@
         <action
                 id="ClipCraftGPTAction"
                 class="com.clipcraft.actions.ClipCraftGPTAction"
-                text="ClipCraft: Copy & Prompt GPT"
+                text="ClipCraft: Copy &amp; Prompt GPT"
                 description="Copy snippet(s) plus GPT prompt.">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>

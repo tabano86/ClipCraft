@@ -9,20 +9,10 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.Processor
 import javax.swing.ListCellRenderer
 
-/**
- * Search Everywhere contributor for ClipCraft.
- *
- * This class uses a no-argument constructor. The project is set later
- * via [setProject]. This satisfies the requirement that extensions must
- * have a no-arg constructor.
- */
 class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
 
     private var project: Project? = null
 
-    /**
-     * Injects the project instance for this contributor.
-     */
     fun setProject(project: Project?) {
         this.project = project
     }
@@ -40,17 +30,19 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
         progressIndicator: ProgressIndicator,
         consumer: Processor<in Any>
     ) {
-        val proj = project ?: return
-        val manager = proj.getService(ClipCraftProjectProfileManager::class.java)
-        val matches = manager?.getProfiles()?.filter {
+        val mgr = project?.getService(ClipCraftProjectProfileManager::class.java) ?: return
+        val matches = mgr.getProfiles().filter {
             StringUtil.containsIgnoreCase(it.profileName, pattern)
-        } ?: emptyList()
+        }
         for (profile in matches) {
             if (!consumer.process(profile)) return
         }
     }
 
-    override fun processSelectedItem(selected: Any, modifiers: Int, searchText: String): Boolean = true
+    override fun processSelectedItem(selected: Any, modifiers: Int, searchText: String): Boolean {
+        // Optionally handle selection
+        return true
+    }
 
     override fun getElementPriority(element: Any, pattern: String): Int = 0
 

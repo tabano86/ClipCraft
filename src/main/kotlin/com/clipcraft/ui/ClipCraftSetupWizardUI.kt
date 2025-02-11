@@ -9,7 +9,7 @@ import javax.swing.JPanel
 class ClipCraftSetupWizardUI {
 
     private val mainPanel = JBPanel<JBPanel<*>>().apply {
-        layout = null // For brevity, or use a proper LayoutManager
+        layout = null // For brevity; normally use a proper LayoutManager
     }
 
     private val includeMetadataCheck = JBCheckBox("Include metadata (file size, timestamp, etc.)", true)

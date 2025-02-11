@@ -11,6 +11,12 @@ object ClipCraftNotificationCenter {
         )
     }
 
+    fun warn(message: String) {
+        Notifications.Bus.notify(
+            Notification("ClipCraft", "ClipCraft Warning", message, NotificationType.WARNING)
+        )
+    }
+
     fun error(message: String) {
         Notifications.Bus.notify(
             Notification("ClipCraft", "ClipCraft Error", message, NotificationType.ERROR)

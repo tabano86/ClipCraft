@@ -13,7 +13,7 @@ class ClipCraftPerformanceMetrics(private val project: Project) {
 
     fun stopProcessingAndLog(taskName: String) {
         val elapsed = System.currentTimeMillis() - startTime
-        // In a real scenario, you might write to a log file or store metrics in an event system
+        // In a real scenario, log via Logger or store in a metrics system
         println("[$taskName] Elapsed: ${elapsed}ms")
     }
 }

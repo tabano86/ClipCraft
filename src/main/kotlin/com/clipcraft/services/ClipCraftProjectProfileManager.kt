@@ -1,23 +1,34 @@
 package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftProfile
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 
-class ClipCraftProfileManager {
-    private val settings = ClipCraftSettings.getInstance()
+/**
+ * Similar to ClipCraftProfileManager but at the project level if desired.
+ * By default, delegates to the global settings. You can store project-specific
+ * overrides if your design requires it.
+ */
+@Service(Service.Level.PROJECT)
+class ClipCraftProjectProfileManager(private val project: Project) {
 
-    fun currentProfile(): ClipCraftProfile = settings.getCurrentProfile()
-
-    fun switchProfile(profileName: String) {
-        settings.setCurrentProfile(profileName)
+    fun getProfile(name: String): ClipCraftProfile? {
+        return ClipCraftProfileManager().getProfile(name)
     }
 
-    fun listProfiles(): List<ClipCraftProfile> = settings.getAllProfiles()
-
-    fun addProfile(profile: ClipCraftProfile) {
-        settings.addProfile(profile)
+    fun addOrUpdateProfile(profile: ClipCraftProfile) {
+        ClipCraftProfileManager().addProfile(profile)
     }
 
-    fun deleteProfile(profileName: String) {
-        settings.removeProfile(profileName)
+    fun switchActiveProfile(name: String) {
+        ClipCraftProfileManager().switchProfile(name)
+    }
+
+    fun getProfiles(): List<ClipCraftProfile> {
+        return ClipCraftProfileManager().listProfiles()
+    }
+
+    fun getActiveProfile(): ClipCraftProfile {
+        return ClipCraftProfileManager().currentProfile()
     }
 }

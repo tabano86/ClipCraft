@@ -7,13 +7,12 @@ object ClipCraftGitIntegration {
 
     /**
      * Fills snippet's Git commit info using IntelliJ's built-in Git APIs, if available.
+     * This is a mock example that just sets stub values.
      */
     fun enrichSnippetWithGitInfo(project: Project, snippet: Snippet): Snippet {
-        // IntelliJ's Git APIs can retrieve commit hash, author, etc.
-        // This is a simplified example, actual usage requires using
-        // GitRepositoryManager or GitHistoryUtils, etc.
-
+        // Real usage: GitRepositoryManager, GitHistoryUtils, etc.
         val commitHash = "abc1234" // mock
-        return snippet.copy(gitCommitHash = commitHash, gitAuthor = "Jane Developer")
+        val authorName = "Jane Developer"
+        return snippet.copy(gitCommitHash = commitHash, gitAuthor = authorName)
     }
 }

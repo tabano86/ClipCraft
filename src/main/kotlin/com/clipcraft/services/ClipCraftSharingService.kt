@@ -22,9 +22,9 @@ class ClipCraftSharingService(private val project: Project) {
         // return response
 
         return """
-            [GPT MOCK RESPONSE] 
+            [GPT MOCK RESPONSE]
             Prompt: $promptTemplate
-            Code: ${snippet.content.take(100)}...
+            Code (first 100 chars): ${snippet.content.take(100)}...
         """.trimIndent()
     }
 }

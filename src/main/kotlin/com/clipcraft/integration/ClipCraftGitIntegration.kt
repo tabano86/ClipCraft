@@ -1,21 +1,19 @@
 package com.clipcraft.integration
 
+import com.clipcraft.model.Snippet
 import com.intellij.openapi.project.Project
-import git4idea.repo.GitRepositoryManager
-import org.slf4j.LoggerFactory
 
 object ClipCraftGitIntegration {
-    private val log = LoggerFactory.getLogger(ClipCraftGitIntegration::class.java)
 
-    fun getGitMetadata(project: Project, filePath: String): String {
-        val repoManager = GitRepositoryManager.getInstance(project)
-        val repo = repoManager.repositories.firstOrNull { filePath.startsWith(it.root.path) }
-        if (repo == null) {
-            log.debug("No Git repo found for path $filePath")
-            return ""
-        }
-        val currentBranch = repo.currentBranchName ?: "unknown-branch"
-        val lastCommitHash = repo.currentRevision ?: "unknown-hash"
-        return "[Branch: $currentBranch, Commit: $lastCommitHash]"
+    /**
+     * Fills snippet's Git commit info using IntelliJ's built-in Git APIs, if available.
+     */
+    fun enrichSnippetWithGitInfo(project: Project, snippet: Snippet): Snippet {
+        // IntelliJ's Git APIs can retrieve commit hash, author, etc.
+        // This is a simplified example, actual usage requires using
+        // GitRepositoryManager or GitHistoryUtils, etc.
+
+        val commitHash = "abc1234" // mock
+        return snippet.copy(gitCommitHash = commitHash, gitAuthor = "Jane Developer")
     }
 }

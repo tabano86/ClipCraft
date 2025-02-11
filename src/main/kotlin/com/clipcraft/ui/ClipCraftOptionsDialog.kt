@@ -3,8 +3,8 @@ package com.clipcraft.ui
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.OutputFormat
 import com.intellij.openapi.ui.DialogWrapper
-import org.slf4j.LoggerFactory
 import com.intellij.util.ui.FormBuilder
+import org.slf4j.LoggerFactory
 import javax.swing.*
 
 class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
@@ -12,6 +12,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     private val log = LoggerFactory.getLogger(ClipCraftOptionsDialog::class.java)
     private val mainPanel: JPanel
 
+    // Basic Options
     private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
     private val showPreviewCheckBox = JCheckBox("Show Preview", initialOptions.showPreview)
     private val exportToFileCheckBox = JCheckBox("Export to File", initialOptions.exportToFile)
@@ -22,18 +23,22 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     }
     private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
 
-    // Next-gen options
+    // Advanced Options
     private val ignoreFoldersField = JTextField(initialOptions.ignoreFolders.joinToString(", "), 30)
     private val ignoreFilesField = JTextField(initialOptions.ignoreFiles.joinToString(", "), 30)
     private val ignorePatternsField = JTextField(initialOptions.ignorePatterns.joinToString(", "), 30)
     private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
     private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimLineWhitespace)
 
+    // Next-gen Options
     private val chunkingCheckBox = JCheckBox("Enable GPT Chunking", initialOptions.enableChunkingForGPT)
     private val chunkSizeField = JTextField(initialOptions.maxChunkSize.toString(), 5)
-    private val directorySummaryCheckBox = JCheckBox("Include Directory Summary", initialOptions.includeDirectorySummary)
-    private val collapseBlankLinesCheckBox = JCheckBox("Collapse Consecutive Blank Lines", initialOptions.collapseBlankLines)
-    private val removeLeadingBlankCheckBox = JCheckBox("Remove Leading Blank Lines", initialOptions.removeLeadingBlankLines)
+    private val directorySummaryCheckBox =
+        JCheckBox("Include Directory Summary", initialOptions.includeDirectorySummary)
+    private val collapseBlankLinesCheckBox =
+        JCheckBox("Collapse Consecutive Blank Lines", initialOptions.collapseBlankLines)
+    private val removeLeadingBlankCheckBox =
+        JCheckBox("Remove Leading Blank Lines", initialOptions.removeLeadingBlankLines)
     private val singleLineCheckBox = JCheckBox("Single Line Output", initialOptions.singleLineOutput)
 
     init {
@@ -46,7 +51,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             .addLabeledComponent(JLabel("Include Metadata:"), includeMetadataCheckBox)
             .addLabeledComponent(JLabel("Output Format:"), outputFormatComboBox)
             .addLabeledComponent(JLabel("Remove Imports:"), removeImportsCheckBox)
-            .panel.apply { border = BorderFactory.createTitledBorder("Basic Options") }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Basic Options") }
 
         val advancedPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JLabel("Ignore Folders:"), ignoreFoldersField)
@@ -54,7 +59,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             .addLabeledComponent(JLabel("Ignore Patterns:"), ignorePatternsField)
             .addLabeledComponent(JLabel("Remove Comments:"), removeCommentsCheckBox)
             .addLabeledComponent(JLabel("Trim Whitespace:"), trimLineWhitespaceCheckBox)
-            .panel.apply { border = BorderFactory.createTitledBorder("Advanced Options") }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Advanced Options") }
 
         val nextGenPanel = FormBuilder.createFormBuilder()
             .addComponent(JLabel("Next-Gen Settings:"))
@@ -64,7 +69,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             .addComponent(collapseBlankLinesCheckBox)
             .addComponent(removeLeadingBlankCheckBox)
             .addComponent(singleLineCheckBox)
-            .panel.apply { border = BorderFactory.createTitledBorder("Next-Gen Features") }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Next-Gen Features") }
 
         mainPanel = FormBuilder.createFormBuilder()
             .addComponent(basicPanel)
@@ -104,6 +109,6 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
         )
     }
 
-    private fun parseCommaList(input: String): List<String> =
-        input.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    private fun parseCommaList(input: String): MutableList<String> =
+        input.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toMutableList()
 }

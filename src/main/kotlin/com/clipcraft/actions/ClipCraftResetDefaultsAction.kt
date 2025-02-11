@@ -1,25 +1,21 @@
 package com.clipcraft.actions
 
 import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.services.ClipCraftSettings
+import com.clipcraft.model.ClipCraftProfile
+import com.clipcraft.services.ClipCraftNotificationCenter
+import com.clipcraft.services.ClipCraftProjectProfileManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.slf4j.LoggerFactory
 
 class ClipCraftResetDefaultsAction : AnAction() {
-
-    private val log = LoggerFactory.getLogger(ClipCraftResetDefaultsAction::class.java)
-
     override fun actionPerformed(e: AnActionEvent) {
-        val settings = ClipCraftSettings.getInstance()
-        val currentProfileName = settings.state.activeProfileName
-        val updatedProfiles = HashMap(settings.state.profiles)
-        updatedProfiles[currentProfileName] = ClipCraftOptions()
-        val newState = ClipCraftSettings.State().apply {
-            activeProfileName = currentProfileName
-            profiles = updatedProfiles
-        }
-        settings.loadState(newState)
-        log.info("Reset defaults on profile $currentProfileName")
+        val project = e.project ?: return
+        val profileManager = project.getService(ClipCraftProjectProfileManager::class.java)
+        val defaultProfile = ClipCraftProfile("Default", ClipCraftOptions())
+
+        profileManager?.addOrUpdateProfile(defaultProfile)
+        profileManager?.switchActiveProfile("Default")
+
+        ClipCraftNotificationCenter.info("ClipCraft settings reset to defaults.")
     }
 }

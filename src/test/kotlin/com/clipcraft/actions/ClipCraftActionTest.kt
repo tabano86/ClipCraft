@@ -3,8 +3,8 @@ package com.clipcraft.actions
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileSystem
 import com.intellij.openapi.vfs.VirtualFileListener
+import com.intellij.openapi.vfs.VirtualFileSystem
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.TestInstance
@@ -250,6 +250,7 @@ open class FakeVirtualFile(
     override fun getChildren(): Array<VirtualFile> = if (isDir) childFiles else arrayOf()
     override fun getOutputStream(requestor: Any?, newModificationStamp: Long, newTimeStamp: Long): OutputStream =
         throw UnsupportedOperationException("Not supported in FakeVirtualFile")
+
     override fun contentsToByteArray(): ByteArray = fileContent.toByteArray(Charsets.UTF_8)
     override fun getTimeStamp(): Long = 0L
     override fun getLength(): Long = simulatedLength ?: fileContent.toByteArray(Charsets.UTF_8).size.toLong()
@@ -286,18 +287,23 @@ object FakeVirtualFileSystem : VirtualFileSystem() {
     override fun deleteFile(requestor: Any?, vFile: VirtualFile) {
         throw UnsupportedOperationException("Not yet implemented")
     }
+
     override fun moveFile(requestor: Any?, vFile: VirtualFile, newParent: VirtualFile) {
         throw UnsupportedOperationException("Not yet implemented")
     }
+
     override fun renameFile(requestor: Any?, vFile: VirtualFile, newName: String) {
         throw UnsupportedOperationException("Not yet implemented")
     }
+
     override fun createChildFile(requestor: Any?, vDir: VirtualFile, fileName: String): VirtualFile {
         throw UnsupportedOperationException("Not yet implemented")
     }
+
     override fun createChildDirectory(requestor: Any?, vDir: VirtualFile, dirName: String): VirtualFile {
         throw UnsupportedOperationException("Not yet implemented")
     }
+
     override fun copyFile(
         requestor: Any?,
         virtualFile: VirtualFile,
@@ -306,5 +312,6 @@ object FakeVirtualFileSystem : VirtualFileSystem() {
     ): VirtualFile {
         throw UnsupportedOperationException("Not yet implemented")
     }
+
     override fun isReadOnly(): Boolean = true
 }

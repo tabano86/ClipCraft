@@ -1,19 +1,27 @@
 package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftOptions
-import com.intellij.openapi.application.ApplicationManager
+import com.clipcraft.model.ClipCraftProfile
 import com.intellij.openapi.components.*
+import com.intellij.openapi.diagnostic.Logger
 
-@State(name = "ClipCraftSettings", storages = [Storage("ClipCraftSettings.xml")])
+@State(name = "ClipCraftSettings", storages = [Storage("clipcraft.xml")])
 @Service(Service.Level.APP)
 class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
 
-    data class State(
-        var activeProfileName: String = "Default",
-        var profiles: MutableMap<String, ClipCraftOptions> = mutableMapOf("Default" to ClipCraftOptions())
-    )
+    companion object {
+        fun getInstance(): ClipCraftSettings = service()
+        private val logger = Logger.getInstance(ClipCraftSettings::class.java)
+    }
 
-    private var myState: State = State()
+    class State {
+        var currentProfileName: String = "Default"
+        var allProfiles: MutableList<ClipCraftProfile> = mutableListOf(
+            ClipCraftProfile("Default", ClipCraftOptions())
+        )
+    }
+
+    private var myState = State()
 
     override fun getState(): State = myState
 
@@ -21,28 +29,22 @@ class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
         myState = state
     }
 
-    fun getActiveOptions(): ClipCraftOptions =
-        myState.profiles[myState.activeProfileName] ?: ClipCraftOptions()
-
-    fun saveProfile(name: String, options: ClipCraftOptions) {
-        myState.profiles[name] = options
+    fun getCurrentProfile(): ClipCraftProfile {
+        return myState.allProfiles.find { it.profileName == myState.currentProfileName }
+            ?: myState.allProfiles.first()
     }
 
-    fun deleteProfile(name: String) {
-        if (name == myState.activeProfileName) return
-        myState.profiles.remove(name)
+    fun setCurrentProfile(name: String) {
+        myState.currentProfileName = name
     }
 
-    fun setActiveProfile(name: String) {
-        if (myState.profiles.containsKey(name)) {
-            myState.activeProfileName = name
-        }
+    fun getAllProfiles(): List<ClipCraftProfile> = myState.allProfiles
+
+    fun addProfile(profile: ClipCraftProfile) {
+        myState.allProfiles.add(profile)
     }
 
-    fun listProfileNames(): List<String> = myState.profiles.keys.toList()
-
-    companion object {
-        fun getInstance(): ClipCraftSettings =
-            ApplicationManager.getApplication().getService(ClipCraftSettings::class.java)
+    fun removeProfile(name: String) {
+        myState.allProfiles.removeIf { it.profileName == name }
     }
 }

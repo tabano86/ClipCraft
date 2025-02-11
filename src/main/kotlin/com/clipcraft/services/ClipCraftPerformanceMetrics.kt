@@ -1,15 +1,19 @@
 package com.clipcraft.services
 
-import org.slf4j.LoggerFactory
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 
-object ClipCraftPerformanceMetrics {
-    private val log = LoggerFactory.getLogger(ClipCraftPerformanceMetrics::class.java)
+@Service(Service.Level.PROJECT)
+class ClipCraftPerformanceMetrics(private val project: Project) {
+    private var startTime: Long = 0
 
-    fun <T> measure(label: String, block: () -> T): T {
-        val startNs = System.nanoTime()
-        val result = block()
-        val durationMs = (System.nanoTime() - startNs) / 1_000_000
-        log.info("Performance [$label]: ${durationMs} ms")
-        return result
+    fun startProcessing() {
+        startTime = System.currentTimeMillis()
+    }
+
+    fun stopProcessingAndLog(taskName: String) {
+        val elapsed = System.currentTimeMillis() - startTime
+        // In a real scenario, you might write to a log file or store metrics in an event system
+        println("[$taskName] Elapsed: ${elapsed}ms")
     }
 }

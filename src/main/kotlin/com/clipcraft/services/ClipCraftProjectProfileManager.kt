@@ -1,23 +1,23 @@
 package com.clipcraft.services
 
-import com.clipcraft.model.ClipCraftOptions
-import com.intellij.openapi.components.*
-import com.intellij.openapi.project.Project
+import com.clipcraft.model.ClipCraftProfile
 
-@State(name = "ClipCraftProjectSettings", storages = [Storage(StoragePathMacros.WORKSPACE_FILE)])
-class ClipCraftProjectProfileManager(private val project: Project) : PersistentStateComponent<ClipCraftOptions> {
+class ClipCraftProfileManager {
+    private val settings = ClipCraftSettings.getInstance()
 
-    private var projectOptions = ClipCraftOptions()
+    fun currentProfile(): ClipCraftProfile = settings.getCurrentProfile()
 
-    override fun getState(): ClipCraftOptions = projectOptions
-
-    override fun loadState(state: ClipCraftOptions) {
-        projectOptions = state
+    fun switchProfile(profileName: String) {
+        settings.setCurrentProfile(profileName)
     }
 
-    companion object {
-        fun getInstance(project: Project): ClipCraftProjectProfileManager {
-            return project.getService(ClipCraftProjectProfileManager::class.java)
-        }
+    fun listProfiles(): List<ClipCraftProfile> = settings.getAllProfiles()
+
+    fun addProfile(profile: ClipCraftProfile) {
+        settings.addProfile(profile)
+    }
+
+    fun deleteProfile(profileName: String) {
+        settings.removeProfile(profileName)
     }
 }

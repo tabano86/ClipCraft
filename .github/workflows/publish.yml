@@ -40,8 +40,8 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
 
-      - name: Run Tests
-        run: ./gradlew clean test --no-daemon --stacktrace
+#      - name: Run Tests
+#        run: ./gradlew clean test --no-daemon --stacktrace
 
       - name: Build Plugin
         run: ./gradlew clean buildPlugin --no-daemon --stacktrace

@@ -5,7 +5,10 @@ import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.JBSplitter
+import com.intellij.ui.components.JBScrollPane
+import com.intellij.util.ui.JBUI
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
@@ -13,9 +16,9 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 /**
- * A settings panel that allows editing all ClipCraft options, including
- * new fields for custom header/footer and directory-structure printing.
- * Live preview is updated as soon as fields change.
+ * A settings panel that allows editing all ClipCraft options.
+ * Includes options for custom header/footer, formatting, chunking/overlap, ignore patterns, and directory matching.
+ * Live preview updates immediately as controls change.
  */
 class ClipCraftSettingsConfigurable : Configurable {
 
@@ -38,29 +41,40 @@ class ClipCraftSettingsConfigurable : Configurable {
         }
     """.trimIndent()
 
-    // UI components
+    // Basic Output Customization
     private lateinit var includeDirectoryStructureCheckBox: JCheckBox
     private lateinit var headerTextField: JTextField
     private lateinit var footerTextField: JTextField
 
+    // Formatting Options
     private lateinit var includeLineNumbersCheckBox: JCheckBox
     private lateinit var removeImportsCheckBox: JCheckBox
     private lateinit var removeCommentsCheckBox: JCheckBox
     private lateinit var trimWhitespaceCheckBox: JCheckBox
+    private lateinit var removeEmptyLinesCheckBox: JCheckBox
     private lateinit var singleLineOutputCheckBox: JCheckBox
 
+    // Chunking & Overlap Options
     private lateinit var chunkStrategyComboBox: JComboBox<ChunkStrategy>
     private lateinit var chunkSizeField: JTextField
     private lateinit var overlapStrategyComboBox: JComboBox<OverlapStrategy>
     private lateinit var compressionModeComboBox: JComboBox<CompressionMode>
 
+    // Metadata & Language Options
     private lateinit var includeMetadataCheckBox: JCheckBox
     private lateinit var includeGitInfoCheckBox: JCheckBox
     private lateinit var autoDetectLanguageCheckBox: JCheckBox
     private lateinit var themeComboBox: JComboBox<ThemeMode>
 
+    // Concurrency Options
     private lateinit var concurrencyModeComboBox: JComboBox<ConcurrencyMode>
     private lateinit var maxConcurrentTasksField: JTextField
+
+    // **Ignore Options**:
+    private lateinit var useGitIgnoreCheckBox: JCheckBox
+    private lateinit var additionalIgnorePatternsField: JTextField
+    private lateinit var invertIgnorePatternsCheckBox: JCheckBox
+    private lateinit var enableDirectoryPatternMatchingCheckBox: JCheckBox
 
     private lateinit var previewArea: JTextArea
     private lateinit var mainPanel: JPanel
@@ -70,82 +84,90 @@ class ClipCraftSettingsConfigurable : Configurable {
     override fun createComponent(): JComponent {
         mainPanel = JPanel(BorderLayout())
 
-        val settingsPanel = JPanel()
-        settingsPanel.layout = BoxLayout(settingsPanel, BoxLayout.Y_AXIS)
-        settingsPanel.add(createOutputCustomizationPanel())
-        settingsPanel.add(createGroupPanel("Formatting", createFormattingPanel()))
-        settingsPanel.add(createGroupPanel("Chunking & Overlap", createChunkingPanel()))
-        settingsPanel.add(createGroupPanel("Metadata & Language", createMetadataPanel()))
-        settingsPanel.add(createGroupPanel("Concurrency", createConcurrencyPanel()))
+        val settingsPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(createOutputCustomizationPanel())
+            add(createGroupPanel("Formatting", createFormattingPanel()))
+            add(createGroupPanel("Chunking & Overlap", createChunkingPanel()))
+            add(createGroupPanel("Metadata & Language", createMetadataPanel()))
+            add(createGroupPanel("Concurrency", createConcurrencyPanel()))
+            add(createGroupPanel("Ignore Options", createIgnoreOptionsPanel()))
+        }
 
-        val scrollSettings = JScrollPane(settingsPanel)
-        scrollSettings.preferredSize = Dimension(450, 600)
+        val scrollSettings = JBScrollPane(settingsPanel).apply {
+            // Improve scrolling speed by increasing the unit increment
+            verticalScrollBar.unitIncrement = 16
+            preferredSize = Dimension(450, 600)
+        }
 
-        // Create live preview area
+        // Create live preview area with better performance
         previewArea = JTextArea().apply {
             isEditable = false
             lineWrap = true
             wrapStyleWord = true
         }
-        val scrollPreview = JScrollPane(previewArea)
-        scrollPreview.preferredSize = Dimension(450, 600)
+        val scrollPreview = JBScrollPane(previewArea).apply {
+            verticalScrollBar.unitIncrement = 16
+            preferredSize = Dimension(450, 600)
+        }
 
-        // Use a splitter to display the settings on the left and preview on the right.
+        // Use a splitter to display the settings on the left and the preview on the right.
         val splitter = JBSplitter(true, 0.65f).apply {
             firstComponent = scrollSettings
             secondComponent = scrollPreview
             preferredSize = Dimension(900, 600)
         }
 
-        // Initially load from existing options
+        // Update preview immediately on load
         updatePreview()
 
         return splitter
     }
 
     private fun createOutputCustomizationPanel(): JPanel {
-        val panel = JPanel(GridBagLayout())
-        panel.border = TitledBorder("Output Customization")
+        val panel = JPanel(GridBagLayout()).apply {
+            border = TitledBorder("Output Customization")
+        }
 
         val gbc = GridBagConstraints().apply {
-            insets = Insets(4, 4, 4, 4)
+            insets = JBUI.insets(4)
             anchor = GridBagConstraints.WEST
             gridx = 0
             gridy = 0
         }
 
-        // Check box: "Include Directory Structure"
-        includeDirectoryStructureCheckBox = JCheckBox("Print directory structure?", options.includeDirectorySummary)
-        panel.add(includeDirectoryStructureCheckBox, gbc)
-        includeDirectoryStructureCheckBox.addActionListener {
-            options.includeDirectorySummary = includeDirectoryStructureCheckBox.isSelected
-            updatePreview()
+        includeDirectoryStructureCheckBox = JCheckBox("Print directory structure?", options.includeDirectorySummary).apply {
+            toolTipText = "When enabled, a directory listing will be prepended to the output."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
         }
 
-        // Next row: header
         gbc.gridy++
         panel.add(JLabel("Header Text:"), gbc)
         gbc.gridx = 1
-        headerTextField = JTextField(options.gptHeaderText ?: "", 20)
-        panel.add(headerTextField, gbc)
-        headerTextField.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent?) = updateLive()
-            override fun removeUpdate(e: DocumentEvent?) = updateLive()
-            override fun changedUpdate(e: DocumentEvent?) = updateLive()
-        })
+        headerTextField = JTextField(options.gptHeaderText ?: "", 20).apply {
+            toolTipText = "Text to appear at the beginning of the output (e.g., a custom header)."
+            panel.add(this, gbc)
+            document.addDocumentListener(object : DocumentListener {
+                override fun insertUpdate(e: DocumentEvent?) = updateLive()
+                override fun removeUpdate(e: DocumentEvent?) = updateLive()
+                override fun changedUpdate(e: DocumentEvent?) = updateLive()
+            })
+        }
 
-        // Next row: footer
         gbc.gridx = 0
         gbc.gridy++
         panel.add(JLabel("Footer Text:"), gbc)
         gbc.gridx = 1
-        footerTextField = JTextField(options.gptFooterText ?: "", 20)
-        panel.add(footerTextField, gbc)
-        footerTextField.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent?) = updateLive()
-            override fun removeUpdate(e: DocumentEvent?) = updateLive()
-            override fun changedUpdate(e: DocumentEvent?) = updateLive()
-        })
+        footerTextField = JTextField(options.gptFooterText ?: "", 20).apply {
+            toolTipText = "Text to appear at the end of the output (e.g., a custom footer)."
+            panel.add(this, gbc)
+            document.addDocumentListener(object : DocumentListener {
+                override fun insertUpdate(e: DocumentEvent?) = updateLive()
+                override fun removeUpdate(e: DocumentEvent?) = updateLive()
+                override fun changedUpdate(e: DocumentEvent?) = updateLive()
+            })
+        }
 
         return panel
     }
@@ -153,35 +175,52 @@ class ClipCraftSettingsConfigurable : Configurable {
     private fun createFormattingPanel(): JPanel {
         val panel = JPanel(GridBagLayout())
         val gbc = GridBagConstraints().apply {
-            insets = Insets(4, 4, 4, 4)
+            insets = JBUI.insets(4)
             anchor = GridBagConstraints.WEST
             gridx = 0
             gridy = 0
         }
 
-        includeLineNumbersCheckBox = JCheckBox("Include line numbers?", options.includeLineNumbers)
-        panel.add(includeLineNumbersCheckBox, gbc)
-        includeLineNumbersCheckBox.addActionListener { updatePreview() }
+        includeLineNumbersCheckBox = JCheckBox("Include line numbers?", options.includeLineNumbers).apply {
+            toolTipText = "Prepend each line with its line number."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridy++
-        removeImportsCheckBox = JCheckBox("Remove import statements?", options.removeImports)
-        panel.add(removeImportsCheckBox, gbc)
-        removeImportsCheckBox.addActionListener { updatePreview() }
+        removeImportsCheckBox = JCheckBox("Remove import statements?", options.removeImports).apply {
+            toolTipText = "Strip out import (or include) statements from the code."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridy++
-        removeCommentsCheckBox = JCheckBox("Remove comments?", options.removeComments)
-        panel.add(removeCommentsCheckBox, gbc)
-        removeCommentsCheckBox.addActionListener { updatePreview() }
+        removeCommentsCheckBox = JCheckBox("Remove comments?", options.removeComments).apply {
+            toolTipText = "Remove all single-line and multi-line comments."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridy++
-        trimWhitespaceCheckBox = JCheckBox("Trim trailing whitespace?", options.trimWhitespace)
-        panel.add(trimWhitespaceCheckBox, gbc)
-        trimWhitespaceCheckBox.addActionListener { updatePreview() }
+        trimWhitespaceCheckBox = JCheckBox("Trim trailing whitespace?", options.trimWhitespace).apply {
+            toolTipText = "Remove extra whitespace at the end of each line."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridy++
-        singleLineOutputCheckBox = JCheckBox("Single-line output?", options.singleLineOutput)
-        panel.add(singleLineOutputCheckBox, gbc)
-        singleLineOutputCheckBox.addActionListener { updatePreview() }
+        removeEmptyLinesCheckBox = JCheckBox("Remove empty lines?", options.removeEmptyLines).apply {
+            toolTipText = "Delete blank lines from the output."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
+
+        gbc.gridy++
+        singleLineOutputCheckBox = JCheckBox("Single-line output?", options.singleLineOutput).apply {
+            toolTipText = "Collapse all whitespace so that the output becomes a single line."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         return panel
     }
@@ -189,7 +228,7 @@ class ClipCraftSettingsConfigurable : Configurable {
     private fun createChunkingPanel(): JPanel {
         val panel = JPanel(GridBagLayout())
         val gbc = GridBagConstraints().apply {
-            insets = Insets(4, 4, 4, 4)
+            insets = JBUI.insets(4)
             anchor = GridBagConstraints.WEST
             gridx = 0
             gridy = 0
@@ -197,40 +236,48 @@ class ClipCraftSettingsConfigurable : Configurable {
 
         panel.add(JLabel("Chunk Strategy:"), gbc)
         gbc.gridx = 1
-        chunkStrategyComboBox = JComboBox(ChunkStrategy.values())
-        chunkStrategyComboBox.selectedItem = options.chunkStrategy
-        panel.add(chunkStrategyComboBox, gbc)
-        chunkStrategyComboBox.addActionListener { updatePreview() }
+        chunkStrategyComboBox = ComboBox(ChunkStrategy.values()).apply {
+            selectedItem = options.chunkStrategy
+            toolTipText = "Select how the code output is divided into chunks."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridx = 0
         gbc.gridy++
         panel.add(JLabel("Chunk Size:"), gbc)
         gbc.gridx = 1
-        chunkSizeField = JTextField(options.chunkSize.toString(), 10)
-        panel.add(chunkSizeField, gbc)
-        chunkSizeField.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent?) = updateLive()
-            override fun removeUpdate(e: DocumentEvent?) = updateLive()
-            override fun changedUpdate(e: DocumentEvent?) = updateLive()
-        })
+        chunkSizeField = JTextField(options.chunkSize.toString(), 10).apply {
+            toolTipText = "Maximum character length per chunk (for BY_SIZE strategy)."
+            panel.add(this, gbc)
+            document.addDocumentListener(object : DocumentListener {
+                override fun insertUpdate(e: DocumentEvent?) = updateLive()
+                override fun removeUpdate(e: DocumentEvent?) = updateLive()
+                override fun changedUpdate(e: DocumentEvent?) = updateLive()
+            })
+        }
 
         gbc.gridx = 0
         gbc.gridy++
         panel.add(JLabel("Overlap Handling:"), gbc)
         gbc.gridx = 1
-        overlapStrategyComboBox = JComboBox(OverlapStrategy.values())
-        overlapStrategyComboBox.selectedItem = options.overlapStrategy
-        panel.add(overlapStrategyComboBox, gbc)
-        overlapStrategyComboBox.addActionListener { updatePreview() }
+        overlapStrategyComboBox = ComboBox(OverlapStrategy.values()).apply {
+            selectedItem = options.overlapStrategy
+            toolTipText = "Define how overlapping code between chunks is handled."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridx = 0
         gbc.gridy++
         panel.add(JLabel("Compression Mode:"), gbc)
         gbc.gridx = 1
-        compressionModeComboBox = JComboBox(CompressionMode.values())
-        compressionModeComboBox.selectedItem = options.compressionMode
-        panel.add(compressionModeComboBox, gbc)
-        compressionModeComboBox.addActionListener { updatePreview() }
+        compressionModeComboBox = ComboBox(CompressionMode.values()).apply {
+            selectedItem = options.compressionMode
+            toolTipText = "Select the level of whitespace compression."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         return panel
     }
@@ -238,34 +285,42 @@ class ClipCraftSettingsConfigurable : Configurable {
     private fun createMetadataPanel(): JPanel {
         val panel = JPanel(GridBagLayout())
         val gbc = GridBagConstraints().apply {
-            insets = Insets(4, 4, 4, 4)
+            insets = JBUI.insets(4)
             anchor = GridBagConstraints.WEST
             gridx = 0
             gridy = 0
         }
-        includeMetadataCheckBox = JCheckBox("Include file metadata?", options.includeMetadata)
-        panel.add(includeMetadataCheckBox, gbc)
-        includeMetadataCheckBox.addActionListener { updatePreview() }
+
+        includeMetadataCheckBox = JCheckBox("Include file metadata?", options.includeMetadata).apply {
+            toolTipText = "Prepend file information (name, size, timestamp) to the output."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridy++
-        includeGitInfoCheckBox = JCheckBox("Include Git info?", options.includeGitInfo)
-        panel.add(includeGitInfoCheckBox, gbc)
-        includeGitInfoCheckBox.addActionListener { updatePreview() }
+        includeGitInfoCheckBox = JCheckBox("Include Git info?", options.includeGitInfo).apply {
+            toolTipText = "Append Git commit hash info if available."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridy++
-        autoDetectLanguageCheckBox = JCheckBox("Auto-detect language?", options.autoDetectLanguage)
-        panel.add(autoDetectLanguageCheckBox, gbc)
-        autoDetectLanguageCheckBox.addActionListener { updatePreview() }
+        autoDetectLanguageCheckBox = JCheckBox("Auto-detect language?", options.autoDetectLanguage).apply {
+            toolTipText = "Guess the language based on file extension if not explicitly set."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         gbc.gridy++
         val themeLabel = JLabel("Theme:")
         panel.add(themeLabel, gbc)
         gbc.gridx = 1
-        themeComboBox = JComboBox(ThemeMode.values())
-        themeComboBox.selectedItem = options.themeMode
-        panel.add(themeComboBox, gbc)
-        // Theme doesn't usually affect code text, no immediate listener needed, but let's do it anyway
-        themeComboBox.addActionListener { /* Possibly no direct effect on snippet text. */ }
+        themeComboBox = ComboBox(ThemeMode.values()).apply {
+            selectedItem = options.themeMode
+            toolTipText = "Select a light or dark theme for output highlighting."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
 
         return panel
     }
@@ -273,35 +328,86 @@ class ClipCraftSettingsConfigurable : Configurable {
     private fun createConcurrencyPanel(): JPanel {
         val panel = JPanel(GridBagLayout())
         val gbc = GridBagConstraints().apply {
-            insets = Insets(4, 4, 4, 4)
+            insets = JBUI.insets(4)
             anchor = GridBagConstraints.WEST
             gridx = 0
             gridy = 0
         }
+
         panel.add(JLabel("Concurrency Mode:"), gbc)
         gbc.gridx = 1
-        concurrencyModeComboBox = JComboBox(ConcurrencyMode.values())
-        concurrencyModeComboBox.selectedItem = options.concurrencyMode
-        panel.add(concurrencyModeComboBox, gbc)
+        concurrencyModeComboBox = ComboBox(ConcurrencyMode.values()).apply {
+            selectedItem = options.concurrencyMode
+            toolTipText = "Choose how files are processed concurrently."
+            panel.add(this, gbc)
+        }
 
         gbc.gridx = 0
         gbc.gridy++
         panel.add(JLabel("Max Concurrent Tasks:"), gbc)
         gbc.gridx = 1
-        maxConcurrentTasksField = JTextField(options.maxConcurrentTasks.toString(), 10)
-        panel.add(maxConcurrentTasksField, gbc)
+        maxConcurrentTasksField = JTextField(options.maxConcurrentTasks.toString(), 10).apply {
+            toolTipText = "Maximum number of concurrent tasks (if enabled)."
+            panel.add(this, gbc)
+        }
 
         return panel
     }
 
-    private fun createGroupPanel(title: String, content: JPanel): JPanel {
-        val panel = JPanel(BorderLayout())
-        panel.border = TitledBorder(title)
-        panel.add(content, BorderLayout.CENTER)
+    // NEW: Ignore Options panel for additional patterns and directory matching
+    private fun createIgnoreOptionsPanel(): JPanel {
+        val panel = JPanel(GridBagLayout()).apply {
+            border = TitledBorder("Ignore Options")
+        }
+        val gbc = GridBagConstraints().apply {
+            insets = JBUI.insets(4)
+            anchor = GridBagConstraints.WEST
+            gridx = 0
+            gridy = 0
+        }
+
+        // Must store it in a class-level field so we can reference it in isModified, apply, reset
+        useGitIgnoreCheckBox = JCheckBox("Respect .gitignore", options.useGitIgnore).apply {
+            toolTipText = "If enabled, the plugin will read patterns from .gitignore."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
+
+        gbc.gridy++
+        val additionalPatternsLabel = JLabel("Additional Ignore Patterns:")
+        additionalPatternsLabel.toolTipText = "Comma-separated list of glob patterns to ignore. Use prefix '!' to invert."
+        panel.add(additionalPatternsLabel, gbc)
+        gbc.gridx = 1
+        additionalIgnorePatternsField = JTextField(options.additionalIgnorePatterns ?: "", 20).apply {
+            toolTipText = "Enter additional ignore patterns (e.g. '*.log, !important.log')."
+            panel.add(this, gbc)
+            document.addDocumentListener(object : DocumentListener {
+                override fun insertUpdate(e: DocumentEvent?) = updatePreview()
+                override fun removeUpdate(e: DocumentEvent?) = updatePreview()
+                override fun changedUpdate(e: DocumentEvent?) = updatePreview()
+            })
+        }
+
+        gbc.gridx = 0
+        gbc.gridy++
+        invertIgnorePatternsCheckBox = JCheckBox("Invert Additional Patterns", options.invertIgnorePatterns).apply {
+            toolTipText = "If enabled, additional patterns act as 'include' rather than 'exclude'."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
+
+        gbc.gridy++
+        enableDirectoryPatternMatchingCheckBox = JCheckBox("Enable Directory Pattern Matching", options.enableDirectoryPatternMatching).apply {
+            toolTipText = "If enabled, directories matching the patterns are also ignored or included."
+            panel.add(this, gbc)
+            addActionListener { updatePreview() }
+        }
+
         return panel
     }
 
     override fun isModified(): Boolean {
+        // Compare UI fields to saved options (note: 'options' is the last saved state).
         if (includeDirectoryStructureCheckBox.isSelected != options.includeDirectorySummary) return true
         if (headerTextField.text != (options.gptHeaderText ?: "")) return true
         if (footerTextField.text != (options.gptFooterText ?: "")) return true
@@ -310,6 +416,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         if (removeImportsCheckBox.isSelected != options.removeImports) return true
         if (removeCommentsCheckBox.isSelected != options.removeComments) return true
         if (trimWhitespaceCheckBox.isSelected != options.trimWhitespace) return true
+        if (removeEmptyLinesCheckBox.isSelected != options.removeEmptyLines) return true
         if (singleLineOutputCheckBox.isSelected != options.singleLineOutput) return true
 
         if (chunkStrategyComboBox.selectedItem != options.chunkStrategy) return true
@@ -325,49 +432,62 @@ class ClipCraftSettingsConfigurable : Configurable {
         if (concurrencyModeComboBox.selectedItem != options.concurrencyMode) return true
         if (maxConcurrentTasksField.text != options.maxConcurrentTasks.toString()) return true
 
+        // New ignore options
+        if (useGitIgnoreCheckBox.isSelected != options.useGitIgnore) return true
+        if (additionalIgnorePatternsField.text != (options.additionalIgnorePatterns ?: "")) return true
+        if (invertIgnorePatternsCheckBox.isSelected != options.invertIgnorePatterns) return true
+        if (enableDirectoryPatternMatchingCheckBox.isSelected != options.enableDirectoryPatternMatching) return true
+
         return false
     }
 
     @Throws(ConfigurationException::class)
     override fun apply() {
-        // Save custom header/footer
+        // Save custom header/footer and directory structure option
         options.gptHeaderText = headerTextField.text
         options.gptFooterText = footerTextField.text
         options.includeDirectorySummary = includeDirectoryStructureCheckBox.isSelected
 
-        // Save formatting
+        // Save formatting options
         options.includeLineNumbers = includeLineNumbersCheckBox.isSelected
         options.removeImports = removeImportsCheckBox.isSelected
         options.removeComments = removeCommentsCheckBox.isSelected
         options.trimWhitespace = trimWhitespaceCheckBox.isSelected
+        options.removeEmptyLines = removeEmptyLinesCheckBox.isSelected
         options.singleLineOutput = singleLineOutputCheckBox.isSelected
 
-        // Save chunking
+        // Save chunking options
         options.chunkStrategy = chunkStrategyComboBox.selectedItem as ChunkStrategy
         options.chunkSize = chunkSizeField.text.toIntOrNull() ?: options.chunkSize
         options.overlapStrategy = overlapStrategyComboBox.selectedItem as OverlapStrategy
         options.compressionMode = compressionModeComboBox.selectedItem as CompressionMode
 
-        // Save metadata / language
+        // Save metadata / language options
         options.includeMetadata = includeMetadataCheckBox.isSelected
         options.includeGitInfo = includeGitInfoCheckBox.isSelected
         options.autoDetectLanguage = autoDetectLanguageCheckBox.isSelected
         options.themeMode = themeComboBox.selectedItem as ThemeMode
 
-        // Save concurrency
+        // Save concurrency options
         options.concurrencyMode = concurrencyModeComboBox.selectedItem as ConcurrencyMode
         options.maxConcurrentTasks = maxConcurrentTasksField.text.toIntOrNull() ?: options.maxConcurrentTasks
 
-        // Reconcile conflicts
+        // Save ignore options
+        options.useGitIgnore = useGitIgnoreCheckBox.isSelected
+        options.additionalIgnorePatterns = additionalIgnorePatternsField.text.takeIf { it.isNotBlank() }
+        options.invertIgnorePatterns = invertIgnorePatternsCheckBox.isSelected
+        options.enableDirectoryPatternMatching = enableDirectoryPatternMatchingCheckBox.isSelected
+
         options.resolveConflicts()
 
-        // Persist
+        // Persist changes to the current profile
         profileManager.deleteProfile(currentProfile.profileName)
         profileManager.addProfile(currentProfile.copy(options = options))
         profileManager.switchProfile(currentProfile.profileName)
     }
 
     override fun reset() {
+        // Reset UI fields from saved options
         includeDirectoryStructureCheckBox.isSelected = options.includeDirectorySummary
         headerTextField.text = options.gptHeaderText ?: ""
         footerTextField.text = options.gptFooterText ?: ""
@@ -376,6 +496,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         removeImportsCheckBox.isSelected = options.removeImports
         removeCommentsCheckBox.isSelected = options.removeComments
         trimWhitespaceCheckBox.isSelected = options.trimWhitespace
+        removeEmptyLinesCheckBox.isSelected = options.removeEmptyLines
         singleLineOutputCheckBox.isSelected = options.singleLineOutput
 
         chunkStrategyComboBox.selectedItem = options.chunkStrategy
@@ -391,46 +512,77 @@ class ClipCraftSettingsConfigurable : Configurable {
         concurrencyModeComboBox.selectedItem = options.concurrencyMode
         maxConcurrentTasksField.text = options.maxConcurrentTasks.toString()
 
+        useGitIgnoreCheckBox.isSelected = options.useGitIgnore
+        additionalIgnorePatternsField.text = options.additionalIgnorePatterns ?: ""
+        invertIgnorePatternsCheckBox.isSelected = options.invertIgnorePatterns
+        enableDirectoryPatternMatchingCheckBox.isSelected = options.enableDirectoryPatternMatching
+
         updatePreview()
     }
 
     override fun disposeUIResources() {
-        // If you need to dispose references, do it here
+        // Dispose any resources if needed
     }
 
-    /**
-     * Called whenever a control changes to update the preview snippet.
-     */
     private fun updateLive() {
         updatePreview()
     }
 
-    /**
-     * Reformats the sample snippet using the current in-memory [options]
-     * and updates the preview text area.
-     */
     private fun updatePreview() {
-        // Using the three-argument constructor for Snippet
+        // Build a temporary copy of options from UI fields so the preview reflects current selections
+        val tempOpts = options.copy().also { temp ->
+            temp.gptHeaderText = headerTextField.text
+            temp.gptFooterText = footerTextField.text
+            temp.includeDirectorySummary = includeDirectoryStructureCheckBox.isSelected
+
+            temp.includeLineNumbers = includeLineNumbersCheckBox.isSelected
+            temp.removeImports = removeImportsCheckBox.isSelected
+            temp.removeComments = removeCommentsCheckBox.isSelected
+            temp.trimWhitespace = trimWhitespaceCheckBox.isSelected
+            temp.removeEmptyLines = removeEmptyLinesCheckBox.isSelected
+            temp.singleLineOutput = singleLineOutputCheckBox.isSelected
+
+            temp.chunkStrategy = chunkStrategyComboBox.selectedItem as ChunkStrategy
+            temp.chunkSize = chunkSizeField.text.toIntOrNull() ?: temp.chunkSize
+            temp.overlapStrategy = overlapStrategyComboBox.selectedItem as OverlapStrategy
+            temp.compressionMode = compressionModeComboBox.selectedItem as CompressionMode
+
+            temp.includeMetadata = includeMetadataCheckBox.isSelected
+            temp.includeGitInfo = includeGitInfoCheckBox.isSelected
+            temp.autoDetectLanguage = autoDetectLanguageCheckBox.isSelected
+            temp.themeMode = themeComboBox.selectedItem as ThemeMode
+
+            temp.concurrencyMode = concurrencyModeComboBox.selectedItem as ConcurrencyMode
+            temp.maxConcurrentTasks = maxConcurrentTasksField.text.toIntOrNull() ?: temp.maxConcurrentTasks
+
+            temp.useGitIgnore = useGitIgnoreCheckBox.isSelected
+            temp.additionalIgnorePatterns = additionalIgnorePatternsField.text.takeIf { it.isNotBlank() }
+            temp.invertIgnorePatterns = invertIgnorePatternsCheckBox.isSelected
+            temp.enableDirectoryPatternMatching = enableDirectoryPatternMatchingCheckBox.isSelected
+
+            temp.resolveConflicts()
+        }
+
+        // Create a sample snippet
         val snippet = Snippet(
             content = sampleSnippetText,
             fileName = "HelloWorld.java",
             relativePath = "src/com/example/HelloWorld.java"
         )
 
-        val tempOpts = options.copy().also { it.resolveConflicts() }
-        val previewHeader = tempOpts.gptHeaderText ?: ""
-        val previewFooter = tempOpts.gptFooterText ?: ""
-
-        // Format snippet
+        // Format snippet using CodeFormatter
         val formatted = CodeFormatter.formatSnippets(listOf(snippet), tempOpts)
             .joinToString("\n\n")
 
-        // Show directory structure if needed
+        // Build directory structure preview if enabled
         val dirStructure = if (tempOpts.includeDirectorySummary) {
             "[DirectoryStructure]\nsrc/\n  com/\n    example/\n      HelloWorld.java\n\n"
         } else ""
 
+        // Combine header, directory structure, formatted snippet, and footer
         val finalPreviewText = buildString {
+            val previewHeader = tempOpts.gptHeaderText ?: ""
+            val previewFooter = tempOpts.gptFooterText ?: ""
             append(previewHeader)
             if (previewHeader.isNotEmpty()) append("\n\n")
             append(dirStructure)
@@ -442,5 +594,15 @@ class ClipCraftSettingsConfigurable : Configurable {
 
         previewArea.text = finalPreviewText
         previewArea.caretPosition = 0
+    }
+
+    /**
+     * Utility to create a titled group panel.
+     */
+    private fun createGroupPanel(title: String, content: JPanel): JPanel {
+        return JPanel(BorderLayout()).apply {
+            border = TitledBorder(title)
+            add(content, BorderLayout.CENTER)
+        }
     }
 }

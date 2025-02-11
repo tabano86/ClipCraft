@@ -1,198 +1,290 @@
 package com.clipcraft.util
 
 import com.clipcraft.model.*
-import org.apache.commons.lang.StringEscapeUtils
+import matchesGlob
+import org.apache.commons.lang3.StringEscapeUtils
+import java.io.File
 import kotlin.math.min
 
 /**
- * A unified, advanced code formatter that applies user-defined cleanup,
+ * A unified, advanced code formatter that applies configurable cleanup,
  * chunking, compression, and metadata injection.
  */
 object CodeFormatter {
 
-    /**
-     * Formats multiple snippets into a list of output strings (chunks)
-     * according to the user’s [options]. This is the main entry point.
-     */
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
-        // Ensure internal consistency
         options.resolveConflicts()
 
-        val combinedContent = buildString {
-            snippets.forEach { snippet ->
-                append(formatSingleSnippet(snippet, options))
-                append("\n\n")
-            }
+        val combined = snippets.joinToString("\n\n") { snippet ->
+            formatSingleSnippet(snippet, options)
         }
 
+        val processed = combined.trim()
+
         return when (options.chunkStrategy) {
-            ChunkStrategy.NONE -> listOf(combinedContent)
-            ChunkStrategy.BY_SIZE -> chunkBySize(combinedContent, options.chunkSize)
-            ChunkStrategy.BY_METHODS -> chunkByMethods(combinedContent)
+            ChunkStrategy.NONE       -> listOf(processed)
+            ChunkStrategy.BY_SIZE    -> chunkBySize(processed, options.chunkSize, preserveWords = true)
+            ChunkStrategy.BY_METHODS -> chunkByMethods(processed)
         }
     }
 
-    /**
-     * Performs the full pipeline for a single snippet: remove imports, comments,
-     * apply compression, and wrap with metadata if needed.
-     */
     private fun formatSingleSnippet(snippet: Snippet, options: ClipCraftOptions): String {
-        // If autoDetectLanguage is on and snippet.language isn't set, guess from extension
-        if (options.autoDetectLanguage && snippet.language.isNullOrEmpty()) {
-            snippet.language = guessLanguageByExtension(snippet.fileName)
+        val language = if (options.autoDetectLanguage && snippet.language.isNullOrBlank()) {
+            guessLanguageByExtension(snippet.fileName) ?: "java"
+        } else {
+            snippet.language ?: "java"
         }
 
         var content = snippet.content
 
-        // Remove imports
-        if (options.removeImports) {
-            content = removeImports(content)
-        }
-        // Remove comments
-        if (options.removeComments) {
-            content = removeComments(content)
-        }
-        // Trim extra whitespace
+        if (options.removeImports) content = removeImports(content, language)
+        if (options.removeComments) content = removeComments(content, language)
         if (options.trimWhitespace) {
             content = trimWhitespace(content, options.collapseBlankLines, options.removeLeadingBlankLines)
         }
-        // Possibly transform to single line
-        if (options.singleLineOutput) {
-            content = content.replace(Regex("\\s+"), " ")
-        }
-        // Apply compression
-        content = applyCompression(content, options.compressionMode)
+        if (options.removeEmptyLines) content = collapseConsecutiveBlankLines(content)
+        if (options.singleLineOutput) content = singleLineOutput(content)
 
-        // Add line numbers if requested
-        if (options.includeLineNumbers) {
-            content = addLineNumbers(content)
-        }
+        content = applyCompression(content, options)
+        if (options.includeLineNumbers) content = addLineNumbers(content)
 
-        // If including metadata, prepend it
         val finalText = if (options.includeMetadata) {
-            buildString {
+            val metadata = buildString {
                 append("**File:** ${snippet.relativePath ?: snippet.fileName}")
                 append(" | **Size:** ${snippet.fileSizeBytes} bytes")
                 append(" | **Modified:** ${snippet.lastModified}")
-                if (options.includeGitInfo && !snippet.gitCommitHash.isNullOrEmpty()) {
+                if (options.includeGitInfo && !snippet.gitCommitHash.isNullOrBlank()) {
                     append(" | **GitCommit:** ${snippet.gitCommitHash}")
                 }
-                append("\n\n")
-                append(content)
             }
+            "$metadata\n\n$content"
         } else {
             content
         }
 
-        // Wrap in Markdown, HTML, or plain text
-        return wrapOutputForFormat(finalText, options.outputFormat, snippet.language)
+        return wrapOutputForFormat(finalText, options.outputFormat, language)
     }
 
-    /**
-     * Tries to guess language from a file extension in the simplest possible way.
-     */
     private fun guessLanguageByExtension(fileName: String): String? {
-        val extension = fileName.substringAfterLast('.', "").lowercase()
-        return when (extension) {
-            "java" -> "java"
-            "kt", "kts" -> "kotlin"
-            "js" -> "javascript"
-            "ts" -> "typescript"
-            "py" -> "python"
-            "cpp", "cxx", "cc" -> "cpp"
-            else -> null
+        return when (fileName.substringAfterLast('.', "").lowercase()) {
+            "java"            -> "java"
+            "kt", "kts"       -> "kotlin"
+            "js"              -> "javascript"
+            "ts"              -> "typescript"
+            "py"              -> "python"
+            "cpp", "cxx", "cc"-> "cpp"
+            else              -> null
         }
     }
 
-    private fun removeImports(text: String): String {
-        // Basic approach for Java-like languages
-        val importRegex = Regex("(?m)^(?:import\\s+.*|#include\\s+.*)$")
-        return text.replace(importRegex, "")
+    fun removeImports(text: String, language: String): String {
+        return when (language.lowercase()) {
+            "python" -> text.lineSequence()
+                .filterNot { it.trimStart().startsWith("import ") || it.trimStart().startsWith("from ") }
+                .joinToString("\n")
+            else -> text.lineSequence()
+                .filterNot { it.trimStart().startsWith("import ") || it.trimStart().startsWith("#include ") }
+                .joinToString("\n")
+        }
     }
 
-    private fun removeComments(text: String): String {
-        var result = text
-        // Single-line comments
-        result = result.replace(Regex("(?m)//.*$"), "")
-        // Multi-line comments
-        result = result.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
-        return result
+    fun removeComments(text: String, language: String): String {
+        return when (language.lowercase()) {
+            "python" -> text.lineSequence()
+                .filterNot { it.trimStart().startsWith("#") }
+                .joinToString("\n")
+
+            else -> {
+                // Remove block comments first
+                val withoutBlock = text.replace(Regex("(?s)/\\*.*?\\*/"), "")
+                // Remove line comments; skip any now-empty lines
+                val lines = withoutBlock.lineSequence()
+                    .map { line ->
+                        // remove //... comment text
+                        val noLineComment = line.replace(Regex("//.*$"), "")
+                        // trim trailing spaces
+                        noLineComment.trimEnd()
+                    }
+                    // discard lines if they’re now blank
+                    .filterNot { it.isBlank() }
+                    .toList()
+
+                lines.joinToString("\n")
+            }
+        }
     }
 
-    private fun trimWhitespace(
+
+    fun trimWhitespace(
         text: String,
         collapseBlankLines: Boolean,
         removeLeadingBlankLines: Boolean
     ): String {
-        // Trim trailing spaces from each line
-        var processed = text.lines().joinToString("\n") { it.trimEnd() }
-
-        // Remove consecutive blank lines
-        if (collapseBlankLines) {
-            processed = processed.replace(Regex("(\\n){2,}"), "\n\n")
+        val trimmedLines = text.lines().map { it.replace("\u200B", "").trim() }
+        val processedLines = if (removeLeadingBlankLines) {
+            trimmedLines.dropWhile { it.isEmpty() }
+        } else {
+            trimmedLines
         }
-        // Remove leading blank lines
-        if (removeLeadingBlankLines) {
-            processed = processed.replace(Regex("^\\s+"), "")
-        }
-        return processed
+        return if (collapseBlankLines)
+            collapseConsecutiveBlankLines(processedLines.joinToString("\n"))
+        else
+            processedLines.joinToString("\n")
     }
 
-    private fun applyCompression(text: String, mode: CompressionMode): String {
-        return when (mode) {
-            CompressionMode.NONE -> text
-            CompressionMode.MINIMAL -> text.replace(Regex("\\n{3,}"), "\n\n")
-            CompressionMode.ULTRA -> text.replace(Regex("\\s+"), " ")
+    fun collapseConsecutiveBlankLines(text: String): String {
+        return text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
+    }
+
+    fun singleLineOutput(text: String): String {
+        return text.replace(Regex("\\s+"), " ").trim()
+    }
+
+    fun applyCompression(input: String, options: ClipCraftOptions): String {
+        return when (options.compressionMode) {
+            CompressionMode.NONE -> input
+
+            CompressionMode.MINIMAL -> input.lineSequence().joinToString("\n") { line ->
+                line.replace("\u200B", " ")
+                    .replace(Regex("\\s+"), " ")
+            }
+
+            CompressionMode.ULTRA -> {
+                println("applyCompression(ULTRA) – selective=${options.selectiveCompression}")
+                input.lineSequence()
+                    .map { line ->
+                        // Also print raw line
+                        println("Raw line => '$line'")
+                        val sanitized = line.replace("\uFEFF", "")
+                            .replace("\u200B", "")
+                            .replace(Regex("\\p{C}+"), "")
+                            .trim()
+                        println("Sanitized => '$sanitized' (uppercase='${sanitized.uppercase()}')")
+                        sanitized
+                    }
+                    .filter { cleanLine ->
+                        val upper = cleanLine.uppercase()
+                        val toKeep = if (options.selectiveCompression) {
+                            !upper.contains("TODO") && !upper.contains("DEBUG") && cleanLine.isNotBlank()
+                        } else {
+                            cleanLine.isNotBlank()
+                        }
+                        println("Filter => '$cleanLine' => toKeep=$toKeep")
+                        toKeep
+                    }
+                    .joinToString(" ") { cleanLine ->
+                        cleanLine.replace(Regex("\\s+"), " ")
+                    }
+            }
+
+
         }
     }
 
-    private fun addLineNumbers(content: String): String {
-        val lines = content.lines()
-        val width = lines.size.toString().length
-        return lines.mapIndexed { index, line ->
-            val lineNum = (index + 1).toString().padStart(width, ' ')
-            "$lineNum: $line"
-        }.joinToString("\n")
+
+    fun addLineNumbers(text: String): String {
+        return text.lines().mapIndexed { index, line -> "${index + 1}: $line" }
+            .joinToString("\n")
     }
 
-    private fun wrapOutputForFormat(snippetText: String, format: OutputFormat, language: String?): String {
+    fun wrapOutputForFormat(snippetText: String, format: OutputFormat, language: String?): String {
         return when (format) {
             OutputFormat.MARKDOWN -> {
                 val lang = language ?: ""
                 "```$lang\n$snippetText\n```"
             }
             OutputFormat.HTML -> {
-                "<pre><code>${StringEscapeUtils.escapeHtml(snippetText)}</code></pre>"
+                val langClass = language?.let { " class=\"$it\"" } ?: ""
+                "<pre><code$langClass>${StringEscapeUtils.escapeHtml4(snippetText)}</code></pre>"
             }
-            else -> snippetText // PLAIN
+            OutputFormat.PLAIN -> snippetText
         }
     }
 
-    /**
-     * Splits large text into chunks based on the [maxChunkSize].
-     * This is the legacy approach if chunkStrategy == BY_SIZE.
-     */
-    private fun chunkBySize(text: String, maxChunkSize: Int): List<String> {
-        if (maxChunkSize <= 0 || text.length <= maxChunkSize) return listOf(text)
+    fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean = false): List<String> {
+        require(maxChunkSize > 0) { "maxChunkSize must be positive" }
+        if (text.length <= maxChunkSize) return listOf(text)
+        if (!preserveWords) {
+            val chunks = mutableListOf<String>()
+            var index = 0
+            while (index < text.length) {
+                val end = min(index + maxChunkSize, text.length)
+                chunks.add(text.substring(index, end))
+                index = end
+            }
+            return chunks
+        }
         val chunks = mutableListOf<String>()
-        var start = 0
-        while (start < text.length) {
-            val end = min(start + maxChunkSize, text.length)
-            chunks.add(text.substring(start, end))
-            start = end
+        var index = 0
+        while (index < text.length) {
+            var end = min(index + maxChunkSize, text.length)
+            if (end < text.length) {
+                val lastDelimiter = text.lastIndexOfAny(charArrayOf(' ', '\n', '\t'), end)
+                if (lastDelimiter > index) {
+                    end = lastDelimiter
+                }
+            }
+            chunks.add(text.substring(index, end))
+            index = end
+            while (index < text.length && text[index].isWhitespace()) index++
         }
         return chunks
     }
 
-    /**
-     * Splits text by a naive detection of methods or functions.
-     * This is an experimental approach if chunkStrategy == BY_METHODS.
-     */
-    private fun chunkByMethods(text: String): List<String> {
-        // Very naive example: split on "fun " or lines that start with e.g. "public " "private " "def "
-        // A real approach would parse AST or use a smarter regex.
+    fun chunkByMethods(text: String): List<String> {
         val pattern = Regex("(?m)(?=^\\s*(fun |public |private |def ))")
         val parts = text.split(pattern)
         return if (parts.size <= 1) listOf(text) else parts.filter { it.isNotBlank() }
+    }
+
+    fun filterFilesByGitIgnore(fileList: List<String>, gitIgnoreFile: File): List<String> {
+        if (!gitIgnoreFile.exists() || !gitIgnoreFile.isFile) return fileList
+
+        val patterns = gitIgnoreFile.readLines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("#") }
+
+        return fileList.filter { file ->
+            val normalized = file.replace('\\', '/')
+            patterns.none { pattern -> matchesGlob(pattern, normalized) }
+        }
+    }
+
+    fun processContent(input: String, options: ClipCraftOptions, language: String): String {
+        var result = input
+        if (options.removeImports) result = removeImports(result, language)
+        if (options.removeComments) result = removeComments(result, language)
+        if (options.trimWhitespace) {
+            result = trimWhitespace(
+                result,
+                options.collapseBlankLines,
+                options.removeLeadingBlankLines
+            )
+        }
+        return result.trim()
+    }
+
+    fun trimLineWhitespaceAdvanced(input: String): String {
+        return input.lines().joinToString("\n") { line ->
+            line.replace("\u200B", "").trimStart()
+        }
+    }
+
+    fun minimizeWhitespace(input: String): String {
+        return input.lines().joinToString("\n") { line ->
+            line.replace("\u200B", "").trim()
+        }.trimEnd()
+    }
+
+    fun formatBlock(code: String, language: String, format: OutputFormat): String {
+        return when (format) {
+            OutputFormat.MARKDOWN -> "```$language\n$code\n```"
+            OutputFormat.HTML -> "<pre><code class=\"$language\">${StringEscapeUtils.escapeHtml4(code)}</code></pre>"
+            OutputFormat.PLAIN -> code
+        }
+    }
+
+    fun removeLeadingBlankLines(input: String): String {
+        return input.lines().dropWhile { it.isBlank() }.joinToString("\n")
     }
 }

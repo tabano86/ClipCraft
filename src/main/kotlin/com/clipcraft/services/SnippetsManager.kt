@@ -6,10 +6,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import java.util.concurrent.CopyOnWriteArrayList
 
-/**
- * Example snippet manager at the project level. You can also unify this with
- * ClipCraftQueueService if you only need one snippet queue.
- */
 @Service(Service.Level.PROJECT)
 class SnippetsManager(val project: Project) : Disposable {
 

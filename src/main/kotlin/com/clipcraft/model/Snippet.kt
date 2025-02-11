@@ -14,15 +14,9 @@ data class Snippet(
     val lastModified: Long,
     val content: String,
 
-    // Added optional fields for language and Git commit hash
     var language: String? = null,
     var gitCommitHash: String? = null
 ) {
-
-    /**
-     * Two-argument constructor: content + fileName only.
-     * relativePath=null, fileSizeBytes=content.length, lastModified=System.currentTimeMillis()
-     */
     constructor(content: String, fileName: String) : this(
         id = UUID.randomUUID().toString(),
         filePath = fileName,
@@ -35,10 +29,6 @@ data class Snippet(
         gitCommitHash = null
     )
 
-    /**
-     * Three-argument constructor: content, fileName, relativePath.
-     * fileSizeBytes=content.length, lastModified=System.currentTimeMillis()
-     */
     constructor(content: String, fileName: String, relativePath: String) : this(
         id = UUID.randomUUID().toString(),
         filePath = fileName,

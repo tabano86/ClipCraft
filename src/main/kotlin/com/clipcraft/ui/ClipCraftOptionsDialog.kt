@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory
 import java.awt.BorderLayout
 import javax.swing.*
 
+/**
+ * A simple example of a dialog to edit ClipCraftOptions, not necessarily used in production.
+ */
 class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : DialogWrapper(true) {
 
     private val log = LoggerFactory.getLogger(ClipCraftOptionsDialog::class.java)
@@ -15,7 +18,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
 
     private val includeLineNumbersCheckBox = JCheckBox("Include Line Numbers", initialOptions.includeLineNumbers)
     private val autoDetectLanguageCheckBox = JCheckBox("Auto-Detect Language?", initialOptions.autoDetectLanguage)
-    private val showPreviewCheckBox = JCheckBox("Show Preview", false) // example UI
+    private val showPreviewCheckBox = JCheckBox("Show Preview", false)
     private val exportToFileCheckBox = JCheckBox("Export to File", false)
     private val exportFilePathField = JTextField("", 30)
     private val includeMetadataCheckBox = JCheckBox("Include File Metadata", initialOptions.includeMetadata)
@@ -25,21 +28,15 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
     private val removeImportsCheckBox = JCheckBox("Remove Import Statements", initialOptions.removeImports)
     private val removeCommentsCheckBox = JCheckBox("Remove Comments", initialOptions.removeComments)
     private val trimLineWhitespaceCheckBox = JCheckBox("Trim Trailing Whitespace", initialOptions.trimWhitespace)
-
-    // concurrency
     private val concurrencyModeComboBox = ComboBox(ConcurrencyMode.values()).apply {
         selectedItem = initialOptions.concurrencyMode
     }
     private val maxTasksField = JTextField(initialOptions.maxConcurrentTasks.toString(), 5)
-
-    // chunking
     private val singleLineOutputCheckBox = JCheckBox("Single-line Output", initialOptions.singleLineOutput)
     private val chunkStrategyComboBox = ComboBox(ChunkStrategy.values()).apply {
         selectedItem = initialOptions.chunkStrategy
     }
     private val chunkSizeField = JTextField(initialOptions.chunkSize.toString(), 5)
-
-    // overlap
     private val overlapStrategyComboBox = ComboBox(OverlapStrategy.values()).apply {
         selectedItem = initialOptions.overlapStrategy
     }
@@ -107,9 +104,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             overlapStrategy = overlapStrategyComboBox.selectedItem as OverlapStrategy
         )
 
-        // Resolve any overlaps or conflicting options
         updated.resolveConflicts()
-
         return updated
     }
 }

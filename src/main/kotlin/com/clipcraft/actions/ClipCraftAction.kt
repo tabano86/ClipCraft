@@ -1,8 +1,14 @@
 package com.clipcraft.actions
 
 import com.clipcraft.integration.ClipCraftGitIntegration
-import com.clipcraft.model.*
-import com.clipcraft.services.*
+import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.ConcurrencyMode
+import com.clipcraft.model.Snippet
+import com.clipcraft.model.SnippetGroup
+import com.clipcraft.services.ClipCraftNotificationCenter
+import com.clipcraft.services.ClipCraftPerformanceMetrics
+import com.clipcraft.services.ClipCraftProjectProfileManager
+import com.clipcraft.services.ClipCraftSettings
 import com.clipcraft.util.CodeFormatter
 import com.clipcraft.util.IgnoreUtil
 import com.intellij.openapi.actionSystem.AnAction
@@ -20,22 +26,27 @@ import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
+/**
+ * Main action that copies formatted code from selected files/directories to the clipboard.
+ */
 class ClipCraftAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val virtualFiles = e.getData(LangDataKeys.VIRTUAL_FILE_ARRAY) ?: return
 
-        // Try to get active profile from the project-level manager; fallback to global settings
+        // Obtain the active profile from the project-level manager or fallback to global.
         val profileManager = project.getService(ClipCraftProjectProfileManager::class.java)
         val activeProfile = profileManager?.getActiveProfile() ?: ClipCraftSettings.getInstance().getCurrentProfile()
         val options = activeProfile.options
 
+        // Ensure concurrency + chunking settings are up to date.
         options.resolveConflicts()
 
-        // Possibly parse .gitignore
+        // Optionally parse .gitignore if user has enabled it.
         IgnoreUtil.parseGitIgnoreIfEnabled(options, project.basePath ?: "")
 
+        // Depending on concurrency mode, run differently.
         when (options.concurrencyMode) {
             ConcurrencyMode.DISABLED -> runSequentially(project, virtualFiles.map { it.path }, options)
             ConcurrencyMode.THREAD_POOL -> runWithThreadPool(project, virtualFiles.map { it.path }, options)
@@ -59,50 +70,52 @@ class ClipCraftAction : AnAction() {
     }
 
     private fun runWithThreadPool(project: Project, paths: List<String>, options: ClipCraftOptions) {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Concurrent Processing", true) {
-            override fun run(indicator: ProgressIndicator) {
-                val metrics = project.getService(ClipCraftPerformanceMetrics::class.java)
-                metrics?.startProcessing()
+        ProgressManager.getInstance()
+            .run(object : Task.Backgroundable(project, "ClipCraft Concurrent Processing", true) {
+                override fun run(indicator: ProgressIndicator) {
+                    val metrics = project.getService(ClipCraftPerformanceMetrics::class.java)
+                    metrics?.startProcessing()
 
-                val snippetGroup = SnippetGroup("Collected Snippets")
-                val pool = Executors.newFixedThreadPool(options.maxConcurrentTasks)
-                for (path in paths) {
-                    pool.submit {
-                        processFileOrDirectory(File(path), project, options, snippetGroup)
+                    val snippetGroup = SnippetGroup("Collected Snippets")
+                    val pool = Executors.newFixedThreadPool(options.maxConcurrentTasks)
+                    for (path in paths) {
+                        pool.submit {
+                            processFileOrDirectory(File(path), project, options, snippetGroup)
+                        }
                     }
+                    pool.shutdown()
+                    pool.awaitTermination(10, TimeUnit.MINUTES)
+
+                    val outputs = formatFinalOutputs(snippetGroup, options)
+                    handleFinalOutputs(project, outputs)
+
+                    metrics?.stopProcessingAndLog("ClipCraftAction (thread pool)")
                 }
-                pool.shutdown()
-                pool.awaitTermination(10, TimeUnit.MINUTES)
-
-                val outputs = formatFinalOutputs(snippetGroup, options)
-                handleFinalOutputs(project, outputs)
-
-                metrics?.stopProcessingAndLog("ClipCraftAction (thread pool)")
-            }
-        })
+            })
     }
 
     private fun runWithCoroutines(project: Project, paths: List<String>, options: ClipCraftOptions) {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Coroutine Processing", true) {
-            override fun run(indicator: ProgressIndicator) {
-                val metrics = project.getService(ClipCraftPerformanceMetrics::class.java)
-                metrics?.startProcessing()
+        ProgressManager.getInstance()
+            .run(object : Task.Backgroundable(project, "ClipCraft Coroutine Processing", true) {
+                override fun run(indicator: ProgressIndicator) {
+                    val metrics = project.getService(ClipCraftPerformanceMetrics::class.java)
+                    metrics?.startProcessing()
 
-                val snippetGroup = SnippetGroup("Collected Snippets")
-                runBlocking(Dispatchers.Default) {
-                    paths.map { path ->
-                        async {
-                            processFileOrDirectory(File(path), project, options, snippetGroup)
-                        }
-                    }.awaitAll()
+                    val snippetGroup = SnippetGroup("Collected Snippets")
+                    runBlocking(Dispatchers.Default) {
+                        paths.map { path ->
+                            async {
+                                processFileOrDirectory(File(path), project, options, snippetGroup)
+                            }
+                        }.awaitAll()
+                    }
+
+                    val outputs = formatFinalOutputs(snippetGroup, options)
+                    handleFinalOutputs(project, outputs)
+
+                    metrics?.stopProcessingAndLog("ClipCraftAction (coroutines)")
                 }
-
-                val outputs = formatFinalOutputs(snippetGroup, options)
-                handleFinalOutputs(project, outputs)
-
-                metrics?.stopProcessingAndLog("ClipCraftAction (coroutines)")
-            }
-        })
+            })
     }
 
     private fun processFileOrDirectory(
@@ -132,14 +145,22 @@ class ClipCraftAction : AnAction() {
         } catch (e: Exception) {
             "<Error reading file: ${e.message}>"
         }
+
         var snippet = Snippet(
             filePath = file.absolutePath,
-            relativePath = project.basePath?.let { base -> file.relativeTo(File(base)).path },
+            relativePath = project.basePath?.let { base ->
+                try {
+                    file.relativeTo(File(base)).path
+                } catch (_: IllegalArgumentException) {
+                    file.absolutePath
+                }
+            },
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
             content = content
         )
+        // Optionally enrich snippet with Git info
         if (options.includeGitInfo) {
             snippet = ClipCraftGitIntegration.enrichSnippetWithGitInfo(project, snippet)
         }
@@ -147,11 +168,13 @@ class ClipCraftAction : AnAction() {
     }
 
     /**
-     * Builds the final output string with optional directory structure and user-defined header/footer.
+     * Builds the final output string, including optional directory structure, user-defined header/footer,
+     * and the formatted snippet text.
      */
     private fun formatFinalOutputs(snippetGroup: SnippetGroup, options: ClipCraftOptions): String {
-        val header = options.gptHeaderText ?: ""
-        val footer = options.gptFooterText ?: ""
+        val header = options.gptHeaderText.orEmpty()
+        val footer = options.gptFooterText.orEmpty()
+
         val snippetText = CodeFormatter.formatSnippets(snippetGroup.snippets, options)
             .joinToString("\n---\n")
 
@@ -180,7 +203,7 @@ class ClipCraftAction : AnAction() {
     }
 
     /**
-     * Copies the final output to the clipboard and notifies the user.
+     * Copies the final output to the system clipboard and notifies the user.
      */
     private fun handleFinalOutputs(project: Project, finalOutput: String) {
         ClipCraftNotificationCenter.info("ClipCraft finished. Content length: ${finalOutput.length}")

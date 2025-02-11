@@ -3,7 +3,7 @@ package com.clipcraft.services
 import com.intellij.openapi.diagnostic.Logger
 
 /**
- * Manages snippet storage or a snippet queue.
+ * Manages snippet storage or queue (in memory).
  */
 class ClipCraftSnippetManager private constructor() {
 
@@ -21,9 +21,6 @@ class ClipCraftSnippetManager private constructor() {
         }
     }
 
-    /**
-     * Adds a snippet (in this stub, the snippet content is simply logged).
-     */
     fun addSnippet(content: String) {
         logger.info("Snippet added:\n$content")
     }

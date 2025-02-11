@@ -1,11 +1,15 @@
 package com.clipcraft.services
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
 
 /**
  * Collects and logs performance metrics for snippet processing.
+ * Registered as a project-level service (fixes "not registered" issue).
  */
-class ClipCraftPerformanceMetrics {
+@Service(Service.Level.PROJECT)
+class ClipCraftPerformanceMetrics(project: Project) {
     private val logger = Logger.getInstance(ClipCraftPerformanceMetrics::class.java)
     private var startTime: Long = 0
 

@@ -7,6 +7,9 @@ import com.clipcraft.services.ClipCraftProjectProfileManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
+/**
+ * Resets all ClipCraft settings to defaults by overwriting the "Default" profile.
+ */
 class ClipCraftResetDefaultsAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

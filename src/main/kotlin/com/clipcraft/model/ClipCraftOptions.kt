@@ -1,5 +1,8 @@
 package com.clipcraft.model
 
+/**
+ * Holds user-facing settings for snippet processing, concurrency, ignoring files, etc.
+ */
 data class ClipCraftOptions(
     var includeLineNumbers: Boolean = false,
     var outputFormat: OutputFormat = OutputFormat.MARKDOWN,
@@ -8,11 +11,11 @@ data class ClipCraftOptions(
     var removeImports: Boolean = false,
     var removeComments: Boolean = false,
     var trimWhitespace: Boolean = true,
-    var removeEmptyLines: Boolean = false,         // Remove empty lines
+    var removeEmptyLines: Boolean = false,
     var useGitIgnore: Boolean = false,
-    var enableDirectoryPatternMatching: Boolean = false,  // Directory pattern matching
-    var additionalIgnorePatterns: String? = null,    // Additional glob patterns (comma-separated)
-    var invertIgnorePatterns: Boolean = false,       // Negative match option
+    var enableDirectoryPatternMatching: Boolean = false,
+    var additionalIgnorePatterns: String? = null,
+    var invertIgnorePatterns: Boolean = false,
     var themeMode: ThemeMode = ThemeMode.LIGHT,
     var ignorePatterns: MutableList<String> = mutableListOf(),
     var maxConcurrentTasks: Int = 4,
@@ -25,7 +28,7 @@ data class ClipCraftOptions(
     var includeMetadata: Boolean = false,
     var includeGitInfo: Boolean = false,
 
-    // New fields for GPT prompt templates, or other stored info
+    // GPT-related expansions
     var gptTemplates: MutableList<GPTPromptTemplate> = mutableListOf(
         GPTPromptTemplate("ExplainThisCode", "Explain this code"),
         GPTPromptTemplate("OptimizeSnippet", "Optimize this snippet")
@@ -35,20 +38,13 @@ data class ClipCraftOptions(
     var chunkStrategy: ChunkStrategy = ChunkStrategy.NONE,
     var concurrencyMode: ConcurrencyMode = ConcurrencyMode.DISABLED,
 
-    /**
-     * User-defined text that will be prepended to snippet output.
-     */
     var gptHeaderText: String? = null,
-
-    /**
-     * User-defined text that will be appended to snippet output.
-     */
     var gptFooterText: String? = null,
 
-    // NEW: Lists for explicit file/folder ignoring
+    // Additional ignoring
     var ignoreFiles: List<String>? = null,
     var ignoreFolders: List<String>? = null,
-    var selectiveCompression: Boolean = false,
+    var selectiveCompression: Boolean = false
 ) {
     fun resolveConflicts() {
         // Upgrade legacy concurrency
@@ -65,12 +61,10 @@ data class ClipCraftOptions(
             chunkStrategy = ChunkStrategy.NONE
         }
 
-        // Overlap: if singleLineOutput is on, chunking should be off
-        if (singleLineOutput && chunkStrategy != ChunkStrategy.NONE) {
-            when (overlapStrategy) {
-                OverlapStrategy.SINGLE_LINE -> chunkStrategy = ChunkStrategy.NONE
-                OverlapStrategy.CHUNKING, OverlapStrategy.ASK -> singleLineOutput = false
-            }
+        // If singleLineOutput is on, chunking is effectively meaningless.
+        // We disable chunking and set chunkStrategy = NONE for safety.
+        if (singleLineOutput) {
+            chunkStrategy = ChunkStrategy.NONE
         }
     }
 }

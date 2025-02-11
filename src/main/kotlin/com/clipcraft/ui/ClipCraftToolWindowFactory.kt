@@ -13,19 +13,23 @@ import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
 import javax.swing.*
 
+/**
+ * Creates a tool window containing a simple GPT chat interface (stub).
+ */
 class ClipCraftToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val panel = JPanel(BorderLayout())
 
-        val inputArea = JTextArea(5, 50)
-        inputArea.lineWrap = true
-        inputArea.wrapStyleWord = true
-
-        val outputArea = JTextArea(15, 50)
-        outputArea.isEditable = false
-        outputArea.lineWrap = true
-        outputArea.wrapStyleWord = true
+        val inputArea = JTextArea(5, 50).apply {
+            lineWrap = true
+            wrapStyleWord = true
+        }
+        val outputArea = JTextArea(15, 50).apply {
+            isEditable = false
+            lineWrap = true
+            wrapStyleWord = true
+        }
 
         val scrollInput = JScrollPane(inputArea)
         val scrollOutput = JScrollPane(outputArea)
@@ -37,11 +41,7 @@ class ClipCraftToolWindowFactory : ToolWindowFactory, DumbAware {
                     ClipCraftNotificationCenter.warn("No text provided to GPT.")
                     return@addActionListener
                 }
-
-                // Simulate sending snippet to GPT
-                // For a real plugin, you'd use an HTTP request or official GPT SDK
-                val sharingService = project.getService(ClipCraftSharingService::class.java)
-                    ?: return@addActionListener
+                val sharingService = project.getService(ClipCraftSharingService::class.java) ?: return@addActionListener
 
                 runBlocking {
                     val snippet = Snippet(content = text, fileName = "UserChatInput")

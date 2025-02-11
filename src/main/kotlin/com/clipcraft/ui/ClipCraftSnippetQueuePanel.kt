@@ -39,7 +39,7 @@ class ClipCraftSnippetQueuePanel(project: Project) {
         val snippets: List<Snippet> = queueService.getAllSnippets()
         val sb = StringBuilder()
         snippets.forEach { snippet ->
-            sb.append("File: ${snippet.fileName ?: "Untitled"}\n")
+            sb.append("File: ${snippet.fileName}\n")
             sb.append(snippet.content)
             sb.append("\n------------------------\n")
         }

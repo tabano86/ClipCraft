@@ -58,20 +58,17 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         val settings = ClipCraftSettings.getInstance()
         val header: String = settings.getHeader()
         val footer: String = settings.getFooter()
-        val sb = StringBuilder()
-        if (header.isNotBlank()) {
-            sb.append(header.trim()).append("\n\n")
+        return buildString {
+            if (header.isNotBlank()) {
+                append(header.trim()).append("\n\n")
+            }
+            append(snippet)
+            if (footer.isNotBlank()) {
+                append("\n\n").append(footer.trim())
+            }
         }
-        sb.append(snippet)
-        if (footer.isNotBlank()) {
-            sb.append("\n\n").append(footer.trim())
-        }
-        return sb.toString()
     }
 
-    /**
-     * Displays a notification to the user.
-     */
     private fun notify(message: String, type: NotificationType) {
         val notification = Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type)
         Notifications.Bus.notify(notification)

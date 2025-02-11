@@ -17,10 +17,6 @@ object ClipCraftIcons {
     val CLIPCRAFT_32: Icon =
         IconLoader.getIcon("/icons/clipcraft_32.svg", ClipCraftIcons::class.java)
 
-    /**
-     * For convenience, we can define a default icon to use if no size specified.
-     * Usually 16×16 is standard for toolbar actions.
-     */
     @JvmField
     val CLIPCRAFT_DEFAULT: Icon = CLIPCRAFT_16
 }

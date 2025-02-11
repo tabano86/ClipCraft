@@ -8,9 +8,9 @@ import com.intellij.openapi.project.Project
  */
 object ClipCraftGitIntegration {
     fun enrichSnippetWithGitInfo(project: Project, snippet: Snippet): Snippet {
-        // Example: attach a dummy Git commit hash.
-        val dummyGitHash = "abc123"
+        // Example: attach a dummy Git commit hash or run a "git" command.
+        val dummyGitHash = "abc123" // In real usage, you'd query Git for the actual commit.
         val gitInfo = "\n[Git Commit Hash: $dummyGitHash]"
-        return snippet.copy(content = snippet.content + gitInfo)
+        return snippet.copy(content = snippet.content + gitInfo, gitCommitHash = dummyGitHash)
     }
 }

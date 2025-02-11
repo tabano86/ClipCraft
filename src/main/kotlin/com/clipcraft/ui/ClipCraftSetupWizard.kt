@@ -7,20 +7,17 @@ import java.awt.event.ActionEvent
 import javax.swing.*
 
 /**
- * A multi-step setup wizard using DialogWrapper, with Next/Back/Finish.
- * This implementation uses a CardLayout to switch between steps.
+ * A multi-step setup wizard using DialogWrapper and CardLayout.
  */
 class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
 
     private val wizardCore = ClipCraftSetupWizardCore(project)
-    private val wizardUI = ClipCraftSetupWizardUI()  // Existing UI fields
+    private val wizardUI = ClipCraftSetupWizardUI()
 
-    // Create a panel with a CardLayout for the wizard steps.
     private val cardLayout = CardLayout()
     private val wizardPanel = JPanel(cardLayout)
 
-    // Step 0: Welcome panel.
-    private val welcomePanel: JPanel = JPanel().apply {
+    private val welcomePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(Box.createVerticalStrut(20))
         val label = JLabel("Welcome to ClipCraft Setup Wizard!")
@@ -34,14 +31,10 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         add(JLabel("• Concurrency"))
         add(Box.createVerticalGlue())
     }
+    private val settingsPanel = wizardUI.getMainPanel()
 
-    // Step 1: Existing settings UI panel.
-    private val settingsPanel: JPanel = wizardUI.getMainPanel()
-
-    // Current step index (0-based)
     private var stepIndex = 0
 
-    // Custom actions stored as properties so we can enable/disable them.
     private val backAction = object : DialogWrapperAction("Back") {
         override fun doAction(e: ActionEvent?) {
             if (stepIndex > 0) {
@@ -50,16 +43,14 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
             }
         }
     }
-
     private val nextAction = object : DialogWrapperAction("Next") {
         override fun doAction(e: ActionEvent?) {
-            if (stepIndex < 1) { // Only 2 steps in this example
+            if (stepIndex < 1) {
                 stepIndex++
                 updateStepUI()
             }
         }
     }
-
     private val finishAction = object : DialogWrapperAction("Finish") {
         override fun doAction(e: ActionEvent?) {
             applyWizardResults()
@@ -69,40 +60,27 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
 
     init {
         title = "ClipCraft Setup Wizard"
-        // Add steps to the card panel.
         wizardPanel.add(welcomePanel, "Step0")
         wizardPanel.add(settingsPanel, "Step1")
-        init() // Must call init() from DialogWrapper.
+        init()
     }
 
     override fun createCenterPanel(): JComponent = wizardPanel
+    override fun createActions(): Array<Action> = arrayOf(backAction, nextAction, finishAction, cancelAction)
 
-    override fun createActions(): Array<Action> {
-        // Return our custom actions plus the cancel action.
-        return arrayOf(backAction, nextAction, finishAction, cancelAction)
-    }
-
-    /**
-     * Updates the displayed step and enables/disables buttons accordingly.
-     */
     private fun updateStepUI() {
         cardLayout.show(wizardPanel, "Step$stepIndex")
         backAction.isEnabled = stepIndex > 0
         nextAction.isEnabled = stepIndex < 1
     }
 
-    /**
-     * Applies the wizard results using the existing wizard core.
-     */
     private fun applyWizardResults() {
         wizardCore.applyWizardResults(wizardUI)
     }
 
-    /**
-     * If the user triggers the default OK action, we apply wizard results.
-     */
     override fun doOKAction() {
         applyWizardResults()
         super.doOKAction()
     }
 }
+

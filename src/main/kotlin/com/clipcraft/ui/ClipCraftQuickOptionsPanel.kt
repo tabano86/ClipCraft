@@ -4,13 +4,26 @@ import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.services.ClipCraftSettings
 import com.intellij.openapi.ui.ComboBox
-import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JCheckBox
 
 class ClipCraftQuickOptionsPanel {
 
-    val panel: DialogPanel
+    val panel = panel {
+        row("Output Format:") {
+            outputFormatCombo = ComboBox(OutputFormat.values())
+            cell(outputFormatCombo)
+        }
+        row("Compression Mode:") {
+            compressionModeCombo = ComboBox(CompressionMode.values())
+            cell(compressionModeCombo)
+        }
+        row {
+            removeCommentsCheckBox = JCheckBox("Remove Comments", currentOptions.removeComments)
+            cell(removeCommentsCheckBox)
+        }
+    }
+
     private val currentOptions = ClipCraftSettings.getInstance().getCurrentProfile().options
 
     private lateinit var outputFormatCombo: ComboBox<OutputFormat>
@@ -18,21 +31,6 @@ class ClipCraftQuickOptionsPanel {
     private lateinit var removeCommentsCheckBox: JCheckBox
 
     init {
-        panel = panel {
-            row("Output Format:") {
-                outputFormatCombo = ComboBox(OutputFormat.values())
-                cell(outputFormatCombo)
-            }
-            row("Compression Mode:") {
-                compressionModeCombo = ComboBox(CompressionMode.values())
-                cell(compressionModeCombo)
-            }
-            row {
-                removeCommentsCheckBox = JCheckBox("Remove Comments", currentOptions.removeComments)
-                cell(removeCommentsCheckBox)
-            }
-        }
-        // Initialize
         outputFormatCombo.selectedItem = currentOptions.outputFormat
         compressionModeCombo.selectedItem = currentOptions.compressionMode
         removeCommentsCheckBox.isSelected = currentOptions.removeComments

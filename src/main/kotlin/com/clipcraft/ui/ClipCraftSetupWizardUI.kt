@@ -6,10 +6,13 @@ import com.intellij.ui.components.JBTextField
 import javax.swing.JLabel
 import javax.swing.JPanel
 
+/**
+ * Minimal UI for the wizard's second step.
+ */
 class ClipCraftSetupWizardUI {
 
     private val mainPanel = JBPanel<JBPanel<*>>().apply {
-        layout = null // For brevity; normally use a proper LayoutManager
+        layout = null
     }
 
     private val includeMetadataCheck = JBCheckBox("Include metadata (file size, timestamp, etc.)", true)
@@ -36,7 +39,6 @@ class ClipCraftSetupWizardUI {
     }
 
     fun getMainPanel(): JPanel = mainPanel
-
     fun isIncludeMetadata(): Boolean = includeMetadataCheck.isSelected
     fun isUseGitIgnore(): Boolean = useGitIgnoreCheck.isSelected
     fun getMaxConcurrentTasks(): Int = concurrencyText.text.toIntOrNull() ?: 4

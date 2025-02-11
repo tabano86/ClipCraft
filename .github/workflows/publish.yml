@@ -6,10 +6,10 @@ on:
   push:
     branches: [main]
 
-env:
-  # Global environment variables (if needed) can be defined here.
-  # Note: GITHUB_TOKEN is automatically injected.
-  # JB_PLUGIN_REPOSITORY_TOKEN must be set in repository secrets.
+#env:
+#   Global environment variables (if needed) can be defined here.
+#   Note: GITHUB_TOKEN is automatically injected.
+#   JB_PLUGIN_REPOSITORY_TOKEN must be set in repository secrets.
 
 jobs:
   build:

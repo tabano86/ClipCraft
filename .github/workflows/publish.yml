@@ -57,12 +57,13 @@ jobs:
           git reset --hard origin/main
 
       - name: Run Release and Publish Plugin with Retry
+        # Set the environment variable expected by the Gradle plugin
         env:
-          JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
+          ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
           max_attempts=3
           attempt=1
-          until ./gradlew release publishPlugin -Ptoken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace --parallel; do
+          until ./gradlew release publishPlugin --no-daemon --stacktrace --parallel; do
             if [ $attempt -ge $max_attempts ]; then
               echo "Release and publish failed after $attempt attempts."
               exit 1

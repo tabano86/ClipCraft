@@ -1,14 +1,8 @@
 package com.clipcraft.actions
 
 import com.clipcraft.integration.ClipCraftGitIntegration
-import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.model.ConcurrencyMode
-import com.clipcraft.model.Snippet
-import com.clipcraft.model.SnippetGroup
-import com.clipcraft.services.ClipCraftNotificationCenter
-import com.clipcraft.services.ClipCraftPerformanceMetrics
-import com.clipcraft.services.ClipCraftProjectProfileManager
-import com.clipcraft.services.ClipCraftSettings
+import com.clipcraft.model.*
+import com.clipcraft.services.*
 import com.clipcraft.util.CodeFormatter
 import com.clipcraft.util.IgnoreUtil
 import com.intellij.openapi.actionSystem.AnAction
@@ -32,9 +26,9 @@ class ClipCraftAction : AnAction() {
         val project = e.project ?: return
         val virtualFiles = e.getData(LangDataKeys.VIRTUAL_FILE_ARRAY) ?: return
 
+        // Try to get active profile from the project-level manager; fallback to global settings
         val profileManager = project.getService(ClipCraftProjectProfileManager::class.java)
-        val activeProfile = profileManager?.getActiveProfile()
-            ?: ClipCraftSettings.getInstance().getCurrentProfile()
+        val activeProfile = profileManager?.getActiveProfile() ?: ClipCraftSettings.getInstance().getCurrentProfile()
         val options = activeProfile.options
 
         options.resolveConflicts()
@@ -51,7 +45,7 @@ class ClipCraftAction : AnAction() {
 
     private fun runSequentially(project: Project, paths: List<String>, options: ClipCraftOptions) {
         val metrics = project.getService(ClipCraftPerformanceMetrics::class.java)
-        metrics.startProcessing()
+        metrics?.startProcessing()
 
         val snippetGroup = SnippetGroup("Collected Snippets")
         for (path in paths) {
@@ -61,14 +55,14 @@ class ClipCraftAction : AnAction() {
         val outputs = formatFinalOutputs(snippetGroup, options)
         handleFinalOutputs(project, outputs)
 
-        metrics.stopProcessingAndLog("ClipCraftAction (sequential)")
+        metrics?.stopProcessingAndLog("ClipCraftAction (sequential)")
     }
 
     private fun runWithThreadPool(project: Project, paths: List<String>, options: ClipCraftOptions) {
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Concurrent Processing", true) {
             override fun run(indicator: ProgressIndicator) {
                 val metrics = project.getService(ClipCraftPerformanceMetrics::class.java)
-                metrics.startProcessing()
+                metrics?.startProcessing()
 
                 val snippetGroup = SnippetGroup("Collected Snippets")
                 val pool = Executors.newFixedThreadPool(options.maxConcurrentTasks)
@@ -83,7 +77,7 @@ class ClipCraftAction : AnAction() {
                 val outputs = formatFinalOutputs(snippetGroup, options)
                 handleFinalOutputs(project, outputs)
 
-                metrics.stopProcessingAndLog("ClipCraftAction (thread pool)")
+                metrics?.stopProcessingAndLog("ClipCraftAction (thread pool)")
             }
         })
     }
@@ -92,7 +86,7 @@ class ClipCraftAction : AnAction() {
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Coroutine Processing", true) {
             override fun run(indicator: ProgressIndicator) {
                 val metrics = project.getService(ClipCraftPerformanceMetrics::class.java)
-                metrics.startProcessing()
+                metrics?.startProcessing()
 
                 val snippetGroup = SnippetGroup("Collected Snippets")
                 runBlocking(Dispatchers.Default) {
@@ -106,7 +100,7 @@ class ClipCraftAction : AnAction() {
                 val outputs = formatFinalOutputs(snippetGroup, options)
                 handleFinalOutputs(project, outputs)
 
-                metrics.stopProcessingAndLog("ClipCraftAction (coroutines)")
+                metrics?.stopProcessingAndLog("ClipCraftAction (coroutines)")
             }
         })
     }
@@ -140,9 +134,7 @@ class ClipCraftAction : AnAction() {
         }
         var snippet = Snippet(
             filePath = file.absolutePath,
-            relativePath = project.basePath?.let { base ->
-                file.relativeTo(File(base)).path
-            },
+            relativePath = project.basePath?.let { base -> file.relativeTo(File(base)).path },
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
@@ -155,15 +147,14 @@ class ClipCraftAction : AnAction() {
     }
 
     /**
-     * Builds the final output string with optional directory structure,
-     * and user-defined header & footer from [options].
+     * Builds the final output string with optional directory structure and user-defined header/footer.
      */
     private fun formatFinalOutputs(snippetGroup: SnippetGroup, options: ClipCraftOptions): String {
         val header = options.gptHeaderText ?: ""
         val footer = options.gptFooterText ?: ""
-        val snippetText = CodeFormatter.formatSnippets(snippetGroup.snippets, options).joinToString("\n---\n")
+        val snippetText = CodeFormatter.formatSnippets(snippetGroup.snippets, options)
+            .joinToString("\n---\n")
 
-        // If user wants directory structure, build a naive listing:
         val dirStructure = if (options.includeDirectorySummary) {
             buildString {
                 append("Directory Structure:\n")

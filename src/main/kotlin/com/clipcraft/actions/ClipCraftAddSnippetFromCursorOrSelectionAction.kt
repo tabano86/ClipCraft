@@ -1,76 +1,79 @@
 package com.clipcraft.actions
 
-import com.clipcraft.model.Snippet
-import com.clipcraft.services.SnippetsManager
 import com.clipcraft.services.ClipCraftSettings
-import com.clipcraft.util.CodeFormatter
+import com.clipcraft.services.ClipCraftSnippetManager
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.util.PsiTreeUtil
+import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.UastFacade
 
-/**
- * Adds a snippet from the current editor selection, or if no selection, tries
- * to find the method at the caret. If none, falls back to the entire line.
- */
-class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction("Add Snippet from Cursor/Method") {
-    override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
-        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-        val psiFile = e.getData(CommonDataKeys.PSI_FILE)
-        val snippetManager = project.getService(SnippetsManager::class.java) ?: return
+class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
+    override fun actionPerformed(event: AnActionEvent) {
+        // Retrieve the editor and file from the event context.
+        val editor: Editor? = event.getData(CommonDataKeys.EDITOR)
+        val psiFile: PsiFile? = event.getData(CommonDataKeys.PSI_FILE)
+        if (editor == null || psiFile == null) {
+            notify("No editor or file found.", NotificationType.WARNING)
+            return
+        }
 
-        val activeProfile = ClipCraftSettings.getInstance().getCurrentProfile()
-        val doc: Document = editor.document
+        val snippetText = extractSnippet(editor, psiFile)
+        if (snippetText == null || snippetText.trim().isEmpty()) {
+            notify("No valid snippet could be extracted.", NotificationType.WARNING)
+            return
+        }
 
-        // Attempt selection first
-        val selectionModel = editor.selectionModel
-        val text = when {
-            selectionModel.hasSelection() -> selectionModel.selectedText
-            else -> {
-                val methodText = findMethodAtCaret(psiFile, editor)
-                if (methodText != null) methodText else {
-                    // fallback to entire line
-                    val caretOffset = editor.caretModel.offset
-                    val lineNumber = doc.getLineNumber(caretOffset)
-                    val startOffset = doc.getLineStartOffset(lineNumber)
-                    val endOffset = doc.getLineEndOffset(lineNumber)
-                    doc.getText(TextRange(startOffset, endOffset))
-                }
-            }
-        } ?: return
-
-        // Clean up the code snippet as per profile settings
-        val cleaned = CodeFormatter.formatSnippets(
-            listOf(Snippet(content = text, fileName = "EditorSnippet")),
-            activeProfile.options
-        ).joinToString("\n")
-
-        snippetManager.addSnippet(Snippet(content = cleaned, fileName = "EditorSnippet"))
-        selectionModel.removeSelection()
-
-        Messages.showInfoMessage(project, "Snippet (method/line/selection) added to the queue.", "ClipCraft")
+        val formattedSnippet = formatSnippet(snippetText)
+        ClipCraftSnippetManager.getInstance().addSnippet(formattedSnippet)
+        notify("Snippet added successfully.", NotificationType.INFORMATION)
     }
 
     /**
-     * Tries to find a PSI method at the caret offset. Returns the method's text if found,
-     * or null if no method is found.
+     * Extracts a snippet either from the current selection or, if absent,
+     * finds the enclosing method using UAST.
      */
-    private fun findMethodAtCaret(psiFile: PsiFile?, editor: Editor): String? {
-        if (psiFile == null) return null
-        val caretOffset = editor.caretModel.offset
-        val psiDocManager = PsiDocumentManager.getInstance(psiFile.project)
-        psiDocManager.commitDocument(editor.document) // Ensure PSI is in sync
+    private fun extractSnippet(editor: Editor, psiFile: PsiFile): String? {
+        if (editor.selectionModel.hasSelection()) {
+            return editor.selectionModel.selectedText
+        }
 
+        val caretOffset = editor.caretModel.offset
         val elementAtCaret = psiFile.findElementAt(caretOffset) ?: return null
-        val method = PsiTreeUtil.getParentOfType<PsiMethod>(elementAtCaret, PsiMethod::class.java, false)
-        return method?.text
+
+        // Use UastFacade to convert the PSI element to a UAST method.
+        val uMethod: UMethod? = UastFacade.convertElementWithParent(elementAtCaret, UMethod::class.java) as? UMethod
+        return uMethod?.sourcePsi?.text
+    }
+
+    /**
+     * Applies user-defined header and footer to the snippet.
+     */
+    private fun formatSnippet(snippet: String): String {
+        val settings = ClipCraftSettings.getInstance()
+        val header: String = settings.getHeader()
+        val footer: String = settings.getFooter()
+        val sb = StringBuilder()
+        if (header.isNotBlank()) {
+            sb.append(header.trim()).append("\n\n")
+        }
+        sb.append(snippet)
+        if (footer.isNotBlank()) {
+            sb.append("\n\n").append(footer.trim())
+        }
+        return sb.toString()
+    }
+
+    /**
+     * Displays a notification to the user.
+     */
+    private fun notify(message: String, type: NotificationType) {
+        val notification = Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type)
+        Notifications.Bus.notify(notification)
     }
 }

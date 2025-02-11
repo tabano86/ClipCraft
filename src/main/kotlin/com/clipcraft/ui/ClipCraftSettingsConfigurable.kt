@@ -265,7 +265,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         themeComboBox.selectedItem = options.themeMode
         panel.add(themeComboBox, gbc)
         // Theme doesn't usually affect code text, no immediate listener needed, but let's do it anyway
-        themeComboBox.addActionListener { /* No direct effect on snippet text. */ }
+        themeComboBox.addActionListener { /* Possibly no direct effect on snippet text. */ }
 
         return panel
     }
@@ -410,14 +410,14 @@ class ClipCraftSettingsConfigurable : Configurable {
      * and updates the preview text area.
      */
     private fun updatePreview() {
+        // Using the three-argument constructor for Snippet
         val snippet = Snippet(
             content = sampleSnippetText,
             fileName = "HelloWorld.java",
             relativePath = "src/com/example/HelloWorld.java"
         )
-        val tempOpts = options.copy().also { it.resolveConflicts() }
 
-        // Use header and footer if present
+        val tempOpts = options.copy().also { it.resolveConflicts() }
         val previewHeader = tempOpts.gptHeaderText ?: ""
         val previewFooter = tempOpts.gptFooterText ?: ""
 
@@ -425,22 +425,21 @@ class ClipCraftSettingsConfigurable : Configurable {
         val formatted = CodeFormatter.formatSnippets(listOf(snippet), tempOpts)
             .joinToString("\n\n")
 
-        // Optionally show directory structure if set
+        // Show directory structure if needed
         val dirStructure = if (tempOpts.includeDirectorySummary) {
             "[DirectoryStructure]\nsrc/\n  com/\n    example/\n      HelloWorld.java\n\n"
         } else ""
 
-        // Combine
         val finalPreviewText = buildString {
             append(previewHeader)
             if (previewHeader.isNotEmpty()) append("\n\n")
             append(dirStructure)
             append(formatted)
             if (previewFooter.isNotEmpty()) {
-                append("\n\n")
-                append(previewFooter)
+                append("\n\n").append(previewFooter)
             }
         }
+
         previewArea.text = finalPreviewText
         previewArea.caretPosition = 0
     }

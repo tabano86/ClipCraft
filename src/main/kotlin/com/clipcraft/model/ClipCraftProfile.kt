@@ -1,9 +1,9 @@
 package com.clipcraft.model
 
 /**
- * A named profile that holds a set of ClipCraftOptions.
+ * Represents a named set of ClipCraft options.
  */
 data class ClipCraftProfile(
     val profileName: String,
-    val options: ClipCraftOptions = ClipCraftOptions()
+    val options: ClipCraftOptions
 )

@@ -31,7 +31,7 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
         consumer: Processor<in Any>
     ) {
         val mgr = project?.getService(ClipCraftProjectProfileManager::class.java) ?: return
-        val matches = mgr.getProfiles().filter {
+        val matches = mgr.listProfiles().filter {
             StringUtil.containsIgnoreCase(it.profileName, pattern)
         }
         for (profile in matches) {

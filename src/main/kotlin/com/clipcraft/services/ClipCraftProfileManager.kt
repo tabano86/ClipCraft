@@ -24,5 +24,6 @@ class ClipCraftProfileManager {
         settings.removeProfile(profileName)
     }
 
-    fun getProfile(name: String): ClipCraftProfile? = settings.getAllProfiles().find { it.profileName == name }
+    fun getProfile(name: String): ClipCraftProfile? =
+        settings.getAllProfiles().find { it.profileName == name }
 }

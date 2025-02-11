@@ -37,10 +37,9 @@ object CodeFormatter {
      * apply compression, and wrap with metadata if needed.
      */
     private fun formatSingleSnippet(snippet: Snippet, options: ClipCraftOptions): String {
-        // If autoDetectLanguage is on and the snippet's language isn't set,
-        // guess it from the file extension.
-        if (options.autoDetectLanguage && (snippet.language.isNullOrEmpty())) {
-            snippet.language = guessLanguageByExtension(snippet.fileName ?: "")
+        // If autoDetectLanguage is on and snippet.language isn't set, guess from extension
+        if (options.autoDetectLanguage && snippet.language.isNullOrEmpty()) {
+            snippet.language = guessLanguageByExtension(snippet.fileName)
         }
 
         var content = snippet.content
@@ -72,10 +71,10 @@ object CodeFormatter {
         // If including metadata, prepend it
         val finalText = if (options.includeMetadata) {
             buildString {
-                append("**File:** ${snippet.relativePath ?: snippet.fileName ?: "Unknown"}")
+                append("**File:** ${snippet.relativePath ?: snippet.fileName}")
                 append(" | **Size:** ${snippet.fileSizeBytes} bytes")
                 append(" | **Modified:** ${snippet.lastModified}")
-                if (options.includeGitInfo && snippet.gitCommitHash != null) {
+                if (options.includeGitInfo && !snippet.gitCommitHash.isNullOrEmpty()) {
                     append(" | **GitCommit:** ${snippet.gitCommitHash}")
                 }
                 append("\n\n")

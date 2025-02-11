@@ -1,9 +1,9 @@
 package com.clipcraft.model
 
 /**
- * A collection of snippets grouped under a name.
+ * A named group of related snippets.
  */
-data class SnippetGroup(
-    val name: String,
+class SnippetGroup(
+    val groupName: String,
     val snippets: MutableList<Snippet> = mutableListOf()
 )

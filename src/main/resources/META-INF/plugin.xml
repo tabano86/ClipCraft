@@ -5,26 +5,26 @@
     <vendor email="support@clipcraft.com" url="https://clipcraft.com">ClipCraft Inc.</vendor>
 
     <description><![CDATA[
-    ClipCraft copies and formats code snippets from multiple files and directories.
-    It includes a snippet queue, advanced chunking, concurrency, GPT integration stubs,
-    and now features a single parent context menu with child actions, user-defined header/footer,
-    directory structure printing, and enhanced snippet extraction (including method detection).
-  ]]></description>
+      ClipCraft copies and formats code snippets from multiple files and directories.
+      It includes a snippet queue, advanced chunking, concurrency, GPT integration stubs,
+      and now features a single parent context menu with child actions, user-defined header/footer,
+      directory structure printing, and enhanced snippet extraction (including method detection).
+    ]]></description>
 
     <change-notes><![CDATA[
-    Version 4.0.0:
-    - Unified all ClipCraft actions under one parent context menu item.
-    - Added user-defined header/footer and directory-structure printing.
-    - Live preview in settings for new fields.
-    - Enhanced snippet extraction: optionally extracts only the current method at caret.
-  ]]></change-notes>
+      Version 4.0.0:
+      - Unified all ClipCraft actions under one parent context menu item.
+      - Added user-defined header/footer and directory-structure printing.
+      - Live preview in settings for new fields.
+      - Enhanced snippet extraction: optionally extracts only the current method at caret.
+    ]]></change-notes>
 
     <!-- Must depend on IntelliJ platform modules -->
     <depends>com.intellij.modules.platform</depends>
-    <idea-version since-build="223" until-build="243.*"/>
+    <depends>com.intellij.modules.java</depends>
+    <idea-version since-build="223" until-build="243.*" />
 
     <extensions defaultExtensionNs="com.intellij">
-
         <!-- Notification group for showing balloon messages -->
         <notificationGroup id="ClipCraft" displayType="BALLOON"/>
 
@@ -37,42 +37,35 @@
                 instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
                 displayName="ClipCraft" />
 
-        <!-- Tool Window for the snippet queue (only if you have ClipCraftToolWindowFactory) -->
+        <!-- Tool Window for the snippet queue -->
+        <!-- We reference `com.clipcraft.ui.ClipCraftToolWindowFactory` -->
         <toolWindow
                 id="ClipCraft.SnippetQueue"
                 factoryClass="com.clipcraft.ui.ClipCraftToolWindowFactory"
                 anchor="left"
                 secondary="true"
-                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT" />
-
-        <!-- (Optional) GPT Chat Tool Window
-        <toolWindow
-            id="ClipCraft.GPTChat"
-            factoryClass="com.clipcraft.ui.ClipCraftGPTChatToolWindowFactory"
-            anchor="right"
-            icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT"/>
-        -->
+                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_24" />
     </extensions>
 
     <actions>
-        <!-- Single parent action group -->
-        <action
+        <!-- Declare the parent group as a GROUP, not an action -->
+        <group
                 id="ClipCraftParentActionGroup"
-                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                 text="ClipCraft"
+                description="All ClipCraft actions"
                 popup="true"
-                description="All ClipCraft actions">
+                class="com.intellij.openapi.actionSystem.DefaultActionGroup">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-        </action>
+        </group>
 
-        <!-- Child actions that reference the parent group -->
+        <!-- Child actions that reference the parent group, using 16×16 icons -->
         <action
                 id="ClipCraftAction"
                 class="com.clipcraft.actions.ClipCraftAction"
                 text="Copy Formatted Code"
                 description="Copies and formats code from selected files and directories."
-                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT">
+                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
             <add-to-group group-id="ClipCraftParentActionGroup" anchor="first"/>
         </action>
 

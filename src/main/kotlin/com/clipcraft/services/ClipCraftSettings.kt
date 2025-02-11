@@ -2,50 +2,106 @@ package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ClipCraftProfile
-import com.intellij.openapi.components.*
-import com.intellij.openapi.diagnostic.Logger
 
-@State(name = "ClipCraftSettings", storages = [Storage("clipcraft.xml")])
-@Service(Service.Level.APP)
-class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
+/**
+ * Global, application-level settings for ClipCraft.
+ *
+ * In this example, profiles are stored in memory only.
+ * Adjust for persistence if needed.
+ */
+class ClipCraftSettings private constructor() {
+
+    // Fallback profile if no project-specific profile exists.
+    // We'll include it by default in our allProfiles list.
+    private val fallbackProfile = ClipCraftProfile(
+        profileName = "Global Default",
+        options = ClipCraftOptions()
+    )
+
+    // Holds all known profiles in memory.
+    private val allProfiles = mutableListOf<ClipCraftProfile>()
+
+    // Tracks the currently selected profile name.
+    private var currentProfileName: String
 
     companion object {
-        fun getInstance(): ClipCraftSettings = service()
-        private val logger = Logger.getInstance(ClipCraftSettings::class.java)
+        private val instance = ClipCraftSettings()
+        @JvmStatic
+        fun getInstance(): ClipCraftSettings = instance
     }
 
-    class State {
-        var currentProfileName: String = "Default"
-        var allProfiles: MutableList<ClipCraftProfile> = mutableListOf(
-            ClipCraftProfile("Default", ClipCraftOptions())
-        )
+    init {
+        // Initialize with the fallback profile in the list
+        allProfiles += fallbackProfile
+        // Set default active profile name to fallbackProfile
+        currentProfileName = fallbackProfile.profileName
     }
 
-    private var myState = State()
-
-    override fun getState(): State = myState
-
-    override fun loadState(state: State) {
-        myState = state
-    }
-
+    /**
+     * Returns the currently active global profile.
+     */
     fun getCurrentProfile(): ClipCraftProfile {
-        return myState.allProfiles.find { it.profileName == myState.currentProfileName }
-            ?: myState.allProfiles.first()
+        return allProfiles.find { it.profileName == currentProfileName } ?: fallbackProfile
     }
 
-    fun setCurrentProfile(name: String) {
-        myState.currentProfileName = name
+    /**
+     * Switches the current profile to the one with the given name.
+     * If not found, remains on the existing profile.
+     */
+    fun setCurrentProfile(profileName: String) {
+        val profile = allProfiles.find { it.profileName == profileName }
+        if (profile != null) {
+            currentProfileName = profileName
+        }
     }
 
-    fun getAllProfiles(): List<ClipCraftProfile> = myState.allProfiles
+    /**
+     * Returns a snapshot list of all known profiles.
+     */
+    fun getAllProfiles(): List<ClipCraftProfile> = allProfiles.toList()
 
+    /**
+     * Adds a new profile or updates an existing one (by matching profileName).
+     */
     fun addProfile(profile: ClipCraftProfile) {
-        removeProfile(profile.profileName)
-        myState.allProfiles.add(profile)
+        // If there's already a profile with the same name, replace it.
+        val index = allProfiles.indexOfFirst { it.profileName == profile.profileName }
+        if (index >= 0) {
+            allProfiles[index] = profile
+        } else {
+            allProfiles += profile
+        }
+        // Optionally auto-switch to the newly added profile if none is active
+        if (getCurrentProfile() == fallbackProfile && currentProfileName == fallbackProfile.profileName) {
+            currentProfileName = profile.profileName
+        }
     }
 
-    fun removeProfile(name: String) {
-        myState.allProfiles.removeIf { it.profileName == name }
+    /**
+     * Removes a profile by name (if it exists).
+     * If the removed profile was active, reverts to the fallback profile.
+     */
+    fun removeProfile(profileName: String) {
+        // Only remove if it's not the fallback.
+        if (profileName == fallbackProfile.profileName) return
+
+        val removed = allProfiles.removeIf { it.profileName == profileName }
+        if (removed && currentProfileName == profileName) {
+            currentProfileName = fallbackProfile.profileName
+        }
+    }
+
+    /**
+     * Returns the user-defined header text (example usage).
+     */
+    fun getHeader(): String {
+        return getCurrentProfile().options.gptHeaderText ?: "/* Default Header */"
+    }
+
+    /**
+     * Returns the user-defined footer text (example usage).
+     */
+    fun getFooter(): String {
+        return getCurrentProfile().options.gptFooterText ?: "/* Default Footer */"
     }
 }

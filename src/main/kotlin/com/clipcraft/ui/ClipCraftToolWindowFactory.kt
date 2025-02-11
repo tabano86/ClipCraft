@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
 import javax.swing.*
 
-class ClipCraftGPTChatToolWindowFactory : ToolWindowFactory, DumbAware {
+class ClipCraftToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val panel = JPanel(BorderLayout())

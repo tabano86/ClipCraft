@@ -1,19 +1,20 @@
 package com.clipcraft.services
 
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.diagnostic.Logger
 
-@Service(Service.Level.PROJECT)
-class ClipCraftPerformanceMetrics(private val project: Project) {
+/**
+ * Collects and logs performance metrics for snippet processing.
+ */
+class ClipCraftPerformanceMetrics {
+    private val logger = Logger.getInstance(ClipCraftPerformanceMetrics::class.java)
     private var startTime: Long = 0
 
     fun startProcessing() {
         startTime = System.currentTimeMillis()
     }
 
-    fun stopProcessingAndLog(taskName: String) {
+    fun stopProcessingAndLog(operationName: String) {
         val elapsed = System.currentTimeMillis() - startTime
-        // In a real scenario, log via Logger or store in a metrics system
-        println("[$taskName] Elapsed: ${elapsed}ms")
+        logger.info("$operationName took $elapsed ms")
     }
 }

@@ -12,7 +12,7 @@ class ClipCraftSwitchProfileAction : AnAction() {
         val project = e.project ?: return
         val profileManager = project.getService(ClipCraftProjectProfileManager::class.java) ?: return
 
-        val names = profileManager.getProfiles().map { it.profileName }.toTypedArray()
+        val names = profileManager.listProfiles().map { it.profileName }.toTypedArray()
         if (names.isEmpty()) {
             ClipCraftNotificationCenter.warn("No profiles available.")
             return

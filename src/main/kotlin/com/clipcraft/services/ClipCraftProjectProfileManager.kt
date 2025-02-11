@@ -2,33 +2,46 @@ package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftProfile
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
 
 /**
- * Similar to ClipCraftProfileManager but at the project level if desired.
- * By default, delegates to the global settings. You can store project-specific
- * overrides if your design requires it.
+ * Manages per-project ClipCraft profiles.
  */
 @Service(Service.Level.PROJECT)
-class ClipCraftProjectProfileManager(private val project: Project) {
+class ClipCraftProjectProfileManager {
 
-    fun getProfile(name: String): ClipCraftProfile? {
-        return ClipCraftProfileManager().getProfile(name)
-    }
+    private val profiles: MutableMap<String, ClipCraftProfile> = mutableMapOf()
+    private var activeProfile: ClipCraftProfile? = null
 
+    /**
+     * Retrieves a profile by name, or null if none is found.
+     */
+    fun getProfile(name: String): ClipCraftProfile? = profiles[name]
+
+    /**
+     * Adds or updates an existing profile.
+     */
     fun addOrUpdateProfile(profile: ClipCraftProfile) {
-        ClipCraftProfileManager().addProfile(profile)
+        profiles[profile.profileName] = profile
+        // If there's no active profile yet, set it to the newly added one
+        if (activeProfile == null) {
+            activeProfile = profile
+        }
     }
 
-    fun switchActiveProfile(name: String) {
-        ClipCraftProfileManager().switchProfile(name)
+    /**
+     * Switches the active profile to the given name, if present.
+     */
+    fun switchActiveProfile(profileName: String) {
+        activeProfile = profiles[profileName]
     }
 
-    fun getProfiles(): List<ClipCraftProfile> {
-        return ClipCraftProfileManager().listProfiles()
-    }
+    /**
+     * Retrieves the currently active profile.
+     */
+    fun getActiveProfile(): ClipCraftProfile? = activeProfile
 
-    fun getActiveProfile(): ClipCraftProfile {
-        return ClipCraftProfileManager().currentProfile()
-    }
+    /**
+     * Returns a list of all available profiles.
+     */
+    fun listProfiles(): List<ClipCraftProfile> = profiles.values.toList()
 }

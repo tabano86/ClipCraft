@@ -1956,3 +1956,4 @@ tmp/
 /build/test-results/test/binary/output.bin.idx
 /build/test-results/test/binary/results.bin
 /build/test-results/test/TEST-com.clipcraft.util.ClipCraftIgnoreUtilTest.xml
+/build/kotlin/compileKotlin/cacheable/dirty-sources.txt

@@ -1,0 +1,55 @@
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+.idea_modules/
+
+# IntelliJ run configurations, workspace settings, and local caches
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/libraries
+.idea/**/shelf/
+.idea/**/modules.xml
+
+# User-specific files
+*.swp
+*.swo
+
+# Gradle files
+.gradle/                # Gradle cache and generated files
+build/                  # Build output directory
+!gradle/wrapper/gradle-wrapper.jar  # Keep the Gradle wrapper jar (needed for builds)
+gradle-app.setting     # Optional: Gradle settings file, if present
+
+# Axion Release Plugin & Generated Files
+# (Axion writes into .gradle, which is already ignored)
+
+# Maven (if any Maven files exist)
+target/
+
+# Output directories
+out/
+
+# Local configuration files (do not commit secrets)
+local.properties
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+tmp/
+*.tmp
+
+# Other artifacts
+*.bak
+*.backup
+
+# Environment files (if used; customize as needed)
+.env

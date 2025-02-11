@@ -59,4 +59,4 @@ jobs:
         if: github.event_name == 'push'
         env:
           JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-        run: ./gradlew publishPlugin -PpublishToken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace
+        run: ./gradlew publishPlugin -Ptoken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace

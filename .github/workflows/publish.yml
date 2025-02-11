@@ -8,10 +8,8 @@ on:
 
 jobs:
   build:
-    # 1) Add "permissions" block to give the GITHUB_TOKEN write access to code
     permissions:
-      contents: write  # needed for pushing tags or commits
-
+      contents: write  # Needed for pushing tags/commits
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -33,20 +31,37 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
 
-      - name: Set up Git config so we can push tags
+      - name: Set up Git config
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          # Force the remote to use token-based HTTPS auth:
+          # Ensure remote uses token-based HTTPS auth
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/tabano86/ClipCraft.git
 
-      - name: Run Release
+      - name: Fetch and Sync Remote Tags
+        run: |
+          # Fetch the latest tags and reset the local branch
+          git fetch --prune --tags
+          git reset --hard origin/main
+
+      - name: Run Release with Retry
         if: github.event_name == 'push'
-        run: ./gradlew release --no-daemon --stacktrace
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          max_attempts=3
+          attempt=1
+          until ./gradlew release --no-daemon --stacktrace; do
+            if [ $attempt -ge $max_attempts ]; then
+              echo "Release failed after $attempt attempts."
+              exit 1
+            fi
+            echo "Release attempt $attempt failed, retrying in 10 seconds..."
+            sleep 10
+            attempt=$((attempt + 1))
+          done
 
-      - name: Debug token
+      - name: Debug Plugin Token
         run: echo "JB_PLUGIN_REPOSITORY_TOKEN = '${JB_PLUGIN_REPOSITORY_TOKEN}'"
         env:
           JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}

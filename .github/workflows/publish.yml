@@ -24,6 +24,9 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Confirm gradlew permissions
+        run: ls -l ./gradlew
+
       - name: Disable file mode changes
         run: git config core.fileMode false
 
@@ -42,21 +45,21 @@ jobs:
 
       - name: Run Release (Bump version and tag)
         if: github.event_name == 'push'
-        run: ./gradlew release
+        run: bash ./gradlew release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       #      - name: Run Tests
-      #        run: ./gradlew clean test --no-daemon --stacktrace
+      #        run: bash ./gradlew clean test --no-daemon --stacktrace
 
       - name: Build Plugin
-        run: ./gradlew clean buildPlugin --no-daemon --stacktrace
+        run: bash ./gradlew clean buildPlugin --no-daemon --stacktrace
 
       - name: Patch Plugin XML
-        run: ./gradlew patchPluginXml --no-daemon --stacktrace
+        run: bash ./gradlew patchPluginXml --no-daemon --stacktrace
 
       - name: Publish Plugin
         if: github.event_name == 'push'
         env:
           JB_PLUGIN_REPOSITORY_TOKEN: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
-        run: ./gradlew publishPlugin -PpublishToken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace
+        run: bash ./gradlew publishPlugin -PpublishToken=$JB_PLUGIN_REPOSITORY_TOKEN --no-daemon --stacktrace

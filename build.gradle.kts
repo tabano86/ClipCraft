@@ -8,7 +8,7 @@ plugins {
     id("pl.allegro.tech.build.axion-release") version "1.18.16"
 }
 
-group = "com.clipcraft"  // Set your plugin's group
+group = "com.clipcraft"
 
 scmVersion {
     tag {
@@ -16,7 +16,7 @@ scmVersion {
         versionSeparator.set("")   // No separator between prefix and version
     }
     useHighestVersion.set(true)    // Consider highest tag across all branches
-    ignoreUncommittedChanges.set(true)  // Do not require a version bump for local changes
+    ignoreUncommittedChanges.set(true)  // Allow uncommitted files (for CI-generated artifacts)
     // Automated version increment based on Conventional Commits on main branch
     branchVersionIncrementer.putAll(mapOf(
         "main" to VersionProperties.Incrementer { ctx: VersionIncrementerContext ->
@@ -45,44 +45,44 @@ scmVersion {
             }
         }
     ))
-    // Default incrementer (used for other branches if above not applied)
-    versionIncrementer("incrementPatch")  // Default to patch increments
-    createReleaseCommit.set(false)        // Do not create an extra commit for tagging
+    // Default incrementer (used for other branches)
+    versionIncrementer("incrementPatch")
+    createReleaseCommit.set(false)  // Do not create an extra commit for tagging
 }
 
 // Set project version dynamically from Git (must come after scmVersion configuration)
-version = scmVersion.version  // e.g., "1.2.3-SNAPSHOT" or "1.2.3" based on tags
+version = scmVersion.version
+
+// Disable the verifyRelease task so that uncommitted (generated) files do not block the release.
+tasks.named("verifyRelease") {
+    enabled = false
+}
 
 repositories {
     mavenCentral()
-    // Gradle Plugin Portal is used implicitly for plugin coordinates.
 }
 
 dependencies {
-    // Kotlin testing library (provides Kotlin assertions and compatibility with JUnit)
     testImplementation(kotlin("test"))
-    // JUnit 5 API and engine for unit tests
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
 intellij {
     version.set("2023.2") // Target IntelliJ IDEA version
-    type.set("IC")        // Target IDE edition: IC = IntelliJ Community, IU = Ultimate
-    // Declare dependency on Java module to satisfy 'com.intellij.modules.java'
+    type.set("IC")        // IntelliJ Community Edition
+    // Add dependency on the Java module to satisfy com.intellij.modules.java requirement.
     plugins.set(listOf("Git4Idea", "java"))
-    // Other IntelliJ plugin options can be set here if needed
 }
 
 kotlin {
-    jvmToolchain(17)  // Use Java 17 for compilation (required for IntelliJ 2022.3+ plugins)
+    jvmToolchain(17)  // Use Java 17 for compilation
 }
 
 tasks.test {
-    useJUnitPlatform()  // Enable JUnit 5 platform for tests
+    useJUnitPlatform()
 }
 
-// Configure IntelliJ plugin XML patching – set since/until build for compatibility
 tasks.patchPluginXml {
-    sinceBuild.set("232")    // Minimum IDE build version (e.g., 232 corresponds to IntelliJ 2023.2)
-    untilBuild.set("232.*")  // Compatible with all 2023.2 builds (adjust if needed)
+    sinceBuild.set("232")
+    untilBuild.set("232.*")
 }

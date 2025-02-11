@@ -45,9 +45,11 @@ jobs:
 
       - name: Run Release (Bump version and tag)
         if: github.event_name == 'push'
-        run: bash ./gradlew release
+        run: bash ./gradlew release --no-daemon --stacktrace
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USERNAME: ${{ github.actor }}
+          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       #      - name: Run Tests
       #        run: bash ./gradlew clean test --no-daemon --stacktrace

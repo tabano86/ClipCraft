@@ -4,7 +4,15 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.SnippetGroup
 
 object LintService {
-    fun lintGroup(group: SnippetGroup, options: ClipCraftOptions) = group.snippets.flatMap { lintSnippet(it) }
+    fun lintGroup(group: SnippetGroup, options: ClipCraftOptions): List<LintIssue> {
+        val allIssues = group.snippets.flatMap { lintSnippet(it) }
+        return when {
+            options.lintErrorsOnly && !options.lintWarningsOnly -> allIssues.filter { it.severity == LintSeverity.ERROR }
+            options.lintWarningsOnly && !options.lintErrorsOnly -> allIssues.filter { it.severity == LintSeverity.WARNING }
+            else -> allIssues
+        }
+    }
+
     fun lintSnippet(snippet: com.clipcraft.model.Snippet): List<LintIssue> {
         val lines = snippet.content.lines()
         return lines.mapIndexedNotNull { index, line ->

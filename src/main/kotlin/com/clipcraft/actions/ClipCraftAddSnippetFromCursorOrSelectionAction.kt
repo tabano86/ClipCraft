@@ -1,5 +1,6 @@
 package com.clipcraft.actions
 
+import com.clipcraft.services.ClipCraftQueueService
 import com.clipcraft.services.ClipCraftSettings
 import com.clipcraft.services.SnippetsManager
 import com.intellij.notification.Notification
@@ -27,17 +28,32 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             return
         }
         val finalSnippet = snippetText.withClipCraftHeaders()
-        SnippetsManager.getInstance(event.project!!).addSnippet(
-            com.clipcraft.model.Snippet(
-                filePath = "InMemory",
-                relativePath = null,
-                fileName = "Snippet",
-                fileSizeBytes = finalSnippet.length.toLong(),
-                lastModified = System.currentTimeMillis(),
-                content = finalSnippet
+        val project = event.project!!
+        if (ClipCraftSettings.getInstance().getCurrentProfile().options.addSnippetToQueue) {
+            ClipCraftQueueService.getInstance(project).addSnippet(
+                com.clipcraft.model.Snippet(
+                    filePath = "InMemory",
+                    relativePath = null,
+                    fileName = "Snippet",
+                    fileSizeBytes = finalSnippet.length.toLong(),
+                    lastModified = System.currentTimeMillis(),
+                    content = finalSnippet
+                )
             )
-        )
-        notify("Snippet added successfully.", NotificationType.INFORMATION)
+            notify("Snippet added to queue.", NotificationType.INFORMATION)
+        } else {
+            SnippetsManager.getInstance(project).addSnippet(
+                com.clipcraft.model.Snippet(
+                    filePath = "InMemory",
+                    relativePath = null,
+                    fileName = "Snippet",
+                    fileSizeBytes = finalSnippet.length.toLong(),
+                    lastModified = System.currentTimeMillis(),
+                    content = finalSnippet
+                )
+            )
+            notify("Snippet added and copied to clipboard.", NotificationType.INFORMATION)
+        }
     }
 
     private fun Editor.extractSnippetOrMethod(psiFile: PsiFile): String {

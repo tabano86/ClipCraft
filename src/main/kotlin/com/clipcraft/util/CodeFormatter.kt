@@ -62,24 +62,22 @@ object CodeFormatter {
     }
 
     fun removeImports(text: String, lang: String?): String {
-        return if (lang?.lowercase() == "python") {
-            text.lineSequence().filterNot {
-                val t = it.trimStart()
-                t.startsWith("import ") || t.startsWith("from ")
+        return when (lang?.lowercase()) {
+            "python" -> text.lines().filterNot {
+                it.trim().startsWith("import ") || it.trim().startsWith("from ")
             }.joinToString("\n")
-        } else {
-            text.lineSequence().filterNot {
-                it.trimStart().startsWith("import ")
+            else -> text.lines().filterNot {
+                it.trim().lowercase().startsWith("import ")
             }.joinToString("\n")
         }
     }
 
     fun removeComments(text: String, lang: String?): String {
         return if (lang?.lowercase()?.contains("python") == true)
-            text.lineSequence().filterNot { it.trimStart().startsWith("#") }.joinToString("\n")
+            text.lines().filterNot { it.trim().startsWith("#") }.joinToString("\n")
         else {
             val noBlock = text.replace(Regex("(?s)/\\*.*?\\*/"), "")
-            noBlock.lineSequence().map { it.replace(Regex("//.*$"), "").trimEnd() }
+            noBlock.lines().map { it.replace(Regex("//.*$"), "").trimEnd() }
                 .filter { it.isNotBlank() }
                 .joinToString("\n")
         }
@@ -99,10 +97,10 @@ object CodeFormatter {
     fun applyCompression(input: String, o: ClipCraftOptions): String {
         return when (o.compressionMode) {
             CompressionMode.NONE -> input
-            CompressionMode.MINIMAL -> input.lineSequence().joinToString("\n") {
+            CompressionMode.MINIMAL -> input.lines().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
-            CompressionMode.ULTRA -> input.lineSequence().map { line ->
+            CompressionMode.ULTRA -> input.lines().map { line ->
                 line.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
             }.filter {
                 if (!o.selectiveCompression) it.isNotBlank() else it.isNotBlank() && !it.uppercase().contains("TODO") && !it.uppercase().contains("DEBUG")
@@ -114,7 +112,9 @@ object CodeFormatter {
         text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
 
     fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
-        require(maxChunkSize > 0) { "maxChunkSize must be positive" }
+        if (maxChunkSize <= 0) {
+            throw IllegalArgumentException("maxChunkSize must be positive")
+        }
         if (text.length <= maxChunkSize) return listOf(text)
         if (!preserveWords) {
             val chunks = mutableListOf<String>()

@@ -11,4 +11,9 @@ class ClipCraftQueueService(val project: Project) {
     fun removeSnippet(id: String) { queue.removeIf { it.id == id } }
     fun clearQueue() { queue.clear() }
     fun getAllSnippets(): List<Snippet> = queue.toList()
+
+    companion object {
+        fun getInstance(project: Project): ClipCraftQueueService =
+            project.getService(ClipCraftQueueService::class.java)
+    }
 }

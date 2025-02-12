@@ -44,6 +44,7 @@ class ClipCraftAction : AnAction() {
             ConcurrencyMode.COROUTINES -> runCoroutines(project, paths, options)
         }
     }
+
     private fun runSequential(proj: Project, paths: List<String>, options: ClipCraftOptions) {
         val metrics = proj.getService(ClipCraftPerformanceMetrics::class.java)
         metrics?.startProcessing()
@@ -55,6 +56,7 @@ class ClipCraftAction : AnAction() {
         copyToClipboard(proj, finalOutput)
         metrics?.stopProcessingAndLog("ClipCraftAction(sequential)")
     }
+
     private fun runThreadPool(proj: Project, paths: List<String>, options: ClipCraftOptions) {
         ProgressManager.getInstance().run(object : Task.Backgroundable(proj, "ClipCraft ThreadPool", true) {
             override fun run(indicator: ProgressIndicator) {
@@ -73,6 +75,7 @@ class ClipCraftAction : AnAction() {
             }
         })
     }
+
     private fun runCoroutines(proj: Project, paths: List<String>, options: ClipCraftOptions) {
         ProgressManager.getInstance().run(object : Task.Backgroundable(proj, "ClipCraft Coroutines", true) {
             override fun run(indicator: ProgressIndicator) {
@@ -90,17 +93,50 @@ class ClipCraftAction : AnAction() {
             }
         })
     }
+
     private fun processFileOrDir(file: File, proj: Project, options: ClipCraftOptions, group: SnippetGroup) {
         if (!file.exists() || IgnoreUtil.shouldIgnore(file, options, proj.basePath ?: "")) return
         if (file.isDirectory) {
             file.listFiles()?.forEach { processFileOrDir(it, proj, options, group) }
             return
         }
-        if (options.detectBinary && isBinary(file, options.binaryCheckThreshold)) return
-        val content = try { file.readText() } catch (ex: Exception) { "<Error: ${ex.message}>" }
+        // If the file is an image and we are not including image content, use a placeholder.
+        val ext = file.extension.lowercase()
+        if (ext in listOf("svg", "png", "jpg", "jpeg", "gif") && !options.includeImageFiles) {
+            val placeholder = "[Image file: ${file.name} not included]"
+            val snippet = Snippet(
+                filePath = file.absolutePath,
+                relativePath = proj.basePath?.let {
+                    try {
+                        file.relativeTo(File(it)).path
+                    } catch (_: Exception) {
+                        file.absolutePath
+                    }
+                },
+                fileName = file.name,
+                fileSizeBytes = file.length(),
+                lastModified = file.lastModified(),
+                content = placeholder
+            )
+            val enriched = if (options.includeGitInfo) ClipCraftGitIntegration.enrichSnippetWithGitInfo(proj, snippet) else snippet
+            synchronized(group) { group.snippets.add(enriched) }
+            return
+        }
+        // Regular file processing
+        val content = try {
+            file.readText()
+        } catch (ex: Exception) {
+            "<Error: ${ex.message}>"
+        }
         var snippet = Snippet(
             filePath = file.absolutePath,
-            relativePath = proj.basePath?.let { try { file.relativeTo(File(it)).path } catch (_: Exception) { file.absolutePath } },
+            relativePath = proj.basePath?.let {
+                try {
+                    file.relativeTo(File(it)).path
+                } catch (_: Exception) {
+                    file.absolutePath
+                }
+            },
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
@@ -109,20 +145,16 @@ class ClipCraftAction : AnAction() {
         if (options.includeGitInfo) snippet = ClipCraftGitIntegration.enrichSnippetWithGitInfo(proj, snippet)
         synchronized(group) { group.snippets.add(snippet) }
     }
-    private fun isBinary(file: File, threshold: Int): Boolean {
-        return try {
-            val bytes = ByteArray(threshold)
-            val read = file.inputStream().read(bytes)
-            read > 0 && bytes.take(read).count { it < 9 || it == 127.toByte() || it > 126 } > read / 3
-        } catch (e: Exception) { false }
-    }
+
     private fun buildFinalOutput(group: SnippetGroup, options: ClipCraftOptions, lintResults: List<com.clipcraft.lint.LintIssue>): String {
         val header = options.snippetHeaderText.orEmpty()
         val footer = options.snippetFooterText.orEmpty()
         val code = CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
-        val dirStruct = if (options.includeDirectorySummary) "Directory Structure:\n" + group.snippets.mapNotNull { it.relativePath }
-            .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n" else ""
-        val lintSummary = if (options.showLint && lintResults.isNotEmpty()) "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" } else ""
+        val dirStruct = if (options.includeDirectorySummary)
+            "Directory Structure:\n" + group.snippets.mapNotNull { it.relativePath }
+                .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n" else ""
+        val lintSummary = if (options.showLint && lintResults.isNotEmpty())
+            "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" } else ""
         return buildString {
             if (header.isNotEmpty()) appendLine(header).appendLine()
             if (dirStruct.isNotEmpty()) appendLine(dirStruct)
@@ -131,6 +163,7 @@ class ClipCraftAction : AnAction() {
             if (lintSummary.isNotEmpty()) appendLine(lintSummary)
         }
     }
+
     private fun copyToClipboard(proj: Project, output: String) {
         ClipCraftNotificationCenter.info("ClipCraft finished. Total length: ${output.length}")
         Toolkit.getDefaultToolkit().systemClipboard.setContents(java.awt.datatransfer.StringSelection(output), null)

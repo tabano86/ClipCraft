@@ -10,6 +10,7 @@ import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.options.Configurable
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
@@ -38,12 +39,14 @@ fun main() {
     println("Hello")
 }"""
 
+    // Outer panels
     private lateinit var mainPanel: JPanel
     private lateinit var previewArea: JTextArea
 
-    // Existing fields
-    private lateinit var headerField: JTextField
-    private lateinit var footerField: JTextField
+    // Existing fields (input controls)
+    // Use JBTextArea for header and footer to allow multi‑line input.
+    private lateinit var headerArea: JTextArea
+    private lateinit var footerArea: JTextArea
     private lateinit var directoryStructureCheck: JCheckBox
     private lateinit var lineNumbersCheck: JCheckBox
     private lateinit var removeImportsCheck: JCheckBox
@@ -69,7 +72,7 @@ fun main() {
     private lateinit var binaryThresholdField: JTextField
     private lateinit var showLintCheck: JCheckBox
 
-    // For chunking panel
+    // For the chunking panel
     private lateinit var chunkLabel: JLabel
 
     // New options controls
@@ -87,15 +90,15 @@ fun main() {
     override fun getDisplayName() = "ClipCraft"
 
     override fun createComponent(): JComponent {
-        // Outer panel for entire settings UI
+        // Outer panel with extra padding.
         mainPanel = JPanel(BorderLayout()).apply {
-            border = JBUI.Borders.empty(16) // extra spacing around everything
+            border = JBUI.Borders.empty(16)
         }
 
-        // Form panel with sections
+        // Create a vertical form panel using BoxLayout.
         val formPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = JBUI.Borders.empty(12) // spacing within the form itself
+            border = JBUI.Borders.empty(12)
             add(panelOutput())
             add(Box.createVerticalStrut(JBUI.scale(12)))
             add(panelFormatting())
@@ -112,15 +115,14 @@ fun main() {
             add(Box.createVerticalStrut(JBUI.scale(12)))
             add(panelLint())
             add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelAdditionalOptions()) // panel for new options
+            add(panelAdditionalOptions())
         }
-
         val formScroll = JBScrollPane(formPanel).apply {
             verticalScrollBar.unitIncrement = 16
             preferredSize = Dimension(480, 620)
         }
 
-        // Preview text area on the right
+        // Preview area on the right with padding.
         previewArea = JTextArea().apply {
             isEditable = false
             lineWrap = true
@@ -133,54 +135,59 @@ fun main() {
             border = JBUI.Borders.empty(5)
         }
 
-        // Splitter for left: form; right: preview
+        // Splitter to allow flexible resizing between the form and preview.
         val splitter = JBSplitter(true, 0.5f).apply {
             firstComponent = formScroll
             secondComponent = previewScroll
             dividerWidth = JBUI.scale(5)
         }
-
         mainPanel.add(splitter, BorderLayout.CENTER)
         updatePreview()
         return mainPanel
     }
 
-    /**
-     * Panel for new additional options:
-     *  - Include Image Files
-     *  - Lint Errors Only
-     *  - Lint Warnings Only
-     *  - Add Snippet To Queue
-     */
+    // New panel for additional options.
     private fun panelAdditionalOptions(): JPanel {
         includeImageFilesCheck = JCheckBox("Include Image Files", options.includeImageFiles)
         lintErrorsOnlyCheck = JCheckBox("Report Only Lint Errors", options.lintErrorsOnly)
         lintWarningsOnlyCheck = JCheckBox("Report Only Lint Warnings", options.lintWarningsOnly)
         addSnippetToQueueCheck = JCheckBox("Add Snippet to Queue", options.addSnippetToQueue)
-
         return FormBuilder.createFormBuilder()
             .addComponent(includeImageFilesCheck)
             .addComponent(lintErrorsOnlyCheck)
             .addComponent(lintWarningsOnlyCheck)
             .addComponent(addSnippetToQueueCheck)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Additional Options")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Additional Options") }
     }
 
     private fun panelOutput(): JPanel {
-        headerField = JBTextField(options.snippetHeaderText.orEmpty(), 20).apply { document.addDocumentListener(docListener) }
-        footerField = JBTextField(options.snippetFooterText.orEmpty(), 20).apply { document.addDocumentListener(docListener) }
+        // Replace header and footer fields with multi-line text areas.
+        headerArea = JBTextArea(options.snippetHeaderText.orEmpty(), 3, 20).apply {
+            lineWrap = true
+            wrapStyleWord = true
+            document.addDocumentListener(docListener)
+        }
+        footerArea = JBTextArea(options.snippetFooterText.orEmpty(), 3, 20).apply {
+            lineWrap = true
+            wrapStyleWord = true
+            document.addDocumentListener(docListener)
+        }
         directoryStructureCheck = JCheckBox("Directory Structure", options.includeDirectorySummary).apply {
             addActionListener { updatePreview() }
         }
+
+        val headerScroll = JBScrollPane(headerArea).apply {
+            preferredSize = Dimension(200, JBUI.scale(60))
+        }
+        val footerScroll = JBScrollPane(footerArea).apply {
+            preferredSize = Dimension(200, JBUI.scale(60))
+        }
+
         return FormBuilder.createFormBuilder()
             .addComponent(directoryStructureCheck)
-            .addLabeledComponent("Header:", headerField, 1, false)
-            .addLabeledComponent("Footer:", footerField, 1, false)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Output")
-            }
+            .addLabeledComponent("Header:", headerScroll, 1, false)
+            .addLabeledComponent("Footer:", footerScroll, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Output") }
     }
 
     private fun panelFormatting(): JPanel {
@@ -202,9 +209,7 @@ fun main() {
             .addComponent(trimWhitespaceCheck)
             .addComponent(removeEmptyLinesCheck)
             .addComponent(singleLineOutputCheck)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Formatting")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Formatting") }
     }
 
     private fun panelChunking(): JPanel {
@@ -225,16 +230,13 @@ fun main() {
             addActionListener { updatePreview() }
         }
         chunkLabel = JLabel("").apply { foreground = javax.swing.plaf.ColorUIResource.RED }
-
         return FormBuilder.createFormBuilder()
             .addLabeledComponent("Chunk Strategy:", chunkStrategyCombo, 1, false)
             .addLabeledComponent("Chunk Size:", chunkSizeField, 1, false)
             .addLabeledComponent("Overlap Strategy:", overlapCombo, 1, false)
             .addLabeledComponent("Compression Mode:", compressionCombo, 1, false)
             .addComponent(chunkLabel)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Chunking & Overlap")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Chunking & Overlap") }
     }
 
     private fun panelMetadata(): JPanel {
@@ -250,9 +252,7 @@ fun main() {
             .addComponent(gitInfoCheck)
             .addComponent(autoLangCheck)
             .addLabeledComponent("Theme:", themeCombo, 1, false)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Metadata & Language")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Metadata & Language") }
     }
 
     private fun panelConcurrency(): JPanel {
@@ -264,9 +264,7 @@ fun main() {
         return FormBuilder.createFormBuilder()
             .addLabeledComponent("Concurrency Mode:", concurrencyCombo, 1, false)
             .addLabeledComponent("Max Tasks:", maxTasksField, 1, false)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Concurrency")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Concurrency") }
     }
 
     private fun panelIgnore(): JPanel {
@@ -274,42 +272,34 @@ fun main() {
         additionalIgnoresField = JBTextField(options.additionalIgnorePatterns.orEmpty(), 15).apply { document.addDocumentListener(docListener) }
         invertIgnoresCheck = JCheckBox("Invert Patterns", options.invertIgnorePatterns).apply { addActionListener { updatePreview() } }
         directoryPatternCheck = JCheckBox("Directory Matching", options.enableDirectoryPatternMatching).apply { addActionListener { updatePreview() } }
-
         return FormBuilder.createFormBuilder()
             .addComponent(gitIgnoreCheck)
             .addLabeledComponent("Additional Ignore Patterns:", additionalIgnoresField, 1, false)
             .addComponent(invertIgnoresCheck)
             .addComponent(directoryPatternCheck)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Ignore Options")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Ignore Options") }
     }
 
     private fun panelBinary(): JPanel {
         detectBinaryCheck = JCheckBox("Detect Binary Files", options.detectBinary).apply { addActionListener { updatePreview() } }
         binaryThresholdField = JBTextField(options.binaryCheckThreshold.toString(), 5).apply { document.addDocumentListener(docListener) }
-
         return FormBuilder.createFormBuilder()
             .addComponent(detectBinaryCheck)
             .addLabeledComponent("Binary Check Threshold:", binaryThresholdField, 1, false)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Binary Detection")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Binary Detection") }
     }
 
     private fun panelLint(): JPanel {
         showLintCheck = JCheckBox("Show Lint Results", options.showLint).apply { addActionListener { updatePreview() } }
         return FormBuilder.createFormBuilder()
             .addComponent(showLintCheck)
-            .panel.also {
-                it.border = BorderFactory.createTitledBorder("Lint")
-            }
+            .panel.also { it.border = BorderFactory.createTitledBorder("Lint") }
     }
 
     override fun isModified(): Boolean {
         return listOf(
-            headerField.text != (options.snippetHeaderText ?: ""),
-            footerField.text != (options.snippetFooterText ?: ""),
+            headerArea.text != (options.snippetHeaderText ?: ""),
+            footerArea.text != (options.snippetFooterText ?: ""),
             directoryStructureCheck.isSelected != options.includeDirectorySummary,
             lineNumbersCheck.isSelected != options.includeLineNumbers,
             removeImportsCheck.isSelected != options.removeImports,
@@ -334,7 +324,6 @@ fun main() {
             detectBinaryCheck.isSelected != options.detectBinary,
             binaryThresholdField.text != options.binaryCheckThreshold.toString(),
             showLintCheck.isSelected != options.showLint,
-            // New options:
             includeImageFilesCheck.isSelected != options.includeImageFiles,
             lintErrorsOnlyCheck.isSelected != options.lintErrorsOnly,
             lintWarningsOnlyCheck.isSelected != options.lintWarningsOnly,
@@ -343,8 +332,8 @@ fun main() {
     }
 
     override fun apply() {
-        options.snippetHeaderText = headerField.text
-        options.snippetFooterText = footerField.text
+        options.snippetHeaderText = headerArea.text
+        options.snippetFooterText = footerArea.text
         options.includeDirectorySummary = directoryStructureCheck.isSelected
         options.includeLineNumbers = lineNumbersCheck.isSelected
         options.removeImports = removeImportsCheck.isSelected
@@ -369,7 +358,6 @@ fun main() {
         options.detectBinary = detectBinaryCheck.isSelected
         options.binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: options.binaryCheckThreshold
         options.showLint = showLintCheck.isSelected
-        // New options:
         options.includeImageFiles = includeImageFilesCheck.isSelected
         options.lintErrorsOnly = lintErrorsOnlyCheck.isSelected
         options.lintWarningsOnly = lintWarningsOnlyCheck.isSelected
@@ -382,8 +370,8 @@ fun main() {
     }
 
     override fun reset() {
-        headerField.text = options.snippetHeaderText.orEmpty()
-        footerField.text = options.snippetFooterText.orEmpty()
+        headerArea.text = options.snippetHeaderText.orEmpty()
+        footerArea.text = options.snippetFooterText.orEmpty()
         directoryStructureCheck.isSelected = options.includeDirectorySummary
         lineNumbersCheck.isSelected = options.includeLineNumbers
         removeImportsCheck.isSelected = options.removeImports
@@ -408,7 +396,6 @@ fun main() {
         detectBinaryCheck.isSelected = options.detectBinary
         binaryThresholdField.text = options.binaryCheckThreshold.toString()
         showLintCheck.isSelected = options.showLint
-        // New options:
         includeImageFilesCheck.isSelected = options.includeImageFiles
         lintErrorsOnlyCheck.isSelected = options.lintErrorsOnly
         lintWarningsOnlyCheck.isSelected = options.lintWarningsOnly
@@ -423,8 +410,8 @@ fun main() {
 
     private fun updatePreview() {
         val tmp = options.copy().apply {
-            snippetHeaderText = headerField.text
-            snippetFooterText = footerField.text
+            snippetHeaderText = headerArea.text
+            snippetFooterText = footerArea.text
             includeDirectorySummary = directoryStructureCheck.isSelected
             includeLineNumbers = lineNumbersCheck.isSelected
             removeImports = removeImportsCheck.isSelected
@@ -449,13 +436,11 @@ fun main() {
             detectBinary = detectBinaryCheck.isSelected
             binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: binaryCheckThreshold
             showLint = showLintCheck.isSelected
-            // New options:
             includeImageFiles = includeImageFilesCheck.isSelected
             lintErrorsOnly = lintErrorsOnlyCheck.isSelected
             lintWarningsOnly = lintWarningsOnlyCheck.isSelected
             addSnippetToQueue = addSnippetToQueueCheck.isSelected
         }
-
         tmp.resolveConflicts()
         val snippet = com.clipcraft.model.Snippet(
             content = sampleCode,
@@ -467,20 +452,22 @@ fun main() {
         )
         val formattedCode = CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
         val dirStruct = if (tmp.includeDirectorySummary) "Directory Structure:\n  src/Sample.kt\n\n" else ""
-
         val fullPreview = buildString {
             if (!tmp.snippetHeaderText.isNullOrEmpty()) {
                 appendLine(tmp.snippetHeaderText)
                 appendLine()
             }
-            if (dirStruct.isNotEmpty()) append(dirStruct)
+            if (dirStruct.isNotEmpty()) {
+                append(dirStruct)
+            }
             append(formattedCode)
             if (!tmp.snippetFooterText.isNullOrEmpty()) {
                 appendLine()
                 appendLine(tmp.snippetFooterText)
             }
+            // Add extra information to preview (for debugging/demo purposes)
+            appendLine("\n---\n[Preview Info] Concurrency: ${tmp.concurrencyMode}, Chunk Strategy: ${tmp.chunkStrategy}")
         }
-
         previewArea.text = fullPreview
         previewArea.caretPosition = 0
         updateChunkUI()

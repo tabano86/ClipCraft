@@ -1,17 +1,14 @@
 package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftProfile
+import com.clipcraft.services.ClipCraftSettings.getInstance
 
-/**
- * A simple manager that delegates to the global ClipCraftSettings for storing/retrieving profiles.
- */
 class ClipCraftProfileManager {
-    private val settings = ClipCraftSettings.getInstance()
-
+    private val settings = getInstance()
     fun currentProfile(): ClipCraftProfile = settings.getCurrentProfile()
-    fun switchProfile(profileName: String) = settings.setCurrentProfile(profileName)
+    fun switchProfile(name: String) = settings.setCurrentProfile(name)
     fun listProfiles(): List<ClipCraftProfile> = settings.getAllProfiles()
     fun addProfile(profile: ClipCraftProfile) = settings.addProfile(profile)
-    fun deleteProfile(profileName: String) = settings.removeProfile(profileName)
-    fun getProfile(name: String): ClipCraftProfile? = settings.getAllProfiles().find { it.profileName == name }
+    fun deleteProfile(name: String) = settings.removeProfile(name)
+    fun getProfile(name: String): ClipCraftProfile = settings.getAllProfiles().find { it.profileName == name }
 }

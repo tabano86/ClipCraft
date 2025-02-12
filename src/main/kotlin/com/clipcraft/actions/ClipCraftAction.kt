@@ -6,7 +6,7 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.Snippet
 import com.clipcraft.model.SnippetGroup
-import com.clipcraft.services.ClipCraftAIAssistantService
+import com.clipcraft.services.ClipCraftGPTService
 import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftPerformanceMetrics
 import com.clipcraft.services.ClipCraftProjectProfileManager
@@ -21,14 +21,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import java.awt.Toolkit
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -54,8 +54,8 @@ class ClipCraftAction : AnAction() {
         val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
         proj.getService(LintResultsService::class.java)?.storeResults(lintResults)
         var finalOutput = buildFinalOutput(group, options, lintResults)
-        finalOutput = proj.getService(ClipCraftAIAssistantService::class.java)?.refineOutput(finalOutput)
-            ?: finalOutput
+        if (options.gptEnhanceOutput)
+            finalOutput = proj.getService(ClipCraftGPTService::class.java)?.enhanceOutput(finalOutput) ?: finalOutput
         copyToClipboard(proj, finalOutput)
         metrics?.stopProcessingAndLog("ClipCraftAction(sequential)")
     }
@@ -73,8 +73,9 @@ class ClipCraftAction : AnAction() {
                 val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
                 proj.getService(LintResultsService::class.java)?.storeResults(lintResults)
                 var finalOutput = buildFinalOutput(group, options, lintResults)
-                finalOutput = proj.getService(ClipCraftAIAssistantService::class.java)?.refineOutput(finalOutput)
-                    ?: finalOutput
+                if (options.gptEnhanceOutput)
+                    finalOutput =
+                        proj.getService(ClipCraftGPTService::class.java)?.enhanceOutput(finalOutput) ?: finalOutput
                 copyToClipboard(proj, finalOutput)
                 metrics?.stopProcessingAndLog("ClipCraftAction(thread pool)")
             }
@@ -93,8 +94,9 @@ class ClipCraftAction : AnAction() {
                 val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
                 proj.getService(LintResultsService::class.java)?.storeResults(lintResults)
                 var finalOutput = buildFinalOutput(group, options, lintResults)
-                finalOutput = proj.getService(ClipCraftAIAssistantService::class.java)?.refineOutput(finalOutput)
-                    ?: finalOutput
+                if (options.gptEnhanceOutput)
+                    finalOutput =
+                        proj.getService(ClipCraftGPTService::class.java)?.enhanceOutput(finalOutput) ?: finalOutput
                 copyToClipboard(proj, finalOutput)
                 metrics?.stopProcessingAndLog("ClipCraftAction(coroutines)")
             }
@@ -108,10 +110,20 @@ class ClipCraftAction : AnAction() {
             return
         }
         if (options.detectBinary && isBinary(file, options.binaryCheckThreshold)) return
-        val content = try { file.readText() } catch (ex: Exception) { "<Error: ${ex.message}>" }
+        val content = try {
+            file.readText()
+        } catch (ex: Exception) {
+            "<Error: ${ex.message}>"
+        }
         var snippet = Snippet(
             filePath = file.absolutePath,
-            relativePath = proj.basePath?.let { try { file.relativeTo(File(it)).path } catch (_: Exception) { file.absolutePath } },
+            relativePath = proj.basePath?.let {
+                try {
+                    file.relativeTo(File(it)).path
+                } catch (_: Exception) {
+                    file.absolutePath
+                }
+            },
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
@@ -126,19 +138,24 @@ class ClipCraftAction : AnAction() {
             val bytes = ByteArray(threshold)
             val read = file.inputStream().read(bytes)
             read > 0 && bytes.take(read).count { it < 9 || it == 127.toByte() || it > 126 } > read / 3
-        } catch (e: Exception) { false }
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    private fun buildFinalOutput(group: SnippetGroup, options: ClipCraftOptions, lintResults: List<com.clipcraft.lint.LintIssue>): String {
+    private fun buildFinalOutput(
+        group: SnippetGroup,
+        options: ClipCraftOptions,
+        lintResults: List<com.clipcraft.lint.LintIssue>
+    ): String {
         val header = options.snippetHeaderText.orEmpty()
         val footer = options.snippetFooterText.orEmpty()
         val code = CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
-        val dirStruct = if (options.includeDirectorySummary) {
-            "Directory Structure:\n" + group.snippets.mapNotNull { it.relativePath }.distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
-        } else ""
-        val lintSummary = if (options.showLint && lintResults.isNotEmpty()) {
-            "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" }
-        } else ""
+        val dirStruct =
+            if (options.includeDirectorySummary) "Directory Structure:\n" + group.snippets.mapNotNull { it.relativePath }
+                .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n" else ""
+        val lintSummary =
+            if (options.showLint && lintResults.isNotEmpty()) "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" } else ""
         return buildString {
             if (header.isNotEmpty()) appendLine(header).appendLine()
             if (dirStruct.isNotEmpty()) appendLine(dirStruct)

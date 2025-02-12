@@ -1,64 +1,38 @@
 package com.clipcraft.lint
 
 import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.model.Snippet
 import com.clipcraft.model.SnippetGroup
 
-/**
- * Central linting engine that checks code for basic issues.
- */
 object LintService {
-
-    /**
-     * Run lint checks on all snippets in a group, returning a combined list of issues.
-     */
-    fun lintGroup(group: SnippetGroup, options: ClipCraftOptions): List<LintIssue> {
-        val result = mutableListOf<LintIssue>()
-        group.snippets.forEach { snippet ->
-            result += lintSnippet(snippet)
-        }
-        return result
-    }
-
-    /**
-     * A simple lint pass:
-     * 1. Lines > 120 characters => WARNING
-     * 2. Tabs => ERROR
-     * 3. Trailing whitespace => WARNING
-     */
-    fun lintSnippet(snippet: Snippet): List<LintIssue> {
+    fun lintGroup(group: SnippetGroup, options: ClipCraftOptions) = group.snippets.flatMap { lintSnippet(it) }
+    fun lintSnippet(snippet: com.clipcraft.model.Snippet): List<LintIssue> {
         val lines = snippet.content.lines()
-        val issues = mutableListOf<LintIssue>()
-        lines.forEachIndexed { index, line ->
-            val lineNumber = index + 1
-            // 1. Check length
-            if (line.length > 120) {
-                issues += LintIssue(
+        return lines.mapIndexedNotNull { index, line ->
+            val num = index + 1
+            when {
+                line.length > 120 -> LintIssue(
                     LintSeverity.WARNING,
                     snippet.filePath,
-                    lineNumber,
-                    "Line exceeds 120 characters (${line.length} chars).",
+                    num,
+                    "Line exceeds 120 characters (${line.length} chars)."
                 )
-            }
-            // 2. Tabs
-            if (line.contains('\t')) {
-                issues += LintIssue(
+
+                line.contains('\t') -> LintIssue(
                     LintSeverity.ERROR,
                     snippet.filePath,
-                    lineNumber,
-                    "Tabs are not allowed; use spaces instead.",
+                    num,
+                    "Tabs are not allowed; use spaces instead."
                 )
-            }
-            // 3. Trailing whitespace
-            if (line.endsWith(" ") || line.endsWith("\t")) {
-                issues += LintIssue(
+
+                line.endsWith(" ") || line.endsWith("\t") -> LintIssue(
                     LintSeverity.WARNING,
                     snippet.filePath,
-                    lineNumber,
-                    "Trailing whitespace found.",
+                    num,
+                    "Trailing whitespace found."
                 )
+
+                else -> null
             }
         }
-        return issues
     }
 }

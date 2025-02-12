@@ -1,27 +1,28 @@
 package com.clipcraft.services
 
+import com.clipcraft.model.Snippet
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
+import java.util.concurrent.CopyOnWriteArrayList
 
-/**
- * Manages snippet storage or queue (in memory).
- */
-class ClipCraftSnippetManager private constructor() {
+@Service(Service.Level.PROJECT)
+class SnippetsManager(private val project: Project) {
+    private val logger = Logger.getInstance(SnippetsManager::class.java)
+    private val snippets = CopyOnWriteArrayList<Snippet>()
 
-    private val logger = Logger.getInstance(ClipCraftSnippetManager::class.java)
-
-    companion object {
-        private var instance: ClipCraftSnippetManager? = null
-
-        @JvmStatic
-        fun getInstance(): ClipCraftSnippetManager {
-            if (instance == null) {
-                instance = ClipCraftSnippetManager()
-            }
-            return instance!!
-        }
+    fun addSnippet(snippet: Snippet) {
+        snippets.add(snippet)
+        logger.info("Snippet added: ${snippet.id} from ${snippet.fileName}")
     }
 
-    fun addSnippet(content: String) {
-        logger.info("Snippet added:\n$content")
+    fun removeSnippet(snippet: Snippet) {
+        snippets.remove(snippet)
+    }
+
+    fun getAllSnippets(): List<Snippet> = snippets.toList()
+
+    fun clearAll() {
+        snippets.clear()
     }
 }

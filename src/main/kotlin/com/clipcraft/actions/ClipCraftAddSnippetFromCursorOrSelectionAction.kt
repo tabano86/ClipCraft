@@ -10,8 +10,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiFile
-import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.UastFacade
 
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
@@ -43,8 +43,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     private fun Editor.extractSnippetOrMethod(psiFile: PsiFile): String {
         return selectionModel.selectedText ?: caretModel.offset.let { offset ->
             psiFile.findElementAt(offset)?.let { element ->
-                (UastFacade.convertElementWithParent(element, UMethod::class.java) as? UMethod)
-                    ?.sourcePsi?.text
+                (UastFacade.convertElementWithParent(element, UMethod::class.java) as? UMethod)?.sourcePsi?.text
             }
         }.orEmpty()
     }

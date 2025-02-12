@@ -1,9 +1,5 @@
 package com.clipcraft.model
 
-/**
- * Main options for snippet extraction, formatting, concurrency, etc.
- * GPT-related fields were removed.
- */
 data class ClipCraftOptions(
     var includeLineNumbers: Boolean = false,
     var outputFormat: OutputFormat = OutputFormat.MARKDOWN,
@@ -27,35 +23,21 @@ data class ClipCraftOptions(
     var singleLineOutput: Boolean = false,
     var includeMetadata: Boolean = false,
     var includeGitInfo: Boolean = false,
-
     var autoDetectLanguage: Boolean = false,
     var overlapStrategy: OverlapStrategy = OverlapStrategy.SINGLE_LINE,
     var chunkStrategy: ChunkStrategy = ChunkStrategy.NONE,
-
-    // Additional compression toggles
     var selectiveCompression: Boolean = false,
-
-    // Binary detection
     var detectBinary: Boolean = false,
     var binaryCheckThreshold: Int = 2000,
-
-    // Lint
     var showLint: Boolean = false,
-
-    // Renamed from GPT-based naming:
     var snippetHeaderText: String? = null,
     var snippetFooterText: String? = null,
+    var gptEnhanceOutput: Boolean = false,
+    var gptApiKey: String? = null,
+    var gptImageSummary: Boolean = false
 ) {
     fun resolveConflicts() {
-        // Adjust concurrency if needed
-        if (concurrencyMode == ConcurrencyMode.DISABLED && maxConcurrentTasks > 1) {
-            // It's valid to keep it at >1, but concurrency won't be used.
-        }
-        // If singleLineOutput is true, chunking is effectively disabled
-        if (singleLineOutput) {
-            chunkStrategy = ChunkStrategy.NONE
-        }
-        // Ensure chunkSize is valid
+        if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE
         if (chunkSize < 1) chunkSize = 4000
         if (binaryCheckThreshold < 1) binaryCheckThreshold = 1000
     }

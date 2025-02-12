@@ -3,7 +3,7 @@
 ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code snippets quickly—across multiple files or directories. It supports concurrency (thread pools or coroutines), GPT integration stubs, a snippet queue, chunking, ignoring files/folders (including `.gitignore`), and a live preview in settings.
 
 <p align="center">
-  <img src="docs/images/clipcraft_logo.png" alt="ClipCraft Logo" width="150"/>
+  <img src="src/main/resources/icons/clipcraft_32.svg" alt="ClipCraft Logo" width="150"/>
 </p>
 
 ## Features

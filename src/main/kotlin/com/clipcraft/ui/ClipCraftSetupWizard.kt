@@ -12,19 +12,18 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 
 class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
-
     private val wizardCore = ClipCraftSetupWizardCore(project)
     private val wizardUI = ClipCraftSetupWizardUI()
-
     private val cardLayout = CardLayout()
     private val wizardPanel = JPanel(cardLayout)
-
-    private val welcomePanel: JPanel = JPanel().apply {
+    private val welcomePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = JBUI.Borders.empty(20)
         add(JLabel("Welcome to ClipCraft Setup Wizard!").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalStrut(JBUI.scale(20)))
-        add(JLabel("This wizard helps configure basic ClipCraft settings:").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
+        add(JLabel("This wizard helps configure basic ClipCraft settings:").apply {
+            alignmentX = JComponent.CENTER_ALIGNMENT
+        })
         add(Box.createVerticalStrut(JBUI.scale(10)))
         add(JLabel("• Metadata Inclusion").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(JLabel("• GitIgnore usage").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
@@ -32,22 +31,18 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         add(Box.createVerticalGlue())
     }
     private val settingsPanel = wizardUI.getMainPanel()
-
     private var stepIndex = 0
-
     private val backAction = object : DialogWrapperAction("Back") {
         override fun doAction(e: java.awt.event.ActionEvent?) {
             if (stepIndex > 0) {
-                stepIndex--
-                updateStepUI()
+                stepIndex--; updateStepUI()
             }
         }
     }
     private val nextAction = object : DialogWrapperAction("Next") {
         override fun doAction(e: java.awt.event.ActionEvent?) {
             if (stepIndex < 1) {
-                stepIndex++
-                updateStepUI()
+                stepIndex++; updateStepUI()
             }
         }
     }
@@ -67,7 +62,6 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
 
     override fun createCenterPanel(): JComponent = wizardPanel
     override fun createActions(): Array<Action> = arrayOf(backAction, nextAction, finishAction, cancelAction)
-
     private fun updateStepUI() {
         cardLayout.show(wizardPanel, "Step$stepIndex")
         backAction.isEnabled = stepIndex > 0

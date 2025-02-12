@@ -1,7 +1,3 @@
 package com.clipcraft.model
 
-enum class OutputFormat {
-    MARKDOWN,
-    PLAIN,
-    HTML,
-}
+enum class OutputFormat { MARKDOWN, PLAIN, HTML }

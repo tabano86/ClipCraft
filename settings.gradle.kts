@@ -14,12 +14,8 @@ plugins {
 gitHooks {
     commitMsg {
         conventionalCommits {
-            // Apply the default conventional commit types.
             defaultTypes()
-            // You can add custom types if needed, for example:
-            // types("foo", "bar")
         }
     }
-    // Automatically create or overwrite hooks on project import/update.
     createHooks()
 }

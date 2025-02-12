@@ -13,12 +13,15 @@ object IgnoreUtil {
     private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
         if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
     }
+
     fun mergeGitIgnoreRules(opts: ClipCraftOptions, project: Project) {
         project.basePath?.let { loadIgnoreFile(Paths.get(it, ".gitignore"), opts) }
     }
+
     fun parseCustomIgnoreFiles(opts: ClipCraftOptions, projectBase: String, files: List<String>) {
         files.forEach { loadIgnoreFile(Paths.get(projectBase, it), opts) }
     }
+
     fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
         parseGitIgnoreIfNeeded(opts, projectBase)
         if (file.name.startsWith(".")) return true
@@ -30,26 +33,33 @@ object IgnoreUtil {
         for (p in patterns) {
             if (p.isBlank()) continue
             val neg = p.startsWith("!")
-            val pattern = p.removePrefix("!").removePrefix("/").let { if (it.endsWith("/") && !it.endsWith("/**")) "$it**" else it }
+            val pattern = p.removePrefix("!").removePrefix("/")
+                .let { if (it.endsWith("/") && !it.endsWith("/**")) "$it**" else it }
             if (globToRegex(pattern).matches(rel)) ignored = !neg
         }
         return if (opts.invertIgnorePatterns) !ignored else ignored
     }
+
     private fun fileInIgnoreFiles(f: File, ignoreFiles: List<String>?): Boolean =
         ignoreFiles?.any { it.equals(f.name, ignoreCase = true) } ?: false
+
     private fun folderInIgnoreFolders(f: File, ignoreFolders: List<String>?, basePath: String): Boolean {
         val rel = toRelative(f.absolutePath, basePath).replace('\\', '/').removePrefix("/")
         val lastSegment = rel.substringAfterLast('/')
         return ignoreFolders?.any { it.equals(lastSegment, ignoreCase = true) } ?: false
     }
+
     private fun gatherAllPatterns(opts: ClipCraftOptions): List<String> {
-        val addl = opts.additionalIgnorePatterns?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        val addl =
+            opts.additionalIgnorePatterns?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
         return (opts.ignorePatterns + addl).filter { it.isNotBlank() }
     }
+
     private fun toRelative(absPath: String, basePath: String): String {
         val base = File(basePath).absolutePath
         return if (!absPath.startsWith(base)) absPath else absPath.substring(base.length).trimStart(File.separatorChar)
     }
+
     private fun loadIgnoreFile(p: Path, opts: ClipCraftOptions) {
         val file = p.toFile()
         if (!file.exists() || !file.isFile) return

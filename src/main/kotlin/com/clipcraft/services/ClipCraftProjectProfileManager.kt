@@ -4,29 +4,20 @@ import com.clipcraft.model.ClipCraftProfile
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 
-/**
- * Manages per-project ClipCraft profiles in memory.
- */
 @Service(Service.Level.PROJECT)
 class ClipCraftProjectProfileManager(val project: Project) {
-
-    private val profiles: MutableMap<String, ClipCraftProfile> = mutableMapOf()
+    private val profiles = mutableMapOf<String, ClipCraftProfile>()
     private var activeProfile: ClipCraftProfile? = null
-
     fun getProfile(name: String): ClipCraftProfile? = profiles[name]
-
     fun addOrUpdateProfile(profile: ClipCraftProfile) {
         profiles[profile.profileName] = profile
-        if (activeProfile == null) {
-            activeProfile = profile
-        }
+        if (activeProfile == null) activeProfile = profile
     }
 
-    fun switchActiveProfile(profileName: String) {
-        activeProfile = profiles[profileName]
+    fun switchActiveProfile(name: String) {
+        activeProfile = profiles[name]
     }
 
     fun getActiveProfile(): ClipCraftProfile? = activeProfile
-
     fun listProfiles(): List<ClipCraftProfile> = profiles.values.toList()
 }

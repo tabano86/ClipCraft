@@ -18,14 +18,18 @@ class ClipCraftLintToolWindowFactory : ToolWindowFactory, DumbAware {
         val panel = JPanel(BorderLayout()).apply {
             border = BorderFactory.createEmptyBorder(JBUI.scale(10), JBUI.scale(10), JBUI.scale(10), JBUI.scale(10))
         }
-        val resultsArea = JTextArea().apply {
-            isEditable = false
-        }
+        val resultsArea = JTextArea().apply { isEditable = false }
         val scroll = JBScrollPane(resultsArea)
         panel.add(JLabel("ClipCraft Lint Results:"), BorderLayout.NORTH)
         panel.add(scroll, BorderLayout.CENTER)
         val results = project.getService(LintResultsService::class.java)?.getAllResults().orEmpty()
         if (results.isNotEmpty()) resultsArea.text = results.joinToString("\n") { it.formatMessage() }
-        toolWindow.contentManager.addContent(toolWindow.contentManager.factory.createContent(panel, "Lint Results", false))
+        toolWindow.contentManager.addContent(
+            toolWindow.contentManager.factory.createContent(
+                panel,
+                "Lint Results",
+                false
+            )
+        )
     }
 }

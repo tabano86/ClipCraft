@@ -1,10 +1,7 @@
 package com.clipcraft.model
 
-import java.util.UUID
+import java.util.*
 
-/**
- * Represents a single code snippet.
- */
 data class Snippet(
     val id: String = UUID.randomUUID().toString(),
     val filePath: String,
@@ -13,7 +10,6 @@ data class Snippet(
     val fileSizeBytes: Long,
     val lastModified: Long,
     val content: String,
-
     var language: String? = null,
-    var gitCommitHash: String? = null,
+    var gitCommitHash: String? = null
 )

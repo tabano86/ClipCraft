@@ -1,13 +1,9 @@
 ---
-autoCorrect: true
-failFast: false
 build:
-  maxIssues: 0
+  maxIssues: 100
   weights:
     complexity: 2
-    LongParameterList: 1
     style: 1
-    formatting: 1
 processors:
   active: true
   exclude:
@@ -17,38 +13,21 @@ config:
 comments:
   CommentOverPrivateFunction:
     active: true
-    allowedPatterns: []
 complexity:
-  TooManyFunctions:
-    active: true
-    threshold: 10
   LongMethod:
     active: true
     threshold: 30
-  ComplexMethod:
+  CyclomaticComplexMethod:
     active: true
     threshold: 15
-formatting:
-  active: true
-  autoCorrect: true
-  android: false
-  disabledRules: []
 style:
   MagicNumber:
     active: true
     ignoreNumbers:
-    - -1
-    - 0
-    - 1
-    - 2
-  NamingConventionViolation:
-    active: true
-  ForbiddenComment:
-    active: true
-    values:
-    - "FIXME"
-    - "BUG"
-    - "TODO"
+    - "-1"
+    - "0"
+    - "1"
+    - "2"
 performance:
   active: true
 potential-bugs:

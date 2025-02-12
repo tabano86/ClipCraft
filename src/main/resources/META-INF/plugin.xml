@@ -13,8 +13,7 @@
       - Added new settings options for image file handling, lint filtering, and snippet queuing.
       - Fixed registration of action groups.
     ]]></change-notes>
-    <!-- Updated to use the actual build numbers for IntelliJ 2023.2 and later -->
-    <idea-version since-build="232" until-build="243.*"/>
+    <idea-version since-build="232" until-build="999.*"/>
     <depends>com.intellij.modules.java</depends>
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="ClipCraft" displayType="BALLOON"/>

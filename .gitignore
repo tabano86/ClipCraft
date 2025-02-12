@@ -30,7 +30,7 @@ out/
 logs/
 coverage/
 
-# Allow Gradle wrapper files (do not ignore the wrapper jar and properties)
+# Allow Gradle wrapper files
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 

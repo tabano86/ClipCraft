@@ -69,6 +69,7 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+    jvmArgs("-Dkotlinx.coroutines.debug=off")
 }
 
 tasks.publishPlugin {

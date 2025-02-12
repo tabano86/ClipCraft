@@ -2,9 +2,7 @@ package com.clipcraft.util
 
 import com.clipcraft.model.CompressionMode
 import matchesGlob
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -37,18 +35,17 @@ class CodeFormatterTest {
         val maxChunkSize = 25
         val chunks = CodeFormatter.chunkBySize(content, maxChunkSize, preserveWords = false)
         chunks.forEach {
-            assertTrue(it.length <= maxChunkSize) { "Chunk exceeds max size: \"$it\"" }
+            assertTrue(it.length <= maxChunkSize, "Chunk exceeds max size: \"$it\"")
         }
         val reassembled = chunks.joinToString("") { it }
         assertEquals(content, reassembled)
     }
 
     @Test
-    fun `trimLineWhitespaceAdvanced removes leading + trailing whitespace and zero-width spaces`() {
+    fun `trimWhitespace removes leading + trailing whitespace and zero-width spaces`() {
         val input = "\u200B   Hello, World!   \u200B"
-        val expected = "Hello, World!"
         val result = CodeFormatter.trimWhitespace(input, collapse = false, removeLeading = false)
-        assertEquals(expected, result)
+        assertEquals("Hello, World!", result)
     }
 
     @Test
@@ -103,25 +100,21 @@ class CodeFormatterTest {
     @Test
     fun `applyCompression returns original text for NONE mode`() {
         val input = "Some   text with   extra spaces"
-        val opts = CodeFormatterTestHelper.createOptions(CompressionMode.NONE)
-        val result = CodeFormatter.applyCompression(input, opts)
+        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.NONE))
         assertEquals(input, result)
     }
 
     @Test
     fun `applyCompression minimizes whitespace for MINIMAL mode`() {
         val input = "a  b\t\tc\u200B\u200Bd"
-        val opts = CodeFormatterTestHelper.createOptions(CompressionMode.MINIMAL)
-        val result = CodeFormatter.applyCompression(input, opts)
-        val expected = "a b c d"
-        assertEquals(expected, result)
+        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.MINIMAL))
+        assertEquals("a b c d", result)
     }
 
     @Test
     fun `applyCompression ultra mode without selective compression compresses newlines and spaces`() {
         val input = "Line    with  spaces\n\n\nAnother    line"
-        val opts = CodeFormatterTestHelper.createOptions(CompressionMode.ULTRA, selectiveCompression = false)
-        val result = CodeFormatter.applyCompression(input, opts)
+        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.ULTRA, false))
         val expected = "Line with spaces Another line"
         assertEquals(expected, result)
     }
@@ -129,8 +122,7 @@ class CodeFormatterTest {
     @Test
     fun `applyCompression ultra mode with selective compression filters out lines containing TODO`() {
         val input = "Line    with  spaces\nTODO:   something\n\n\nAnother    line"
-        val opts = CodeFormatterTestHelper.createOptions(CompressionMode.ULTRA, selectiveCompression = true)
-        val result = CodeFormatter.applyCompression(input, opts)
+        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.ULTRA, true))
         val expected = "Line with spaces Another line"
         assertEquals(expected, result)
     }
@@ -180,5 +172,8 @@ class CodeFormatterTest {
             Arguments.of("**", "any/path/should/match", true),
             Arguments.of("no/match", "different/path", false),
         )
+
+        private fun createOpts(mode: CompressionMode, selective: Boolean = false) =
+            com.clipcraft.model.ClipCraftOptions(compressionMode = mode, selectiveCompression = selective)
     }
 }

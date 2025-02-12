@@ -7,23 +7,23 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
 /**
- * Example persistent service for advanced usage.
- * Currently not deeply integrated with the rest of the code, but can be extended.
+ * Persistent settings service for ClipCraft.
+ * Stores minimal state such as the active profile name.
  */
 @State(name = "ClipCraftSettingsService", storages = [Storage("ClipCraftSettings.xml")])
 @Service(Service.Level.APP)
 class ClipCraftSettingsService : PersistentStateComponent<ClipCraftSettingsService.State> {
 
-    class State {
+    data class State(
         var activeProfileName: String = "Default"
-        var gptApiKey: String? = null
-    }
+    )
 
-    private var myState = State()
+    private var state = State()
 
-    override fun getState(): State = myState
+    override fun getState(): State = state
+
     override fun loadState(state: State) {
-        myState = state
+        this.state = state
     }
 
     companion object {

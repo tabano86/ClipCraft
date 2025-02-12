@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 
 /**
  * Collects and logs performance metrics for snippet processing.
- * Registered as a project-level service (fixes "not registered" issue).
  */
 @Service(Service.Level.PROJECT)
 class ClipCraftPerformanceMetrics(project: Project) {

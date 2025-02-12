@@ -1,5 +1,9 @@
 package com.clipcraft.model
 
+/**
+ * Main options for snippet extraction, formatting, concurrency, etc.
+ * GPT-related fields were removed.
+ */
 data class ClipCraftOptions(
     var includeLineNumbers: Boolean = false,
     var outputFormat: OutputFormat = OutputFormat.MARKDOWN,
@@ -16,45 +20,43 @@ data class ClipCraftOptions(
     var themeMode: ThemeMode = ThemeMode.LIGHT,
     var ignorePatterns: MutableList<String> = mutableListOf(),
     var maxConcurrentTasks: Int = 4,
-    var concurrencyEnabled: Boolean = false,
-    var enableChunkingForGPT: Boolean = false,
+    var concurrencyMode: ConcurrencyMode = ConcurrencyMode.DISABLED,
     var includeDirectorySummary: Boolean = false,
     var collapseBlankLines: Boolean = false,
     var removeLeadingBlankLines: Boolean = false,
     var singleLineOutput: Boolean = false,
     var includeMetadata: Boolean = false,
     var includeGitInfo: Boolean = false,
-    var gptTemplates: MutableList<GPTPromptTemplate> = mutableListOf(
-        GPTPromptTemplate(
-            "ExplainThisCode",
-            "Explain this code",
-        ),
-        GPTPromptTemplate("OptimizeSnippet", "Optimize this snippet"),
-    ),
+
     var autoDetectLanguage: Boolean = false,
     var overlapStrategy: OverlapStrategy = OverlapStrategy.SINGLE_LINE,
     var chunkStrategy: ChunkStrategy = ChunkStrategy.NONE,
-    var concurrencyMode: ConcurrencyMode = ConcurrencyMode.DISABLED,
-    var gptHeaderText: String? = null,
-    var gptFooterText: String? = null,
-    var ignoreFiles: List<String>? = null,
-    var ignoreFolders: List<String>? = null,
+
+    // Additional compression toggles
     var selectiveCompression: Boolean = false,
+
+    // Binary detection
     var detectBinary: Boolean = false,
     var binaryCheckThreshold: Int = 2000,
+
+    // Lint
+    var showLint: Boolean = false,
+
+    // Renamed from GPT-based naming:
+    var snippetHeaderText: String? = null,
+    var snippetFooterText: String? = null,
 ) {
     fun resolveConflicts() {
-        if (concurrencyEnabled && concurrencyMode == ConcurrencyMode.DISABLED) {
-            concurrencyMode =
-                ConcurrencyMode.THREAD_POOL
+        // Adjust concurrency if needed
+        if (concurrencyMode == ConcurrencyMode.DISABLED && maxConcurrentTasks > 1) {
+            // It's valid to keep it at >1, but concurrency won't be used.
         }
-        if (!concurrencyEnabled && concurrencyMode != ConcurrencyMode.DISABLED) {
-            concurrencyMode =
-                ConcurrencyMode.DISABLED
+        // If singleLineOutput is true, chunking is effectively disabled
+        if (singleLineOutput) {
+            chunkStrategy = ChunkStrategy.NONE
         }
-        if (enableChunkingForGPT && chunkStrategy == ChunkStrategy.NONE) chunkStrategy = ChunkStrategy.BY_SIZE
-        if (!enableChunkingForGPT && chunkStrategy != ChunkStrategy.NONE) chunkStrategy = ChunkStrategy.NONE
-        if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE
+        // Ensure chunkSize is valid
+        if (chunkSize < 1) chunkSize = 4000
         if (binaryCheckThreshold < 1) binaryCheckThreshold = 1000
     }
 }

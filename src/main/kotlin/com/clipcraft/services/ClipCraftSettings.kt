@@ -2,37 +2,23 @@ package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ClipCraftProfile
-import com.intellij.openapi.components.Service
 
 /**
- * Global, application-level settings for ClipCraft.
- *
- * In this example, profiles are stored in memory only (non-persistent).
+ * Global, application-level settings for ClipCraft (non-persistent in this example).
  */
-@Service
 class ClipCraftSettings private constructor() {
 
-    // Fallback profile if no project-specific profile exists.
-    private val fallbackProfile = ClipCraftProfile(
-        profileName = "Global Default",
-        options = ClipCraftOptions(),
-    )
-
-    // Holds all known profiles in memory.
+    private val fallbackProfile = ClipCraftProfile("Global Default", ClipCraftOptions())
     private val allProfiles = mutableListOf<ClipCraftProfile>()
-
-    // Tracks the currently selected profile name.
     private var currentProfileName: String
 
     companion object {
         private val instance = ClipCraftSettings()
-
         @JvmStatic
         fun getInstance(): ClipCraftSettings = instance
     }
 
     init {
-        // Initialize with the fallback profile in the list
         allProfiles += fallbackProfile
         currentProfileName = fallbackProfile.profileName
     }
@@ -57,13 +43,13 @@ class ClipCraftSettings private constructor() {
         } else {
             allProfiles += profile
         }
+        // If we were on fallback, switch to newly added profile
         if (getCurrentProfile() == fallbackProfile && currentProfileName == fallbackProfile.profileName) {
             currentProfileName = profile.profileName
         }
     }
 
     fun removeProfile(profileName: String) {
-        // Don't remove fallback
         if (profileName == fallbackProfile.profileName) return
         val removed = allProfiles.removeIf { it.profileName == profileName }
         if (removed && currentProfileName == profileName) {
@@ -71,11 +57,12 @@ class ClipCraftSettings private constructor() {
         }
     }
 
-    fun getHeader(): String {
-        return getCurrentProfile().options.gptHeaderText ?: "/* Default Header */"
+    // Formerly "getHeader/getFooter" with GPT references, now generic:
+    fun getSnippetPrefix(): String {
+        return getCurrentProfile().options.snippetHeaderText ?: "/* Default Header */"
     }
 
-    fun getFooter(): String {
-        return getCurrentProfile().options.gptFooterText ?: "/* Default Footer */"
+    fun getSnippetSuffix(): String {
+        return getCurrentProfile().options.snippetFooterText ?: "/* Default Footer */"
     }
 }

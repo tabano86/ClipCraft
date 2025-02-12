@@ -2,70 +2,58 @@
     <!-- Core plugin identity -->
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>5.0.0</version>
-    <vendor url="https://clipcraft.com" email="support@clipcraft.com">
-        ClipCraft Inc.
-    </vendor>
+    <version>6.0.0</version>
+    <vendor url="https://clipcraft.com" email="support@clipcraft.com">ClipCraft Inc.</vendor>
 
-    <!-- Brief, direct description -->
     <description><![CDATA[
         ClipCraft extracts and formats code from multiple files or directories, offers concurrency modes,
-        dynamic ignoring, snippet previewing, GPT stubs for code analysis, and a wizard for setup.
+        dynamic ignoring, snippet previewing, a new built‑in lint scanner, and a wizard for setup.
     ]]></description>
 
-    <!-- Minimal change notes: you can keep this short or remove entirely if not needed -->
     <change-notes><![CDATA[
-        5.0.0:
-        - Unified concurrency logic
+        6.0.0:
+        - Removed all GPT functionality
+        - Added lint scanning with optional UI
+        - Streamlined concurrency logic
         - .gitignore integration
-        - Optional GPT stubs
         - Real-time snippet preview
     ]]></change-notes>
 
-    <!-- Version constraints -->
     <idea-version since-build="223" until-build="243.*"/>
-
-    <!-- If plugin requires Java classes -->
     <depends>com.intellij.modules.java</depends>
-    <!-- If purely platform-based -->
-    <!-- <depends>com.intellij.modules.platform</depends> -->
 
-    <!-- Registering extensions in a single block for clarity -->
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Notification group for our plugin's balloons -->
         <notificationGroup id="ClipCraft" displayType="BALLOON"/>
 
-        <!-- Settings UI registration -->
+        <!-- Settings registration -->
         <applicationConfigurable
                 id="clipcraft.settings"
                 instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
-                displayName="ClipCraft"/>
+                displayName="ClipCraft" />
 
-        <!-- Because ClipCraftPerformanceMetrics is annotated with @Service(Service.Level.PROJECT),
-             we do NOT register it here. IntelliJ loads it automatically. -->
-
-        <!-- Tool window for snippet queue or GPT chat, anchored on left with a custom icon -->
-        <toolWindow id="ClipCraft.SnippetQueue"
-                    factoryClass="com.clipcraft.ui.ClipCraftToolWindowFactory"
+        <!-- Lint tool window -->
+        <toolWindow id="ClipCraft.Lint"
+                    factoryClass="com.clipcraft.ui.ClipCraftLintToolWindowFactory"
                     anchor="left"
                     icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_24"
                     secondary="true"/>
+
+        <!-- Search Everywhere Contributor Factory -->
+        <searchEverywhereContributorFactory implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory"/>
     </extensions>
 
-    <!-- Unified action definitions -->
     <actions>
-        <!-- Primary code-copying action -->
+        <!-- Primary snippet copy action -->
         <action id="ClipCraftCopyAction"
                 class="com.clipcraft.actions.ClipCraftAction"
                 text="ClipCraft Copy"
                 description="Copies, formats, and merges code snippets"
                 icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
-            <!-- Appear in both Project and Editor context menus -->
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
-        <!-- Submenu group for other actions -->
+        <!-- Submenu for ClipCraft actions -->
         <group id="ClipCraft.Submenu"
                text="ClipCraft Actions"
                description="All ClipCraft plugin features"
@@ -99,7 +87,7 @@
             <add-to-group group-id="ClipCraft.Submenu" anchor="last"/>
         </action>
 
-        <!-- Direct link to ClipCraft settings -->
+        <!-- Open settings action -->
         <action id="OpenClipCraftSettings"
                 class="com.intellij.ide.actions.ShowSettingsAction"
                 text="Open ClipCraft Settings"
@@ -107,7 +95,7 @@
             <add-to-group group-id="ClipCraft.Submenu" anchor="last"/>
         </action>
 
-        <!-- Action for snippet from caret or selection -->
+        <!-- Add snippet from caret/selection action -->
         <action id="ClipCraftAddSnippetFromCursorAction"
                 class="com.clipcraft.actions.ClipCraftAddSnippetFromCursorOrSelectionAction"
                 text="Add Snippet from Caret"

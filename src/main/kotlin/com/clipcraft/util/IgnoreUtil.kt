@@ -3,7 +3,6 @@ package com.clipcraft.util
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import matchesGlob
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
@@ -33,7 +32,7 @@ object IgnoreUtil {
         parseGitIgnoreIfNeeded(opts, projectBase)
 
         if (file.name.startsWith(".")) return true
-        if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
+        if (fileInIgnoreFiles(file, opts.ignorePatterns)) return true
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
 
         var rel = toRelative(file.absolutePath, projectBase).replace('\\', '/')

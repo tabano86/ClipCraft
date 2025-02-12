@@ -13,6 +13,10 @@ import com.intellij.psi.PsiFile
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
 
+/**
+ * Extracts either selected text or the entire method under caret,
+ * then wraps it with snippet header/footer from settings, and adds to snippet manager.
+ */
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
 
     override fun actionPerformed(event: AnActionEvent) {
@@ -32,10 +36,6 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         notify("Snippet added successfully.", NotificationType.INFORMATION)
     }
 
-    /**
-     * Simplified function that returns either the selected text
-     * or the source of the enclosing method if no selection exists.
-     */
     private fun Editor.extractSnippetOrMethod(psiFile: PsiFile): String {
         return selectionModel.selectedText
             ?.takeIf { it.isNotBlank() }
@@ -49,18 +49,15 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             }.orEmpty()
     }
 
-    /**
-     * Inserts user-defined ClipCraft header and footer around snippet text.
-     */
     private fun String.withClipCraftHeaders(): String {
         val settings = ClipCraftSettings.getInstance()
-        val header = settings.getHeader().trim()
-        val footer = settings.getFooter().trim()
+        val prefix = settings.getSnippetPrefix().trim()
+        val suffix = settings.getSnippetSuffix().trim()
         return buildString {
-            if (header.isNotEmpty()) appendLine(header).appendLine()
+            if (prefix.isNotEmpty()) appendLine(prefix).appendLine()
             append(this@withClipCraftHeaders)
-            if (footer.isNotEmpty()) {
-                appendLine().appendLine(footer)
+            if (suffix.isNotEmpty()) {
+                appendLine().appendLine(suffix)
             }
         }
     }

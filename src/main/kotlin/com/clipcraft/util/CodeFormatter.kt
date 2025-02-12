@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringEscapeUtils
 import kotlin.math.min
 
 object CodeFormatter {
+
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
         options.resolveConflicts()
         val merged = snippets.joinToString("\n\n") { formatSingleSnippet(it, options) }.trim()
@@ -19,50 +20,8 @@ object CodeFormatter {
         }
     }
 
-    /**
-     * Updated to keep the trailing space if the chunk ends on whitespace,
-     * so that chunk boundaries do not remove spaces between words.
-     */
-    fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
-        require(maxChunkSize > 0) { "maxChunkSize must be positive" }
-        if (text.length <= maxChunkSize) return listOf(text)
-        if (!preserveWords) {
-            val chunks = mutableListOf<String>()
-            var index = 0
-            while (index < text.length) {
-                val end = min(index + maxChunkSize, text.length)
-                chunks.add(text.substring(index, end))
-                index = end
-            }
-            return chunks
-        }
-
-        val result = mutableListOf<String>()
-        var idx = 0
-        while (idx < text.length) {
-            var end = min(idx + maxChunkSize, text.length)
-            if (end < text.length) {
-                val lastSpace = text.lastIndexOf(' ', end - 1)
-                if (lastSpace >= idx) {
-                    // Include that space in the chunk
-                    end = lastSpace + 1
-                }
-            }
-            result.add(text.substring(idx, end))
-            idx = end
-        }
-        return result
-    }
-
-    fun chunkByMethods(text: String): List<String> {
-        val pattern = Regex("(?m)(?=^\\s*(fun |public |private |def ))")
-        val parts = text.split(pattern)
-        return if (parts.size <= 1) listOf(text) else parts.filter { it.isNotBlank() }
-    }
-
     fun formatSingleSnippet(snippet: Snippet, o: ClipCraftOptions): String {
-        val lang =
-            if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
+        val lang = if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
         var content = snippet.content
         if (o.removeImports) content = removeImports(content, lang)
         if (o.removeComments) content = removeComments(content, lang)
@@ -73,12 +32,40 @@ object CodeFormatter {
                 removeLeading = o.removeLeadingBlankLines,
             )
         }
-        if (o.removeEmptyLines) content = collapseConsecutiveBlankLines(content)
-        if (o.singleLineOutput) content = singleLineOutput(content)
+        if (o.removeEmptyLines) {
+            content = collapseConsecutiveBlankLines(content)
+        }
+        if (o.singleLineOutput) {
+            content = singleLineOutput(content)
+        }
         content = applyCompression(content, o)
-        if (o.includeLineNumbers) content = addLineNumbers(content)
+        if (o.includeLineNumbers) {
+            content = addLineNumbers(content)
+        }
         val final = formatMetadata(snippet, content, o)
         return wrap(final, o.outputFormat, lang)
+    }
+
+    private fun wrap(content: String, format: OutputFormat, lang: String?): String {
+        val l = lang ?: "none"
+        return when (format) {
+            OutputFormat.MARKDOWN -> "```$l\n$content\n```"
+            OutputFormat.HTML -> "<pre><code class=\"$l\">${StringEscapeUtils.escapeHtml4(content)}</code></pre>"
+            OutputFormat.PLAIN -> content
+        }
+    }
+
+    private fun formatMetadata(snippet: Snippet, content: String, o: ClipCraftOptions): String {
+        if (!o.includeMetadata) return content
+        val sb = StringBuilder()
+        sb.append("**File:** ").append(snippet.relativePath ?: snippet.fileName)
+            .append(" | **Size:** ").append(snippet.fileSizeBytes).append(" bytes")
+            .append(" | **Modified:** ").append(snippet.lastModified)
+        if (o.includeGitInfo && !snippet.gitCommitHash.isNullOrEmpty()) {
+            sb.append(" | **GitCommit:** ").append(snippet.gitCommitHash)
+        }
+        sb.append("\n\n").append(content)
+        return sb.toString()
     }
 
     fun guessLang(filename: String?): String {
@@ -115,7 +102,9 @@ object CodeFormatter {
         if (lang == null) return text
         val l = lang.lowercase()
         if (l.contains("python")) {
-            return text.lineSequence().filterNot { it.trimStart().startsWith("#") }.joinToString("\n")
+            return text.lineSequence()
+                .filterNot { it.trimStart().startsWith("#") }
+                .joinToString("\n")
         }
         val noBlock = text.replace(Regex("(?s)/\\*.*?\\*/"), "")
         return noBlock.lineSequence()
@@ -144,7 +133,6 @@ object CodeFormatter {
             CompressionMode.MINIMAL -> input.lineSequence().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
-
             CompressionMode.ULTRA -> input.lineSequence().map { line ->
                 line.replace("\uFEFF", "")
                     .replace("\u200B", "")
@@ -167,25 +155,38 @@ object CodeFormatter {
         return text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
     }
 
-    fun wrap(content: String, format: OutputFormat, lang: String?): String {
-        val l = lang ?: "none"
-        return when (format) {
-            OutputFormat.MARKDOWN -> "```$l\n$content\n```"
-            OutputFormat.HTML -> "<pre><code class=\"$l\">${StringEscapeUtils.escapeHtml4(content)}</code></pre>"
-            OutputFormat.PLAIN -> content
+    fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
+        require(maxChunkSize > 0) { "maxChunkSize must be positive" }
+        if (text.length <= maxChunkSize) return listOf(text)
+        if (!preserveWords) {
+            val chunks = mutableListOf<String>()
+            var index = 0
+            while (index < text.length) {
+                val end = min(index + maxChunkSize, text.length)
+                chunks.add(text.substring(index, end))
+                index = end
+            }
+            return chunks
         }
+        val result = mutableListOf<String>()
+        var idx = 0
+        while (idx < text.length) {
+            var end = min(idx + maxChunkSize, text.length)
+            if (end < text.length) {
+                val lastSpace = text.lastIndexOf(' ', end - 1)
+                if (lastSpace >= idx) {
+                    end = lastSpace + 1
+                }
+            }
+            result.add(text.substring(idx, end))
+            idx = end
+        }
+        return result
     }
 
-    fun formatMetadata(snippet: Snippet, content: String, o: ClipCraftOptions): String {
-        if (!o.includeMetadata) return content
-        val b = StringBuilder()
-        b.append("**File:** ").append(snippet.relativePath ?: snippet.fileName)
-            .append(" | **Size:** ").append(snippet.fileSizeBytes).append(" bytes")
-            .append(" | **Modified:** ").append(snippet.lastModified)
-        if (o.includeGitInfo && !snippet.gitCommitHash.isNullOrEmpty()) {
-            b.append(" | **GitCommit:** ").append(snippet.gitCommitHash)
-        }
-        b.append("\n\n").append(content)
-        return b.toString()
+    fun chunkByMethods(text: String): List<String> {
+        val pattern = Regex("(?m)(?=^\\s*(fun |public |private |def ))")
+        val parts = text.split(pattern)
+        return if (parts.size <= 1) listOf(text) else parts.filter { it.isNotBlank() }
     }
 }

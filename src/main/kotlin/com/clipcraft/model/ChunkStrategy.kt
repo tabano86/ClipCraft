@@ -12,7 +12,7 @@ enum class ChunkStrategy {
     BY_SIZE,
 
     /**
-     * Experimental: Splits code by detected methods or functions (naive approach).
+     * Splits code by detected methods/functions (naive approach).
      */
     BY_METHODS,
 }

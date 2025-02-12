@@ -1,12 +1,7 @@
-data class GlobOptions(
-    val extended: Boolean = false,
-    val globstar: Boolean = false,
-    val flags: String = "",
-)
+import kotlin.text.RegexOption
 
 /**
- * Basic conversion of simple/glob patterns to Regex.
- * If you only need `.gitignore` style matching, you can simplify further.
+ * Converts a glob pattern to a Regex. For .gitignore-style usage.
  */
 fun globToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
     val (extended, globstar, flags) = options
@@ -18,12 +13,9 @@ fun globToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
         when (val char = glob[index]) {
             in listOf('/', '$', '^', '+', '.', '(', ')', '=', '!', '|') ->
                 patternBuilder.append('\\').append(char)
-
             '?' -> patternBuilder.append("[^/]")
-
             '[', ']' ->
                 if (extended) patternBuilder.append(char) else patternBuilder.append('\\').append(char)
-
             '{' ->
                 if (extended) {
                     inGroup = true
@@ -31,7 +23,6 @@ fun globToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
                 } else {
                     patternBuilder.append("\\{")
                 }
-
             '}' ->
                 if (extended) {
                     inGroup = false
@@ -39,10 +30,8 @@ fun globToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
                 } else {
                     patternBuilder.append("\\}")
                 }
-
             ',' ->
                 if (inGroup) patternBuilder.append('|') else patternBuilder.append("\\,")
-
             '*' -> {
                 var starCount = 1
                 while (index + 1 < glob.length && glob[index + 1] == '*') {
@@ -52,10 +41,10 @@ fun globToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
                 if (!globstar) {
                     patternBuilder.append(".*")
                 } else {
-                    patternBuilder.append("([^/]*)") // simplified for demonstration
+                    // simplified
+                    patternBuilder.append("([^/]*)")
                 }
             }
-
             else -> patternBuilder.append(char)
         }
         index++
@@ -65,9 +54,4 @@ fun globToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
         if (flags.contains('i', ignoreCase = true)) add(RegexOption.IGNORE_CASE)
     }
     return Regex(pattern, regexOptions)
-}
-
-fun matchesGlob(glob: String, fullPath: String): Boolean {
-    val normalizedPath = fullPath.replace('\\', '/')
-    return globToRegex(glob).matches(normalizedPath)
 }

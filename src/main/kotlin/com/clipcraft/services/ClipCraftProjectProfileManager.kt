@@ -5,7 +5,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 
 /**
- * Manages per-project ClipCraft profiles (in-memory only).
+ * Manages per-project ClipCraft profiles in memory.
  */
 @Service(Service.Level.PROJECT)
 class ClipCraftProjectProfileManager(val project: Project) {

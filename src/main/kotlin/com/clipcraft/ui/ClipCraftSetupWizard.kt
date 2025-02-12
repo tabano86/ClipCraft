@@ -24,11 +24,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         border = JBUI.Borders.empty(20)
         add(JLabel("Welcome to ClipCraft Setup Wizard!").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalStrut(JBUI.scale(20)))
-        add(
-            JLabel("This wizard helps configure basic ClipCraft settings:").apply {
-                alignmentX = JComponent.CENTER_ALIGNMENT
-            },
-        )
+        add(JLabel("This wizard helps configure basic ClipCraft settings:").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalStrut(JBUI.scale(10)))
         add(JLabel("• Metadata Inclusion").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(JLabel("• GitIgnore usage").apply { alignmentX = JComponent.CENTER_ALIGNMENT })

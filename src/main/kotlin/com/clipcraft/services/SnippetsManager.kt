@@ -1,31 +1,32 @@
 package com.clipcraft.services
 
 import com.clipcraft.model.Snippet
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import java.util.concurrent.CopyOnWriteArrayList
 
+/**
+ * Manages a list of user‑added snippets.
+ * Provides methods to add, remove, and retrieve snippets.
+ */
 @Service(Service.Level.PROJECT)
-class SnippetsManager(val project: Project) : Disposable {
-
+class SnippetsManager(private val project: Project) {
+    private val logger = Logger.getInstance(SnippetsManager::class.java)
     private val snippets = CopyOnWriteArrayList<Snippet>()
 
     fun addSnippet(snippet: Snippet) {
         snippets.add(snippet)
+        logger.info("Snippet added: ${snippet.id} from ${snippet.fileName}")
     }
-
-    fun getAllSnippets(): List<Snippet> = snippets.toList()
 
     fun removeSnippet(snippet: Snippet) {
         snippets.remove(snippet)
     }
 
-    fun clearAll() {
-        snippets.clear()
-    }
+    fun getAllSnippets(): List<Snippet> = snippets.toList()
 
-    override fun dispose() {
+    fun clearAll() {
         snippets.clear()
     }
 }

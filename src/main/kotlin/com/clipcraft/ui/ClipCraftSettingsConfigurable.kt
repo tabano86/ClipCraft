@@ -8,7 +8,6 @@ import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.options.Configurable
-import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
@@ -30,6 +29,9 @@ import javax.swing.JTextField
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
+/**
+ * Main settings panel for ClipCraft plugin.
+ */
 class ClipCraftSettingsConfigurable : Configurable {
     private val manager = ClipCraftProfileManager()
     private val savedProfile = manager.currentProfile().copy()
@@ -40,7 +42,7 @@ fun main() {
     println("Hello")
 }"""
 
-    // UI Components
+    // UI components
     private lateinit var headerField: JTextField
     private lateinit var footerField: JTextField
     private lateinit var directoryStructureCheck: JCheckBox
@@ -69,6 +71,7 @@ fun main() {
     private lateinit var chunkLabel: JLabel
     private lateinit var previewArea: JTextArea
     private lateinit var mainPanel: JPanel
+    private lateinit var showLintCheck: JCheckBox
 
     private val listener = object : DocumentListener {
         override fun insertUpdate(e: DocumentEvent?) = updatePreview()
@@ -96,6 +99,8 @@ fun main() {
             add(panelIgnore())
             add(Box.createVerticalStrut(JBUI.scale(8)))
             add(panelBinary())
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelLint())
         }
         val scrollForm = JBScrollPane(form).apply {
             verticalScrollBar.unitIncrement = 16
@@ -120,8 +125,8 @@ fun main() {
     }
 
     override fun isModified(): Boolean {
-        if (headerField.text != (o.gptHeaderText ?: "")) return true
-        if (footerField.text != (o.gptFooterText ?: "")) return true
+        if (headerField.text != (o.snippetHeaderText ?: "")) return true
+        if (footerField.text != (o.snippetFooterText ?: "")) return true
         if (directoryStructureCheck.isSelected != o.includeDirectorySummary) return true
         if (lineNumbersCheck.isSelected != o.includeLineNumbers) return true
         if (removeImportsCheck.isSelected != o.removeImports) return true
@@ -145,12 +150,14 @@ fun main() {
         if (directoryPatternCheck.isSelected != o.enableDirectoryPatternMatching) return true
         if (detectBinaryCheck.isSelected != o.detectBinary) return true
         if (binaryThresholdField.text != o.binaryCheckThreshold.toString()) return true
+        if (showLintCheck.isSelected != o.showLint) return true
+
         return false
     }
 
     override fun apply() {
-        o.gptHeaderText = headerField.text
-        o.gptFooterText = footerField.text
+        o.snippetHeaderText = headerField.text
+        o.snippetFooterText = footerField.text
         o.includeDirectorySummary = directoryStructureCheck.isSelected
         o.includeLineNumbers = lineNumbersCheck.isSelected
         o.removeImports = removeImportsCheck.isSelected
@@ -174,6 +181,8 @@ fun main() {
         o.enableDirectoryPatternMatching = directoryPatternCheck.isSelected
         o.detectBinary = detectBinaryCheck.isSelected
         o.binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: o.binaryCheckThreshold
+        o.showLint = showLintCheck.isSelected
+
         o.resolveConflicts()
         manager.deleteProfile(savedProfile.profileName)
         manager.addProfile(savedProfile.copy(options = o))
@@ -181,8 +190,8 @@ fun main() {
     }
 
     override fun reset() {
-        headerField.text = o.gptHeaderText.orEmpty()
-        footerField.text = o.gptFooterText.orEmpty()
+        headerField.text = o.snippetHeaderText.orEmpty()
+        footerField.text = o.snippetFooterText.orEmpty()
         directoryStructureCheck.isSelected = o.includeDirectorySummary
         lineNumbersCheck.isSelected = o.includeLineNumbers
         removeImportsCheck.isSelected = o.removeImports
@@ -206,6 +215,8 @@ fun main() {
         directoryPatternCheck.isSelected = o.enableDirectoryPatternMatching
         detectBinaryCheck.isSelected = o.detectBinary
         binaryThresholdField.text = o.binaryCheckThreshold.toString()
+        showLintCheck.isSelected = o.showLint
+
         updatePreview()
         updateChunkUI()
         updateConcurrency()
@@ -216,8 +227,8 @@ fun main() {
     private fun updatePreview() {
         // Create a temporary copy of options with current UI values
         val tmp = o.copy().apply {
-            gptHeaderText = headerField.text
-            gptFooterText = footerField.text
+            snippetHeaderText = headerField.text
+            snippetFooterText = footerField.text
             includeDirectorySummary = directoryStructureCheck.isSelected
             includeLineNumbers = lineNumbersCheck.isSelected
             removeImports = removeImportsCheck.isSelected
@@ -241,6 +252,7 @@ fun main() {
             enableDirectoryPatternMatching = directoryPatternCheck.isSelected
             detectBinary = detectBinaryCheck.isSelected
             binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: binaryCheckThreshold
+            showLint = showLintCheck.isSelected
         }
         tmp.resolveConflicts()
 
@@ -248,6 +260,9 @@ fun main() {
             content = sampleCode,
             fileName = "Sample.kt",
             relativePath = "src/Sample.kt",
+            filePath = "C:/fake/path/Sample.kt",
+            fileSizeBytes = sampleCode.length.toLong(),
+            lastModified = System.currentTimeMillis(),
         )
         val formattedCode = CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
         val dirStruct = if (tmp.includeDirectorySummary) {
@@ -255,14 +270,14 @@ fun main() {
         } else {
             ""
         }
+        val h = tmp.snippetHeaderText.orEmpty()
+        val f = tmp.snippetFooterText.orEmpty()
         val fullPreview = buildString {
-            val h = tmp.gptHeaderText.orEmpty()
-            val f = tmp.gptFooterText.orEmpty()
             if (h.isNotEmpty()) appendLine(h).appendLine()
             if (dirStruct.isNotEmpty()) append(dirStruct)
             append(formattedCode)
             if (f.isNotEmpty()) {
-                appendLine().appendLine().append(f)
+                appendLine().appendLine(f)
             }
         }
         previewArea.text = fullPreview
@@ -289,12 +304,12 @@ fun main() {
         maxTasksField.isEnabled = mode != ConcurrencyMode.DISABLED
     }
 
-    // Panel builders using FormBuilder for a neat layout
+    // Panels
     private fun panelOutput(): JPanel {
-        headerField = JBTextField(o.gptHeaderText.orEmpty(), 20).apply {
+        headerField = JBTextField(o.snippetHeaderText.orEmpty(), 20).apply {
             document.addDocumentListener(listener)
         }
-        footerField = JBTextField(o.gptFooterText.orEmpty(), 20).apply {
+        footerField = JBTextField(o.snippetFooterText.orEmpty(), 20).apply {
             document.addDocumentListener(listener)
         }
         directoryStructureCheck = JCheckBox("Directory Structure", o.includeDirectorySummary).apply {
@@ -340,7 +355,7 @@ fun main() {
     }
 
     private fun panelChunking(): JPanel {
-        chunkStrategyCombo = ComboBox(ChunkStrategy.entries.toTypedArray()).apply {
+        chunkStrategyCombo = JComboBox(ChunkStrategy.entries.toTypedArray()).apply {
             selectedItem = o.chunkStrategy
             addActionListener {
                 updatePreview()
@@ -350,11 +365,11 @@ fun main() {
         chunkSizeField = JBTextField(o.chunkSize.toString(), 6).apply {
             document.addDocumentListener(listener)
         }
-        overlapCombo = ComboBox(OverlapStrategy.entries.toTypedArray()).apply {
+        overlapCombo = JComboBox(OverlapStrategy.entries.toTypedArray()).apply {
             selectedItem = o.overlapStrategy
             addActionListener { updatePreview() }
         }
-        compressionCombo = ComboBox(CompressionMode.entries.toTypedArray()).apply {
+        compressionCombo = JComboBox(CompressionMode.entries.toTypedArray()).apply {
             selectedItem = o.compressionMode
             addActionListener { updatePreview() }
         }
@@ -378,7 +393,7 @@ fun main() {
         autoLangCheck = JCheckBox("Auto-Detect Language", o.autoDetectLanguage).apply {
             addActionListener { updatePreview() }
         }
-        themeCombo = ComboBox(ThemeMode.entries.toTypedArray()).apply {
+        themeCombo = JComboBox(ThemeMode.entries.toTypedArray()).apply {
             selectedItem = o.themeMode
             addActionListener { updatePreview() }
         }
@@ -391,11 +406,13 @@ fun main() {
     }
 
     private fun panelConcurrency(): JPanel {
-        concurrencyCombo = ComboBox(ConcurrencyMode.entries.toTypedArray()).apply {
+        concurrencyCombo = JComboBox(ConcurrencyMode.entries.toTypedArray()).apply {
             selectedItem = o.concurrencyMode
             addActionListener { updateConcurrency() }
         }
-        maxTasksField = JBTextField(o.maxConcurrentTasks.toString(), 4)
+        maxTasksField = JBTextField(o.maxConcurrentTasks.toString(), 4).apply {
+            document.addDocumentListener(listener)
+        }
         return FormBuilder.createFormBuilder()
             .addLabeledComponent("Concurrency Mode:", concurrencyCombo, 1, false)
             .addLabeledComponent("Max Tasks:", maxTasksField, 1, false)
@@ -434,5 +451,14 @@ fun main() {
             .addComponent(detectBinaryCheck)
             .addLabeledComponent("Binary Check Threshold:", binaryThresholdField, 1, false)
             .panel.also { it.border = BorderFactory.createTitledBorder("Binary Detection") }
+    }
+
+    private fun panelLint(): JPanel {
+        showLintCheck = JCheckBox("Show Lint Results", o.showLint).apply {
+            addActionListener { updatePreview() }
+        }
+        return FormBuilder.createFormBuilder()
+            .addComponent(showLintCheck)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Lint") }
     }
 }

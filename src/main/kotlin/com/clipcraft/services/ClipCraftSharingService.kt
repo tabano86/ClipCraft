@@ -2,22 +2,23 @@ package com.clipcraft.services
 
 import com.clipcraft.model.Snippet
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 
+/**
+ * Service for sharing snippets externally.
+ * This stub implementation logs the snippet and returns a dummy URL.
+ */
 @Service(Service.Level.PROJECT)
 class ClipCraftSharingService(private val project: Project) {
+    private val logger = Logger.getInstance(ClipCraftSharingService::class.java)
 
-    var gptApiKey: String? = null
-
-    fun sendToGpt(snippet: Snippet, promptTemplate: String): String {
-        // Hypothetical GPT integration:
-        // val response = openAiApi.sendRequest(promptTemplate + "\n" + snippet.content)
-        // return response
-
-        return """
-            [GPT MOCK RESPONSE]
-            Prompt: $promptTemplate
-            Code (first 100 chars): ${snippet.content.take(100)}...
-        """.trimIndent()
+    /**
+     * Share the provided snippet and return a shareable URL.
+     */
+    fun shareSnippet(snippet: Snippet): String {
+        logger.info("Sharing snippet from file: ${snippet.filePath}")
+        // Replace this with real API logic if needed.
+        return "https://share.clipcraft.com/snippet/${snippet.id}"
     }
 }

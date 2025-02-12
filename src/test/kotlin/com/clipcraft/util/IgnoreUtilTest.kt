@@ -3,13 +3,15 @@ package com.clipcraft.util
 import com.clipcraft.FakeProject
 import com.clipcraft.FakeVirtualFile
 import com.clipcraft.model.ClipCraftOptions
-import org.junit.jupiter.api.Assertions.*
+import java.io.File
+import java.util.stream.Stream
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.io.File
-import java.util.stream.Stream
 
 class ClipCraftIgnoreUtilTest {
 

@@ -1,15 +1,32 @@
 package com.clipcraft.ui
 
-import com.clipcraft.model.*
+import com.clipcraft.model.ChunkStrategy
+import com.clipcraft.model.CompressionMode
+import com.clipcraft.model.ConcurrencyMode
+import com.clipcraft.model.OverlapStrategy
+import com.clipcraft.model.Snippet
+import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
-import java.awt.*
-import javax.swing.*
+import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Dimension
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import javax.swing.BoxLayout
+import javax.swing.JCheckBox
+import javax.swing.JComboBox
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JTextArea
+import javax.swing.JTextField
 import javax.swing.border.TitledBorder
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -360,7 +377,7 @@ fun main() {
         g.gridy++
         g.gridwidth = 2
         chunkLabel = JLabel("")
-        chunkLabel.foreground = Color.RED
+        chunkLabel.foreground = JBColor.RED
         p.add(chunkLabel, g)
         return p
     }

@@ -1,12 +1,21 @@
 package com.clipcraft.ui
 
-import com.clipcraft.model.*
+import com.clipcraft.model.ChunkStrategy
+import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.ConcurrencyMode
+import com.clipcraft.model.OutputFormat
+import com.clipcraft.model.OverlapStrategy
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.util.ui.FormBuilder
-import org.slf4j.LoggerFactory
 import java.awt.BorderLayout
-import javax.swing.*
+import javax.swing.BorderFactory
+import javax.swing.Box
+import javax.swing.JCheckBox
+import javax.swing.JComponent
+import javax.swing.JPanel
+import javax.swing.JTextField
+import org.slf4j.LoggerFactory
 
 /**
  * A simple example of a dialog to edit ClipCraftOptions, not necessarily used in production.

@@ -3,11 +3,11 @@ package com.clipcraft.util
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import matchesGlob
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.Paths
+import matchesGlob
 
 object IgnoreUtil {
     private val logger = Logger.getInstance(IgnoreUtil::class.java)

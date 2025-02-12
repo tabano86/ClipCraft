@@ -1,4 +1,3 @@
-import pl.allegro.tech.build.axion.release.domain.VersionIncrementerContext
 import pl.allegro.tech.build.axion.release.domain.properties.VersionProperties
 
 plugins {
@@ -10,53 +9,46 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
     id("com.github.ben-manes.versions") version "0.48.0"
     id("jacoco")
-    // The pre-commit git hooks plugin is now applied via settings.gradle.kts.
+    // Note: The Git Hooks plugin is applied in settings.gradle.kts.
 }
 
 group = "com.clipcraft"
 
+// Axion release and versioning configuration
 scmVersion {
     tag {
-        prefix.set("v")            // e.g. v1.2.3
-        versionSeparator.set("")   // No separator between prefix and version
+        prefix.set("v")
+        versionSeparator.set("")
     }
-    useHighestVersion.set(true)    // Consider highest tag across branches
-    ignoreUncommittedChanges.set(true)  // Allow uncommitted files (e.g. CI artifacts)
+    useHighestVersion.set(true)
+    ignoreUncommittedChanges.set(true)
     branchVersionIncrementer.putAll(
         mapOf(
-            "main" to VersionProperties.Incrementer { ctx: VersionIncrementerContext ->
+            "main" to VersionProperties.Incrementer { ctx ->
                 val message = Runtime.getRuntime()
                     .exec("git log -1 --pretty=%B")
-                    .inputStream.bufferedReader().readText().trim()
+                    .inputStream
+                    .bufferedReader()
+                    .readText()
+                    .trim()
+
                 when {
-                    "BREAKING CHANGE" in message || Regex("^.*!:").containsMatchIn(message) -> {
-                        println("Conventional Commit detected BREAKING change -> incrementing MAJOR version")
+                    "BREAKING CHANGE" in message ||
+                            Regex("^.*!:").containsMatchIn(message) ->
                         ctx.currentVersion.incrementMajorVersion()
-                    }
-                    message.startsWith("feat", ignoreCase = true) -> {
-                        println("Conventional Commit 'feat:' -> incrementing MINOR version")
+                    message.startsWith("feat", ignoreCase = true) ->
                         ctx.currentVersion.incrementMinorVersion()
-                    }
-                    message.startsWith("fix", ignoreCase = true) -> {
-                        println("Conventional Commit 'fix:' -> incrementing PATCH version")
+                    message.startsWith("fix", ignoreCase = true) ->
                         ctx.currentVersion.incrementPatchVersion()
-                    }
                     else -> ctx.currentVersion
                 }
             }
         )
     )
     versionIncrementer("incrementPatch")
-    createReleaseCommit.set(false)  // Do not create an extra commit for tagging
+    createReleaseCommit.set(false)
 }
-
-// Set the project version from SCM
 version = scmVersion.version
-
-// Disable verifyRelease to allow generated files to pass in CI
-tasks.named("verifyRelease") {
-    enabled = false
-}
 
 repositories {
     mavenCentral()
@@ -68,14 +60,13 @@ dependencies {
 }
 
 intellij {
-    version.set("2023.2") // Target IntelliJ IDEA version
-    type.set("IC")        // Community Edition
-    // Include dependencies to satisfy module requirements.
+    version.set("2023.2")
+    type.set("IC")
     plugins.set(listOf("Git4Idea", "java"))
 }
 
 kotlin {
-    jvmToolchain(17)  // Use Java 17 for compilation
+    jvmToolchain(17)
 }
 
 tasks.test {
@@ -88,23 +79,32 @@ tasks.patchPluginXml {
 }
 
 tasks.publishPlugin {
-    // The Gradle IntelliJ Plugin will use the property intellijPlatformPublishingToken.
-    // Supply it at runtime via the environment variable ORG_GRADLE_PROJECT_intellijPlatformPublishingToken.
     token = providers.gradleProperty("intellijPlatformPublishingToken")
 }
 
-tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-    jvmTarget = "17"
-}
-
 spotless {
+    // Kotlin Formatting
     kotlin {
-        target("**/*.kt")
+        target("src/**/*.kt")
         ktlint("0.48.2")
     }
+    // Java Formatting
     java {
-        target("**/*.java")
+        target("src/**/*.java")
         googleJavaFormat("1.16.0")
+    }
+    // YAML Formatting
+    yaml {
+        target("**/*.yml", "**/*.yaml")
+        jackson()
+    }
+    // Miscellaneous Formatting
+    format("misc") {
+        // Examples of other file types: Gradle scripts, Markdown, .gitignore, etc.
+        target("**/*.gradle", "**/*.md", "**/*.gitignore")
+        trimTrailingWhitespace()
+        indentWithSpaces()
+        endWithNewline()
     }
 }
 

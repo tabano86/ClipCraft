@@ -18,14 +18,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import java.awt.Toolkit
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -99,10 +99,20 @@ class ClipCraftAction : AnAction() {
             return
         }
         if (o.detectBinary && isBinary(file, o.binaryCheckThreshold)) return
-        val content = try { file.readText() } catch (ex: Exception) { "<Error: ${ex.message}>" }
+        val content = try {
+            file.readText()
+        } catch (ex: Exception) {
+            "<Error: ${ex.message}>"
+        }
         var s = Snippet(
             filePath = file.absolutePath,
-            relativePath = proj.basePath?.let { base -> try { file.relativeTo(File(base)).path } catch (_: Exception) { file.absolutePath } },
+            relativePath = proj.basePath?.let { base ->
+                try {
+                    file.relativeTo(File(base)).path
+                } catch (_: Exception) {
+                    file.absolutePath
+                }
+            },
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),

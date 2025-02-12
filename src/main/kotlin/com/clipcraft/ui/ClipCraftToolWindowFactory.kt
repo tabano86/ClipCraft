@@ -7,11 +7,15 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import java.awt.BorderLayout
+import javax.swing.JButton
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JTextArea
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.awt.BorderLayout
-import javax.swing.*
 
 /**
  * Creates a tool window containing a simple GPT chat interface (stub).

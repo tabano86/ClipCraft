@@ -1,8 +1,12 @@
 package com.clipcraft.util
 
-import com.clipcraft.model.*
-import org.apache.commons.lang3.StringEscapeUtils
+import com.clipcraft.model.ChunkStrategy
+import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.CompressionMode
+import com.clipcraft.model.OutputFormat
+import com.clipcraft.model.Snippet
 import kotlin.math.min
+import org.apache.commons.lang3.StringEscapeUtils
 
 object CodeFormatter {
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
@@ -57,7 +61,8 @@ object CodeFormatter {
     }
 
     fun formatSingleSnippet(snippet: Snippet, o: ClipCraftOptions): String {
-        val lang = if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
+        val lang =
+            if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
         var content = snippet.content
         if (o.removeImports) content = removeImports(content, lang)
         if (o.removeComments) content = removeComments(content, lang)
@@ -139,6 +144,7 @@ object CodeFormatter {
             CompressionMode.MINIMAL -> input.lineSequence().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
+
             CompressionMode.ULTRA -> input.lineSequence().map { line ->
                 line.replace("\uFEFF", "")
                     .replace("\u200B", "")

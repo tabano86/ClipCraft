@@ -1,6 +1,12 @@
 package com.clipcraft.util
 
-import com.clipcraft.model.*
+import com.clipcraft.model.ChunkStrategy
+import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.CompressionMode
+import com.clipcraft.model.ConcurrencyMode
+import com.clipcraft.model.OutputFormat
+import com.clipcraft.model.OverlapStrategy
+import com.clipcraft.model.ThemeMode
 
 object CodeFormatterTestHelper {
     fun createOptions(

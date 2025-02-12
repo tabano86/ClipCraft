@@ -1,17 +1,18 @@
 package com.clipcraft.util
 
+import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
-import matchesGlob
-import org.junit.jupiter.api.Assertions.*
+import java.util.stream.Stream
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.stream.Stream
 
 class CodeFormatterTest {
-
     @Test
     fun `chunkContent returns single chunk when content is shorter than maxChunkSize`() {
         val content = "Short content"
@@ -21,7 +22,7 @@ class CodeFormatterTest {
     }
 
     @Test
-    fun `chunkContent reassembles original content with preserveWords=true`() {
+    fun `chunkContent reassembles original content with preserveWords true`() {
         val content = "This is a sample text that should be split into multiple chunks without breaking words."
         val maxChunkSize = 20
         val chunks = CodeFormatter.chunkBySize(content, maxChunkSize, preserveWords = true)
@@ -34,15 +35,13 @@ class CodeFormatterTest {
         val content = "Line one. Line two is a bit longer. Line three."
         val maxChunkSize = 25
         val chunks = CodeFormatter.chunkBySize(content, maxChunkSize, preserveWords = false)
-        chunks.forEach {
-            assertTrue(it.length <= maxChunkSize, "Chunk exceeds max size: \"$it\"")
-        }
+        chunks.forEach { assertTrue(it.length <= maxChunkSize, "Chunk exceeds max size: \"$it\"") }
         val reassembled = chunks.joinToString("") { it }
         assertEquals(content, reassembled)
     }
 
     @Test
-    fun `trimWhitespace removes leading + trailing whitespace and zero-width spaces`() {
+    fun `trimWhitespace removes leading and trailing whitespace and zero-width spaces`() {
         val input = "\u200B   Hello, World!   \u200B"
         val result = CodeFormatter.trimWhitespace(input, collapse = false, removeLeading = false)
         assertEquals("Hello, World!", result)
@@ -129,7 +128,7 @@ class CodeFormatterTest {
 
     @Test
     fun `chunkContent throws IllegalArgumentException for non-positive maxChunkSize`() {
-        val exception = assertThrows<IllegalArgumentException> {
+        val exception = assertFailsWith<IllegalArgumentException> {
             CodeFormatter.chunkBySize("any content", 0, preserveWords = false)
         }
         assertTrue(exception.message!!.contains("maxChunkSize must be positive"))
@@ -154,7 +153,7 @@ class CodeFormatterTest {
     @ParameterizedTest(name = "Glob \"{0}\" matching path \"{1}\" should be {2}")
     @MethodSource("globTestProvider")
     fun `matchesGlob works correctly`(glob: String, fullPath: String, expected: Boolean) {
-        val result = matchesGlob(glob, fullPath)
+        val result = globToRegex(glob).matches(fullPath)
         assertEquals(expected, result, "Glob: \"$glob\" vs Path: \"$fullPath\"")
     }
 
@@ -170,10 +169,10 @@ class CodeFormatterTest {
             Arguments.of("src/main/kotlin/Ex?mple.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("*Example.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("**", "any/path/should/match", true),
-            Arguments.of("no/match", "different/path", false),
+            Arguments.of("no/match", "different/path", false)
         )
 
         private fun createOpts(mode: CompressionMode, selective: Boolean = false) =
-            com.clipcraft.model.ClipCraftOptions(compressionMode = mode, selectiveCompression = selective)
+            ClipCraftOptions(compressionMode = mode, selectiveCompression = selective)
     }
 }

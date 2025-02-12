@@ -3,6 +3,8 @@ package com.clipcraft.util
 import com.clipcraft.FakeProject
 import com.clipcraft.FakeVirtualFile
 import com.clipcraft.model.ClipCraftOptions
+import java.io.File
+import java.util.stream.Stream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,11 +12,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.io.File
-import java.util.stream.Stream
 
 class IgnoreUtilTest {
-
     @Test
     fun negativePatternOverridesPositiveMatch() {
         val opts = ClipCraftOptions(ignorePatterns = mutableListOf(".*\\.txt", "!special\\.txt"))
@@ -41,7 +40,7 @@ class IgnoreUtilTest {
     @ParameterizedTest
     @MethodSource("ignorePatternData")
     fun shouldIgnoreBasedOnIgnorePatterns(name: String, patterns: List<String>, expected: Boolean) {
-        val opts = ClipCraftOptions(ignorePatterns = patterns.toMutableList())
+        val opts = ClipCraftOptions(ignorePatterns = mutableListOf()).apply { ignorePatterns.addAll(patterns) }
         val file = File(FakeVirtualFile("/project/$name", "dummy", false).path)
         val proj = FakeProject("/project")
         assertEquals(expected, IgnoreUtil.shouldIgnore(file, opts, proj.basePath))
@@ -54,7 +53,7 @@ class IgnoreUtilTest {
             Arguments.of("focus.txt", listOf("*.txt", "!focus.txt"), false),
             Arguments.of("readme.md", listOf("*.txt"), false),
             Arguments.of("error.log", listOf("er*or.???"), true),
-            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false),
+            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false)
         )
     }
 
@@ -133,8 +132,6 @@ class IgnoreUtilTest {
         val p = FakeProject("/project")
         val opts = ClipCraftOptions(ignorePatterns = mutableListOf("*.txt"), invertIgnorePatterns = true)
         val file = File(FakeVirtualFile("/project/test.txt", "data").path)
-        // Without inversion, a txt would be ignored
-        // With inversion, it's the opposite
         assertFalse(IgnoreUtil.shouldIgnore(file, opts, p.basePath))
     }
 

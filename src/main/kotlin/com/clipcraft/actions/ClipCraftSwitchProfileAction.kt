@@ -15,14 +15,7 @@ class ClipCraftSwitchProfileAction : AnAction() {
             ClipCraftNotificationCenter.warn("No profiles available.")
             return
         }
-        val chosen = Messages.showEditableChooseDialog(
-            "Select a ClipCraft Profile:",
-            "Switch ClipCraft Profile",
-            Messages.getQuestionIcon(),
-            names,
-            names[0],
-            null
-        )
+        val chosen = Messages.showEditableChooseDialog("Select a ClipCraft Profile:", "Switch ClipCraft Profile", Messages.getQuestionIcon(), names, names[0], null)
         if (chosen != null) {
             mgr.switchActiveProfile(chosen)
             ClipCraftNotificationCenter.info("Switched to profile: $chosen")

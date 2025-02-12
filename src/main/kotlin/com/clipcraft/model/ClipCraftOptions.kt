@@ -15,6 +15,8 @@ data class ClipCraftOptions(
     var invertIgnorePatterns: Boolean = false,
     var themeMode: ThemeMode = ThemeMode.LIGHT,
     var ignorePatterns: MutableList<String> = mutableListOf(),
+    var ignoreFiles: List<String>? = null,
+    var ignoreFolders: List<String>? = null,
     var maxConcurrentTasks: Int = 4,
     var concurrencyMode: ConcurrencyMode = ConcurrencyMode.DISABLED,
     var includeDirectorySummary: Boolean = false,
@@ -31,10 +33,7 @@ data class ClipCraftOptions(
     var binaryCheckThreshold: Int = 2000,
     var showLint: Boolean = false,
     var snippetHeaderText: String? = null,
-    var snippetFooterText: String? = null,
-    var gptEnhanceOutput: Boolean = false,
-    var gptApiKey: String? = null,
-    var gptImageSummary: Boolean = false
+    var snippetFooterText: String? = null
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

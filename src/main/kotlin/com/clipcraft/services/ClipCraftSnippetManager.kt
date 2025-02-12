@@ -25,4 +25,8 @@ class SnippetsManager(private val project: Project) {
     fun clearAll() {
         snippets.clear()
     }
+
+    companion object {
+        fun getInstance(project: Project): SnippetsManager = project.getService(SnippetsManager::class.java)
+    }
 }

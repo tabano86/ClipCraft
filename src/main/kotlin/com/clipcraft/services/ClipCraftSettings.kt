@@ -4,39 +4,59 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ClipCraftProfile
 
 class ClipCraftSettings private constructor() {
-    private val fallback = ClipCraftProfile("Global Default", ClipCraftOptions())
-    private val profiles = mutableListOf<ClipCraftProfile>()
-    private var currentName: String
+    private val fallbackProfile = ClipCraftProfile("Global Default", ClipCraftOptions())
+    private val allProfiles = mutableListOf<ClipCraftProfile>()
+    private var currentProfileName: String
 
     companion object {
         private val instance = ClipCraftSettings()
-
         @JvmStatic
         fun getInstance(): ClipCraftSettings = instance
     }
 
     init {
-        profiles += fallback
-        currentName = fallback.profileName
+        allProfiles += fallbackProfile
+        currentProfileName = fallbackProfile.profileName
     }
 
-    fun getCurrentProfile() = profiles.find { it.profileName == currentName } ?: fallback
-    fun setCurrentProfile(name: String) {
-        if (profiles.any { it.profileName == name }) currentName = name
+    fun getCurrentProfile(): ClipCraftProfile {
+        return allProfiles.find { it.profileName == currentProfileName } ?: fallbackProfile
     }
 
-    fun getAllProfiles() = profiles.toList()
+    fun setCurrentProfile(profileName: String) {
+        val profile = allProfiles.find { it.profileName == profileName }
+        if (profile != null) {
+            currentProfileName = profileName
+        }
+    }
+
+    fun getAllProfiles(): List<ClipCraftProfile> = allProfiles.toList()
+
     fun addProfile(profile: ClipCraftProfile) {
-        val idx = profiles.indexOfFirst { it.profileName == profile.profileName }
-        if (idx >= 0) profiles[idx] = profile else profiles += profile
-        if (getCurrentProfile() == fallback && currentName == fallback.profileName) currentName = profile.profileName
+        val index = allProfiles.indexOfFirst { it.profileName == profile.profileName }
+        if (index >= 0) {
+            allProfiles[index] = profile
+        } else {
+            allProfiles += profile
+        }
+        if (getCurrentProfile() == fallbackProfile && currentProfileName == fallbackProfile.profileName) {
+            currentProfileName = profile.profileName
+        }
     }
 
-    fun removeProfile(name: String) {
-        if (name == fallback.profileName) return
-        if (profiles.removeIf { it.profileName == name } && currentName == name) currentName = fallback.profileName
+    fun removeProfile(profileName: String) {
+        if (profileName == fallbackProfile.profileName) return
+        val removed = allProfiles.removeIf { it.profileName == profileName }
+        if (removed && currentProfileName == profileName) {
+            currentProfileName = fallbackProfile.profileName
+        }
     }
 
-    fun getSnippetPrefix() = getCurrentProfile().options.snippetHeaderText ?: "/* Default Header */"
-    fun getSnippetSuffix() = getCurrentProfile().options.snippetFooterText ?: "/* Default Footer */"
+    fun getSnippetPrefix(): String {
+        return getCurrentProfile().options.snippetHeaderText ?: "/* Default Header */"
+    }
+
+    fun getSnippetSuffix(): String {
+        return getCurrentProfile().options.snippetFooterText ?: "/* Default Footer */"
+    }
 }

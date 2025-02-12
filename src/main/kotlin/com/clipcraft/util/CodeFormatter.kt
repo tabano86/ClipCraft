@@ -1,6 +1,5 @@
 package com.clipcraft.util
 
-import com.clipcraft.model.ChunkStrategy
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
@@ -13,15 +12,14 @@ object CodeFormatter {
         options.resolveConflicts()
         val merged = snippets.joinToString("\n\n") { formatSingleSnippet(it, options) }.trim()
         return when (options.chunkStrategy) {
-            ChunkStrategy.NONE -> listOf(merged)
-            ChunkStrategy.BY_SIZE -> chunkBySize(merged, options.chunkSize, true)
-            ChunkStrategy.BY_METHODS -> chunkByMethods(merged)
+            com.clipcraft.model.ChunkStrategy.NONE -> listOf(merged)
+            com.clipcraft.model.ChunkStrategy.BY_SIZE -> chunkBySize(merged, options.chunkSize, true)
+            com.clipcraft.model.ChunkStrategy.BY_METHODS -> chunkByMethods(merged)
         }
     }
 
     fun formatSingleSnippet(snippet: Snippet, o: ClipCraftOptions): String {
-        val lang =
-            if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
+        val lang = if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
         var content = snippet.content
         if (o.removeImports) content = removeImports(content, lang)
         if (o.removeComments) content = removeComments(content, lang)
@@ -64,10 +62,16 @@ object CodeFormatter {
     }
 
     fun removeImports(text: String, lang: String?): String {
-        return text.lineSequence().filterNot {
-            val t = it.trimStart()
-            lang?.lowercase()?.contains("python") == true && (t.startsWith("import ") || t.startsWith("from "))
-        }.joinToString("\n")
+        return if (lang?.lowercase() == "python") {
+            text.lineSequence().filterNot {
+                val t = it.trimStart()
+                t.startsWith("import ") || t.startsWith("from ")
+            }.joinToString("\n")
+        } else {
+            text.lineSequence().filterNot {
+                it.trimStart().startsWith("import ")
+            }.joinToString("\n")
+        }
     }
 
     fun removeComments(text: String, lang: String?): String {
@@ -91,18 +95,17 @@ object CodeFormatter {
         text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
 
     fun singleLineOutput(text: String): String = text.replace(Regex("\\s+"), " ").trim()
+
     fun applyCompression(input: String, o: ClipCraftOptions): String {
         return when (o.compressionMode) {
             CompressionMode.NONE -> input
             CompressionMode.MINIMAL -> input.lineSequence().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
-
             CompressionMode.ULTRA -> input.lineSequence().map { line ->
                 line.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
             }.filter {
-                if (!o.selectiveCompression) it.isNotBlank() else it.isNotBlank() && !it.uppercase()
-                    .contains("TODO") && !it.uppercase().contains("DEBUG")
+                if (!o.selectiveCompression) it.isNotBlank() else it.isNotBlank() && !it.uppercase().contains("TODO") && !it.uppercase().contains("DEBUG")
             }.joinToString(" ") { it.replace(Regex("\\s+"), " ") }
         }
     }
@@ -111,7 +114,7 @@ object CodeFormatter {
         text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
 
     fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
-        require(maxChunkSize > 0)
+        require(maxChunkSize > 0) { "maxChunkSize must be positive" }
         if (text.length <= maxChunkSize) return listOf(text)
         if (!preserveWords) {
             val chunks = mutableListOf<String>()

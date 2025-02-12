@@ -21,9 +21,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         border = JBUI.Borders.empty(20)
         add(JLabel("Welcome to ClipCraft Setup Wizard!").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalStrut(JBUI.scale(20)))
-        add(JLabel("This wizard helps configure basic ClipCraft settings:").apply {
-            alignmentX = JComponent.CENTER_ALIGNMENT
-        })
+        add(JLabel("This wizard helps configure basic ClipCraft settings:").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalStrut(JBUI.scale(10)))
         add(JLabel("• Metadata Inclusion").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(JLabel("• GitIgnore usage").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
@@ -34,16 +32,12 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
     private var stepIndex = 0
     private val backAction = object : DialogWrapperAction("Back") {
         override fun doAction(e: java.awt.event.ActionEvent?) {
-            if (stepIndex > 0) {
-                stepIndex--; updateStepUI()
-            }
+            if (stepIndex > 0) { stepIndex--; updateStepUI() }
         }
     }
     private val nextAction = object : DialogWrapperAction("Next") {
         override fun doAction(e: java.awt.event.ActionEvent?) {
-            if (stepIndex < 1) {
-                stepIndex++; updateStepUI()
-            }
+            if (stepIndex < 1) { stepIndex++; updateStepUI() }
         }
     }
     private val finishAction = object : DialogWrapperAction("Finish") {
@@ -52,14 +46,12 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
             close(OK_EXIT_CODE)
         }
     }
-
     init {
         title = "ClipCraft Setup Wizard"
         wizardPanel.add(welcomePanel, "Step0")
         wizardPanel.add(settingsPanel, "Step1")
         init()
     }
-
     override fun createCenterPanel(): JComponent = wizardPanel
     override fun createActions(): Array<Action> = arrayOf(backAction, nextAction, finishAction, cancelAction)
     private fun updateStepUI() {
@@ -67,11 +59,9 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         backAction.isEnabled = stepIndex > 0
         nextAction.isEnabled = stepIndex < 1
     }
-
     private fun applyWizardResults() {
         wizardCore.applyWizardResults(wizardUI)
     }
-
     override fun doOKAction() {
         applyWizardResults()
         super.doOKAction()

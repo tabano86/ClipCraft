@@ -1,58 +1,75 @@
----
 name: "Build, Test, and Publish Plugin"
-"on":
+
+on:
   push:
     branches:
-    - "main"
+      - "main"
   pull_request:
     branches:
-    - "main"
+      - "main"
+
 permissions:
-  contents: "write"
-  id-token: "write"
+  contents: write
+  id-token: write
+
 jobs:
   release:
     if: "github.event_name == 'push'"
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     steps:
-    - name: "Checkout Repository (Full History)"
-      uses: "actions/checkout@v3"
-      with:
-        fetch-depth: 0
-    - name: "Set up JDK 17"
-      uses: "actions/setup-java@v3"
-      with:
-        distribution: "temurin"
-        java-version: 17
-    - name: "Ensure gradlew is Executable"
-      run: "chmod +x ./gradlew"
-    - name: "Cache Gradle Directories"
-      uses: "actions/cache@v3"
-      with:
-        path: "~/.gradle/caches\n~/.gradle/wrapper\n.gradle\n"
-        key: "${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties')\
-          \ }}"
-    - name: "Configure Git Remote for Tag Push"
-      run: "git config user.name \"${{ github.actor }}\"\ngit config user.email \"\
-        ${{ github.actor }}@users.noreply.github.com\"\n# Reset the remote URL to\
-        \ use the built-in GITHUB_TOKEN for authentication.\ngit remote set-url origin\
-        \ https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository\
-        \ }}\n"
-    - name: "Sync Repository with Remote"
-      run: "git fetch --prune --tags\ngit reset --hard origin/main\n"
-    - name: "Clean Working Tree"
-      run: "git reset --hard\ngit clean -fdx\n"
-    - name: "Ensure gradlew is Executable (again)"
-      shell: "bash"
-      run: "chmod +x ./gradlew"
-    - name: "Publish Plugin with Retry"
-      uses: "nick-fields/retry@v3"
-      with:
-        max_attempts: 3
-        timeout_minutes: 5
-        command: "bash -c \"set -x; git add -A && git commit -m 'Updates something'\
-          \ && ./gradlew release publishPlugin --no-daemon --stacktrace --parallel\"\
-          \n"
-      env:
-        ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: "${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN\
-          \ }}"
+      - name: "Checkout Repository (Full History)"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: "Set up JDK 17"
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: "Ensure gradlew is Executable"
+        run: chmod +x ./gradlew
+
+      - name: "Cache Gradle Directories"
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: "Configure Git Remote for Tag Push"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          # Reset the remote URL to use the built-in GITHUB_TOKEN for authentication.
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+      - name: "Sync Repository with Remote"
+        run: |
+          git fetch --prune --tags
+          git reset --hard origin/main
+
+      - name: "Clean Working Tree"
+        run: |
+          git reset --hard
+          git clean -fdx
+
+      - name: "Ensure gradlew is Executable (again)"
+        shell: bash
+        run: chmod +x ./gradlew
+
+      - name: "Publish Plugin with Retry"
+        uses: nick-fields/retry@v3
+        with:
+          max_attempts: 3
+          timeout_minutes: 5
+          command: >
+            bash -c "set -x; git add -A &&
+                     git commit -m 'Updates something' &&
+                     git push origin main &&
+                     ./gradlew release publishPlugin --no-daemon --stacktrace --parallel"
+        env:
+          ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}

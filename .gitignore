@@ -9,23 +9,30 @@
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
-.idea/**/dictionaries
-.idea/**/libraries
+.idea/**/dictionaries/
+.idea/**/libraries/
 .idea/**/shelf/
 .idea/**/modules.xml
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/vcs.xml
 
 # User-specific temporary files
 *.swp
 *.swo
 
 # Build, generated, and dependency directories
-.gradle
+.gradle/
 build/
 target/
 out/
+logs/
+coverage/
 
-# Allow Gradle wrapper jar for builds even when ignoring other Gradle files
-!gradle/wrapper/*
+# Allow Gradle wrapper files (do not ignore the wrapper jar and properties)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
 # Local configuration files (do not commit sensitive information)
 local.properties

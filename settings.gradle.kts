@@ -7,7 +7,7 @@ pluginManagement {
 }
 rootProject.name = "ClipCraft"
 
-// Apply the pre-commit git hooks plugin without immediately applying it.
+// Apply the pre-commit git hooks plugin without immediately applying its functionality.
 plugins {
     id("org.danilopianini.gradle-pre-commit-git-hooks") version "2.0.20" apply false
 }

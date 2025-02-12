@@ -25,9 +25,12 @@ scmVersion {
             val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
             val message = process.inputStream.bufferedReader().readText().trim()
             when {
-                "BREAKING CHANGE" in message || Regex("^.*!:").containsMatchIn(message) -> ctx.currentVersion.incrementMajorVersion()
-                message.startsWith("feat", ignoreCase = true) -> ctx.currentVersion.incrementMinorVersion()
-                message.startsWith("fix", ignoreCase = true) -> ctx.currentVersion.incrementPatchVersion()
+                "BREAKING CHANGE" in message || Regex("^.*!:").containsMatchIn(message) ->
+                    ctx.currentVersion.incrementMajorVersion()
+                message.startsWith("feat", ignoreCase = true) ->
+                    ctx.currentVersion.incrementMinorVersion()
+                message.startsWith("fix", ignoreCase = true) ->
+                    ctx.currentVersion.incrementPatchVersion()
                 else -> ctx.currentVersion
             }
         })

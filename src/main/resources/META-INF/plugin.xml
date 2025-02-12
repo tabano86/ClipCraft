@@ -2,7 +2,7 @@
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
     <version>6.0.0</version>
-    <vendor url="https://clipcraft.com" email="support@clipcraft.com">ClipCraft Inc.</vendor>
+    <vendor url="https://github.com/tabano86/ClipCraft" email="support@clipcraft.com">ClipCraft Inc.</vendor>
     <description><![CDATA[
     ClipCraft extracts and formats code from multiple files or directories, supports concurrency modes,
     dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assisted copy process.

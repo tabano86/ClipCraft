@@ -4,16 +4,17 @@
     <version>6.0.0</version>
     <vendor url="https://github.com/tabano86/ClipCraft" email="support@clipcraft.com">ClipCraft Inc.</vendor>
     <description><![CDATA[
-    ClipCraft extracts and formats code from multiple files or directories, supports concurrency modes,
-    dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assisted copy process.
-  ]]></description>
+      ClipCraft extracts and formats code from multiple files or directories, supports concurrency modes,
+      dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assisted copy process.
+    ]]></description>
     <change-notes><![CDATA[
-    6.0.0:
-    - Removed GPT functionality.
-    - Added new settings options for image file handling, lint filtering, and snippet queuing.
-    - Fixed registration of action groups.
-  ]]></change-notes>
-    <idea-version since-build="223" until-build="243.*"/>
+      6.0.0:
+      - Removed GPT functionality.
+      - Added new settings options for image file handling, lint filtering, and snippet queuing.
+      - Fixed registration of action groups.
+    ]]></change-notes>
+    <!-- Updated to use the actual build numbers for IntelliJ 2023.2 and later -->
+    <idea-version since-build="232" until-build="243.*"/>
     <depends>com.intellij.modules.java</depends>
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="ClipCraft" displayType="BALLOON"/>
@@ -22,7 +23,6 @@
         <searchEverywhereContributor implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory"/>
     </extensions>
     <actions>
-        <!-- Registered action group with the correct id -->
         <group id="ClipCraft.Submenu"
                text="ClipCraft Actions"
                description="All ClipCraft plugin features"
@@ -31,8 +31,6 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </group>
-
-        <!-- Actions refer to the correct group id -->
         <action id="ClipCraftCopyAction"
                 class="com.clipcraft.actions.ClipCraftAction"
                 text="ClipCraft Copy"

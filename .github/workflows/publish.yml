@@ -1,75 +1,89 @@
+---
 name: "Build, Test, and Publish Plugin"
-
-on:
+"on":
   push:
     branches:
-      - "main"
+    - "main"
   pull_request:
     branches:
-      - "main"
-
+    - "main"
 permissions:
-  contents: write
-  id-token: write
-
+  contents: "write"
+  id-token: "write"
 jobs:
-  release:
-    if: "github.event_name == 'push'"
-    runs-on: ubuntu-latest
+  build:
+    runs-on: "ubuntu-latest"
     steps:
-      - name: "Checkout Full Repository History"
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: "Set up JDK 17 (Temurin)"
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: "Make gradlew Executable"
-        run: chmod +x ./gradlew
-
-      - name: "Cache Gradle Dependencies"
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            .gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
-
-      - name: "Configure Git Remote for Authenticated Push"
-        run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          # Set remote URL to use GITHUB_TOKEN for push authentication.
-          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-
-      - name: "Synchronize Repository with Remote"
-        run: |
-          git fetch --prune --tags
-          git reset --hard origin/main
-
-      - name: "Clean Workspace"
-        run: |
-          git reset --hard
-          git clean -fdx
-
-      - name: "Recheck gradlew Executable Permission"
-        shell: bash
-        run: chmod +x ./gradlew
-
-      - name: "Publish Plugin with Retry"
-        uses: nick-fields/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 5
-          command: |
-            bash -c "set -x; \
-            git add -A && (git commit -m 'chore: update version files pre-release' || echo 'No changes to commit') && \
-            git push origin main && \
-            ./gradlew release publishPlugin --no-daemon --stacktrace --parallel"
-        env:
-          ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
+    - name: "Checkout Repository (Full History)"
+      uses: "actions/checkout@v3"
+      with:
+        fetch-depth: 0
+    - name: "Set up JDK 17"
+      uses: "actions/setup-java@v3"
+      with:
+        distribution: "temurin"
+        java-version: 17
+    - name: "Ensure gradlew is Executable"
+      run: "chmod +x ./gradlew"
+    - name: "Cache Gradle Directories"
+      uses: "actions/cache@v3"
+      with:
+        path: "~/.gradle/caches\n~/.gradle/wrapper\n.gradle\n"
+        key: "${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties')\
+          \ }}"
+    - name: "Run Dependency Updates Check"
+      run: "./gradlew dependencyUpdates --no-daemon --stacktrace --parallel"
+    - name: "Run Quality Checks, Tests, and Build Plugin"
+      run: "./gradlew clean test buildPlugin patchPluginXml spotlessCheck detekt jacocoTestReport\
+        \ --no-daemon --stacktrace --parallel\n"
+    - name: "Upload Plugin Artifact"
+      uses: "actions/upload-artifact@v4"
+      with:
+        name: "plugin-distribution"
+        path: "build/distributions/*.zip"
+  release:
+    needs: "build"
+    if: "github.event_name == 'push'"
+    runs-on: "ubuntu-latest"
+    steps:
+    - name: "Checkout Full Repository History"
+      uses: "actions/checkout@v3"
+      with:
+        fetch-depth: 0
+    - name: "Set up JDK 17 (Temurin)"
+      uses: "actions/setup-java@v3"
+      with:
+        distribution: "temurin"
+        java-version: 17
+    - name: "Make gradlew Executable"
+      run: "chmod +x ./gradlew"
+    - name: "Cache Gradle Dependencies"
+      uses: "actions/cache@v3"
+      with:
+        path: "~/.gradle/caches\n~/.gradle/wrapper\n.gradle\n"
+        key: "${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties')\
+          \ }}"
+    - name: "Configure Git Remote for Authenticated Push"
+      run: "git config user.name \"${{ github.actor }}\"\ngit config user.email \"\
+        ${{ github.actor }}@users.noreply.github.com\"\n# Set remote URL to use GITHUB_TOKEN\
+        \ for push authentication.\ngit remote set-url origin https://${{ github.actor\
+        \ }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}\n"
+    - name: "Synchronize Repository with Remote"
+      run: "git fetch --prune --tags\ngit reset --hard origin/main\n"
+    - name: "Clean Workspace"
+      run: "git reset --hard\ngit clean -fdx\n"
+    - name: "Recheck gradlew Executable Permission"
+      shell: "bash"
+      run: "chmod +x ./gradlew"
+    - name: "Publish Plugin with Retry"
+      uses: "nick-fields/retry@v3"
+      with:
+        max_attempts: 3
+        timeout_minutes: 5
+        command: "bash -c \"set -x; \\\ngit add -A && (git commit -m 'chore: update\
+          \ version files pre-release' || echo 'No changes to commit') && \\\ngit\
+          \ push origin main && \\\n./gradlew release publishPlugin --no-daemon --stacktrace\
+          \ --parallel\"\n"
+      env:
+        ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: "${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN\
+          \ }}"

@@ -71,11 +71,6 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.patchPluginXml {
-    sinceBuild.set("*")
-    untilBuild.set("232.*")
-}
-
 tasks.publishPlugin {
     token = providers.gradleProperty("intellijPlatformPublishingToken")
 }

@@ -1,12 +1,12 @@
 plugins {
     java
-    id("org.jetbrains.kotlin.jvm") version "1.9.21"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.21"
+    id("org.jetbrains.kotlin.jvm") version "1.9.23"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20-Beta2"
     id("org.jetbrains.intellij") version "1.17.4"
     id("pl.allegro.tech.build.axion-release") version "1.18.16"
-    id("com.diffplug.spotless") version "6.20.0"
+    id("com.diffplug.spotless") version "7.0.2"
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
-    id("com.github.ben-manes.versions") version "0.48.0"
+    id("com.github.ben-manes.versions") version "0.52.0"
     jacoco
 }
 
@@ -40,8 +40,8 @@ scmVersion {
 }
 version = scmVersion.version
 
-val ktorVersion = "2.2.4"
-val kotlinxSerializationVersion = "1.5.1"
+val ktorVersion = "3.1.0"
+val kotlinxSerializationVersion = "1.8.0"
 
 repositories {
     mavenCentral()
@@ -72,6 +72,7 @@ tasks.test {
 }
 
 tasks.publishPlugin {
+    channels = listOf("beta")
     token = providers.gradleProperty("intellijPlatformPublishingToken")
 }
 

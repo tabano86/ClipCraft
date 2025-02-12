@@ -21,7 +21,8 @@ scmVersion {
     ignoreUncommittedChanges.set(true)
     branchVersionIncrementer.putAll(
         mapOf("main" to pl.allegro.tech.build.axion.release.domain.properties.VersionProperties.Incrementer { ctx ->
-            val message = Runtime.getRuntime().exec("git log -1 --pretty=%B").inputStream.bufferedReader().readText().trim()
+            val message = Runtime.getRuntime().exec("git log -1 --pretty=%B")
+                .inputStream.bufferedReader().readText().trim()
             when {
                 "BREAKING CHANGE" in message || Regex("^.*!:").containsMatchIn(message) -> ctx.currentVersion.incrementMajorVersion()
                 message.startsWith("feat", ignoreCase = true) -> ctx.currentVersion.incrementMinorVersion()
@@ -31,7 +32,7 @@ scmVersion {
         })
     )
     versionIncrementer("incrementPatch")
-    createReleaseCommit.set(false)
+    createReleaseCommit.set(true)
 }
 version = scmVersion.version
 

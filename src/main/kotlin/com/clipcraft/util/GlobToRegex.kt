@@ -1,57 +1,30 @@
-import kotlin.text.RegexOption
+package com.clipcraft.util
 
-/**
- * Converts a glob pattern to a Regex. For .gitignore-style usage.
- */
+import GlobOptions
+
 fun globToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
     val (extended, globstar, flags) = options
-    val patternBuilder = StringBuilder()
+    val sb = StringBuilder()
     var inGroup = false
-    var index = 0
-
-    while (index < glob.length) {
-        when (val char = glob[index]) {
-            in listOf('/', '$', '^', '+', '.', '(', ')', '=', '!', '|') ->
-                patternBuilder.append('\\').append(char)
-            '?' -> patternBuilder.append("[^/]")
-            '[', ']' ->
-                if (extended) patternBuilder.append(char) else patternBuilder.append('\\').append(char)
-            '{' ->
-                if (extended) {
-                    inGroup = true
-                    patternBuilder.append('(')
-                } else {
-                    patternBuilder.append("\\{")
-                }
-            '}' ->
-                if (extended) {
-                    inGroup = false
-                    patternBuilder.append(')')
-                } else {
-                    patternBuilder.append("\\}")
-                }
-            ',' ->
-                if (inGroup) patternBuilder.append('|') else patternBuilder.append("\\,")
+    var i = 0
+    while (i < glob.length) {
+        when (val c = glob[i]) {
+            in listOf('/', '$', '^', '+', '.', '(', ')', '=', '!', '|') -> sb.append('\\').append(c)
+            '?' -> sb.append("[^/]")
+            '[', ']' -> if (extended) sb.append(c) else sb.append('\\').append(c)
+            '{' -> if (extended) { inGroup = true; sb.append('(') } else sb.append("\\{")
+            '}' -> if (extended) { inGroup = false; sb.append(')') } else sb.append("\\}")
+            ',' -> if (inGroup) sb.append('|') else sb.append("\\,")
             '*' -> {
                 var starCount = 1
-                while (index + 1 < glob.length && glob[index + 1] == '*') {
-                    starCount++
-                    index++
-                }
-                if (!globstar) {
-                    patternBuilder.append(".*")
-                } else {
-                    // simplified
-                    patternBuilder.append("([^/]*)")
-                }
+                while (i + 1 < glob.length && glob[i + 1] == '*') { starCount++; i++ }
+                if (!globstar) sb.append(".*") else sb.append("([^/]*)")
             }
-            else -> patternBuilder.append(char)
+            else -> sb.append(c)
         }
-        index++
+        i++
     }
-    val pattern = if (!flags.contains('g')) "^${patternBuilder}\$" else patternBuilder.toString()
-    val regexOptions = mutableSetOf<RegexOption>().apply {
-        if (flags.contains('i', ignoreCase = true)) add(RegexOption.IGNORE_CASE)
-    }
-    return Regex(pattern, regexOptions)
+    val pattern = if (!flags.contains('g')) "^$sb\$" else sb.toString()
+    val opts = mutableSetOf<RegexOption>().apply { if (flags.contains('i', ignoreCase = true)) add(RegexOption.IGNORE_CASE) }
+    return Regex(pattern, opts)
 }

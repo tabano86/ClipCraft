@@ -84,10 +84,6 @@ spotless {
         target("src/**/*.java")
         googleJavaFormat("1.16.0")
     }
-    yaml {
-        target("**/*.yml", "**/*.yaml")
-        jackson()
-    }
     format("misc") {
         target("**/*.gradle", "**/*.md", "**/*.gitignore")
         trimTrailingWhitespace()

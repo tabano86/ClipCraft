@@ -2,15 +2,15 @@ package com.clipcraft.util
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
 
 class CodeFormatterTest {
     @Test
@@ -169,7 +169,7 @@ class CodeFormatterTest {
             Arguments.of("src/main/kotlin/Ex?mple.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("*Example.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("**", "any/path/should/match", true),
-            Arguments.of("no/match", "different/path", false)
+            Arguments.of("no/match", "different/path", false),
         )
 
         private fun createOpts(mode: CompressionMode, selective: Boolean = false) =

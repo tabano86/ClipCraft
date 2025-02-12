@@ -18,9 +18,27 @@ object LintService {
         return lines.mapIndexedNotNull { index, line ->
             val num = index + 1
             when {
-                line.length > 120 -> LintIssue(LintSeverity.WARNING, snippet.filePath, num, "Line exceeds 120 characters (${line.length} chars).")
-                line.contains('\t') -> LintIssue(LintSeverity.ERROR, snippet.filePath, num, "Tabs are not allowed; use spaces instead.")
-                line.endsWith(" ") || line.endsWith("\t") -> LintIssue(LintSeverity.WARNING, snippet.filePath, num, "Trailing whitespace found.")
+                line.length > 120 -> LintIssue(
+                    LintSeverity.WARNING,
+                    snippet.filePath,
+                    num,
+                    "Line exceeds 120 characters (${line.length} chars).",
+                )
+
+                line.contains('\t') -> LintIssue(
+                    LintSeverity.ERROR,
+                    snippet.filePath,
+                    num,
+                    "Tabs are not allowed; use spaces instead.",
+                )
+
+                line.endsWith(" ") || line.endsWith("\t") -> LintIssue(
+                    LintSeverity.WARNING,
+                    snippet.filePath,
+                    num,
+                    "Trailing whitespace found.",
+                )
+
                 else -> null
             }
         }

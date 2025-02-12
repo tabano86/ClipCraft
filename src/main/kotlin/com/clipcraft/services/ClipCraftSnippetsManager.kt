@@ -7,8 +7,8 @@ import com.intellij.openapi.project.Project
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Service(Service.Level.PROJECT)
-class SnippetsManager(private val project: Project) {
-    private val logger = Logger.getInstance(SnippetsManager::class.java)
+class ClipCraftSnippetsManager(private val project: Project) {
+    private val logger = Logger.getInstance(ClipCraftSnippetsManager::class.java)
     private val snippets = CopyOnWriteArrayList<Snippet>()
 
     fun addSnippet(snippet: Snippet) {
@@ -27,6 +27,6 @@ class SnippetsManager(private val project: Project) {
     }
 
     companion object {
-        fun getInstance(project: Project): SnippetsManager = project.getService(SnippetsManager::class.java)
+        fun getInstance(project: Project): ClipCraftSnippetsManager = project.getService(ClipCraftSnippetsManager::class.java)
     }
 }

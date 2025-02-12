@@ -2,7 +2,7 @@ package com.clipcraft.actions
 
 import com.clipcraft.services.ClipCraftQueueService
 import com.clipcraft.services.ClipCraftSettings
-import com.clipcraft.services.SnippetsManager
+import com.clipcraft.services.ClipCraftSnippetsManager
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
@@ -37,20 +37,20 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
                     fileName = "Snippet",
                     fileSizeBytes = finalSnippet.length.toLong(),
                     lastModified = System.currentTimeMillis(),
-                    content = finalSnippet
-                )
+                    content = finalSnippet,
+                ),
             )
             notify("Snippet added to queue.", NotificationType.INFORMATION)
         } else {
-            SnippetsManager.getInstance(project).addSnippet(
+            ClipCraftSnippetsManager.getInstance(project).addSnippet(
                 com.clipcraft.model.Snippet(
                     filePath = "InMemory",
                     relativePath = null,
                     fileName = "Snippet",
                     fileSizeBytes = finalSnippet.length.toLong(),
                     lastModified = System.currentTimeMillis(),
-                    content = finalSnippet
-                )
+                    content = finalSnippet,
+                ),
             )
             notify("Snippet added and copied to clipboard.", NotificationType.INFORMATION)
         }
@@ -77,7 +77,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
 
     private fun notify(message: String, type: NotificationType) {
         Notifications.Bus.notify(
-            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type)
+            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type),
         )
     }
 }

@@ -10,9 +10,13 @@ import com.intellij.openapi.components.Storage
 @Service(Service.Level.APP)
 class ClipCraftSettingsService : PersistentStateComponent<ClipCraftSettingsService.State> {
     data class State(var activeProfileName: String = "Default")
+
     private var state = State()
     override fun getState() = state
-    override fun loadState(state: State) { this.state = state }
+    override fun loadState(state: State) {
+        this.state = state
+    }
+
     companion object {
         fun getInstance(): ClipCraftSettingsService =
             ApplicationManager.getApplication().getService(ClipCraftSettingsService::class.java)

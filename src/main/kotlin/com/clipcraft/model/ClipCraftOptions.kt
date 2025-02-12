@@ -35,10 +35,10 @@ data class ClipCraftOptions(
     var snippetHeaderText: String? = "/* ClipCraft Snippet */",
     var snippetFooterText: String? = "/* End of Snippet */",
     // New options:
-    var includeImageFiles: Boolean = false,    // if false, image files are replaced with a placeholder
-    var lintErrorsOnly: Boolean = false,         // if true, only errors are reported in lint results
-    var lintWarningsOnly: Boolean = false,       // if true, only warnings are reported in lint results
-    var addSnippetToQueue: Boolean = false       // if true, snippets from caret are added to a queue
+    var includeImageFiles: Boolean = false, // if false, image files are replaced with a placeholder
+    var lintErrorsOnly: Boolean = false, // if true, only errors are reported in lint results
+    var lintWarningsOnly: Boolean = false, // if true, only warnings are reported in lint results
+    var addSnippetToQueue: Boolean = false, // if true, snippets from caret are added to a queue
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

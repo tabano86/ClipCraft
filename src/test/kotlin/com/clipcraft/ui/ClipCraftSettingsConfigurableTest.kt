@@ -1,13 +1,13 @@
 package com.clipcraft.ui
 
 import com.clipcraft.services.ClipCraftSettings
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import javax.swing.JCheckBox
 import javax.swing.JTextArea
 import javax.swing.JTextField
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
 class ClipCraftSettingsConfigurableTest {
     private lateinit var configurable: ClipCraftSettingsConfigurable
@@ -25,8 +25,9 @@ class ClipCraftSettingsConfigurableTest {
             .get(configurable) as JTextField
         val footerField = configurable.javaClass.getDeclaredField("footerField").apply { isAccessible = true }
             .get(configurable) as JTextField
-        val directoryStructureCheck = configurable.javaClass.getDeclaredField("directoryStructureCheck").apply { isAccessible = true }
-            .get(configurable) as JCheckBox
+        val directoryStructureCheck =
+            configurable.javaClass.getDeclaredField("directoryStructureCheck").apply { isAccessible = true }
+                .get(configurable) as JCheckBox
         val previewArea = configurable.javaClass.getDeclaredField("previewArea").apply { isAccessible = true }
             .get(configurable) as JTextArea
 

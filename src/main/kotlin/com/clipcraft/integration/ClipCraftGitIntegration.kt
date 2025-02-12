@@ -11,6 +11,8 @@ object ClipCraftGitIntegration {
         return if (commitHash != null) {
             val info = "\n[Git Commit Hash: $commitHash]"
             snippet.copy(content = snippet.content + info, gitCommitHash = commitHash)
-        } else snippet
+        } else {
+            snippet
+        }
     }
 }

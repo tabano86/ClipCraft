@@ -8,6 +8,8 @@ import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.ui.ComboBox
+import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
@@ -19,7 +21,6 @@ import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JCheckBox
-import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -37,6 +38,8 @@ package test
 fun main() {
     println("Hello")
 }"""
+
+    // Existing UI components
     private lateinit var headerField: JTextField
     private lateinit var footerField: JTextField
     private lateinit var directoryStructureCheck: JCheckBox
@@ -46,15 +49,15 @@ fun main() {
     private lateinit var trimWhitespaceCheck: JCheckBox
     private lateinit var removeEmptyLinesCheck: JCheckBox
     private lateinit var singleLineOutputCheck: JCheckBox
-    private lateinit var chunkStrategyCombo: JComboBox<ChunkStrategy>
+    private lateinit var chunkStrategyCombo: ComboBox<ChunkStrategy>
     private lateinit var chunkSizeField: JTextField
-    private lateinit var overlapCombo: JComboBox<OverlapStrategy>
-    private lateinit var compressionCombo: JComboBox<CompressionMode>
+    private lateinit var overlapCombo: ComboBox<OverlapStrategy>
+    private lateinit var compressionCombo: ComboBox<CompressionMode>
     private lateinit var metadataCheck: JCheckBox
     private lateinit var gitInfoCheck: JCheckBox
     private lateinit var autoLangCheck: JCheckBox
-    private lateinit var themeCombo: JComboBox<ThemeMode>
-    private lateinit var concurrencyCombo: JComboBox<ConcurrencyMode>
+    private lateinit var themeCombo: ComboBox<ThemeMode>
+    private lateinit var concurrencyCombo: ComboBox<ConcurrencyMode>
     private lateinit var maxTasksField: JTextField
     private lateinit var gitIgnoreCheck: JCheckBox
     private lateinit var additionalIgnoresField: JTextField
@@ -66,12 +69,21 @@ fun main() {
     private lateinit var previewArea: JTextArea
     private lateinit var mainPanel: JPanel
     private lateinit var showLintCheck: JCheckBox
+
+    // New options UI components
+    private lateinit var includeImageFilesCheck: JCheckBox
+    private lateinit var addSnippetToQueueCheck: JCheckBox
+    private lateinit var lintErrorsOnlyCheck: JCheckBox
+    private lateinit var lintWarningsOnlyCheck: JCheckBox
+
     private val listener = object : DocumentListener {
         override fun insertUpdate(e: DocumentEvent?) = updatePreview()
         override fun removeUpdate(e: DocumentEvent?) = updatePreview()
         override fun changedUpdate(e: DocumentEvent?) = updatePreview()
     }
+
     override fun getDisplayName() = "ClipCraft"
+
     override fun createComponent(): JComponent {
         mainPanel = JPanel(BorderLayout())
         val form = JPanel().apply {
@@ -92,6 +104,8 @@ fun main() {
             add(panelBinary())
             add(Box.createVerticalStrut(JBUI.scale(8)))
             add(panelLint())
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelAdvanced()) // New panel for advanced options
         }
         val scrollForm = JBScrollPane(form).apply {
             verticalScrollBar.unitIncrement = 16
@@ -114,6 +128,7 @@ fun main() {
         updatePreview()
         return splitter
     }
+
     override fun isModified(): Boolean = listOf(
         headerField.text != (options.snippetHeaderText ?: ""),
         footerField.text != (options.snippetFooterText ?: ""),
@@ -140,8 +155,14 @@ fun main() {
         directoryPatternCheck.isSelected != options.enableDirectoryPatternMatching,
         detectBinaryCheck.isSelected != options.detectBinary,
         binaryThresholdField.text != options.binaryCheckThreshold.toString(),
-        showLintCheck.isSelected != options.showLint
+        showLintCheck.isSelected != options.showLint,
+        // New options:
+        includeImageFilesCheck.isSelected != options.includeImageFiles,
+        addSnippetToQueueCheck.isSelected != options.addSnippetToQueue,
+        lintErrorsOnlyCheck.isSelected != options.lintErrorsOnly,
+        lintWarningsOnlyCheck.isSelected != options.lintWarningsOnly,
     ).any { it }
+
     override fun apply() {
         options.snippetHeaderText = headerField.text
         options.snippetFooterText = footerField.text
@@ -169,11 +190,18 @@ fun main() {
         options.detectBinary = detectBinaryCheck.isSelected
         options.binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: options.binaryCheckThreshold
         options.showLint = showLintCheck.isSelected
+        // New options:
+        options.includeImageFiles = includeImageFilesCheck.isSelected
+        options.addSnippetToQueue = addSnippetToQueueCheck.isSelected
+        options.lintErrorsOnly = lintErrorsOnlyCheck.isSelected
+        options.lintWarningsOnly = lintWarningsOnlyCheck.isSelected
+
         options.resolveConflicts()
         manager.deleteProfile(savedProfile.profileName)
         manager.addProfile(savedProfile.copy(options = options))
         manager.switchProfile(savedProfile.profileName)
     }
+
     override fun reset() {
         headerField.text = options.snippetHeaderText.orEmpty()
         footerField.text = options.snippetFooterText.orEmpty()
@@ -201,11 +229,19 @@ fun main() {
         detectBinaryCheck.isSelected = options.detectBinary
         binaryThresholdField.text = options.binaryCheckThreshold.toString()
         showLintCheck.isSelected = options.showLint
+        // New options:
+        includeImageFilesCheck.isSelected = options.includeImageFiles
+        addSnippetToQueueCheck.isSelected = options.addSnippetToQueue
+        lintErrorsOnlyCheck.isSelected = options.lintErrorsOnly
+        lintWarningsOnlyCheck.isSelected = options.lintWarningsOnly
+
         updatePreview()
         updateChunkUI()
         updateConcurrency()
     }
+
     override fun disposeUIResources() {}
+
     private fun updatePreview() {
         val tmp = options.copy().apply {
             snippetHeaderText = headerField.text
@@ -234,6 +270,11 @@ fun main() {
             detectBinary = detectBinaryCheck.isSelected
             binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: binaryCheckThreshold
             showLint = showLintCheck.isSelected
+            // New options:
+            includeImageFiles = includeImageFilesCheck.isSelected
+            addSnippetToQueue = addSnippetToQueueCheck.isSelected
+            lintErrorsOnly = lintErrorsOnlyCheck.isSelected
+            lintWarningsOnly = lintWarningsOnlyCheck.isSelected
         }
         tmp.resolveConflicts()
         val snippet = com.clipcraft.model.Snippet(
@@ -242,7 +283,7 @@ fun main() {
             relativePath = "src/Sample.kt",
             filePath = "C:/fake/path/Sample.kt",
             fileSizeBytes = sampleCode.length.toLong(),
-            lastModified = System.currentTimeMillis()
+            lastModified = System.currentTimeMillis(),
         )
         val formattedCode = CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
         val dirStruct = if (tmp.includeDirectorySummary) "Directory Structure:\n  src/Sample.kt\n\n" else ""
@@ -256,33 +297,51 @@ fun main() {
         previewArea.caretPosition = 0
         updateChunkUI()
     }
+
     private fun updateChunkUI() {
-        val active = !singleLineOutputCheck.isSelected && (chunkStrategyCombo.selectedItem as ChunkStrategy) != ChunkStrategy.NONE
+        val active =
+            !singleLineOutputCheck.isSelected && (chunkStrategyCombo.selectedItem as ChunkStrategy) != ChunkStrategy.NONE
         chunkSizeField.isEnabled = active && chunkStrategyCombo.selectedItem == ChunkStrategy.BY_SIZE
         overlapCombo.isEnabled = active
         compressionCombo.isEnabled = true
         chunkLabel.text = if (singleLineOutputCheck.isSelected) "Single-line output active, chunking disabled" else ""
     }
+
     private fun updateConcurrency() {
         maxTasksField.isEnabled = (concurrencyCombo.selectedItem as ConcurrencyMode) != ConcurrencyMode.DISABLED
     }
+
     private fun panelOutput(): JPanel {
-        headerField = JBTextField(options.snippetHeaderText.orEmpty(), 20).apply { document.addDocumentListener(listener) }
-        footerField = JBTextField(options.snippetFooterText.orEmpty(), 20).apply { document.addDocumentListener(listener) }
-        directoryStructureCheck = JCheckBox("Directory Structure", options.includeDirectorySummary).apply { addActionListener { updatePreview() } }
+        headerField =
+            JBTextField(options.snippetHeaderText.orEmpty(), 20).apply { document.addDocumentListener(listener) }
+        footerField =
+            JBTextField(options.snippetFooterText.orEmpty(), 20).apply { document.addDocumentListener(listener) }
+        directoryStructureCheck = JCheckBox(
+            "Directory Structure",
+            options.includeDirectorySummary,
+        ).apply { addActionListener { updatePreview() } }
         return FormBuilder.createFormBuilder()
             .addComponent(directoryStructureCheck)
             .addLabeledComponent("Header:", headerField, 1, false)
             .addLabeledComponent("Footer:", footerField, 1, false)
             .panel.also { it.border = BorderFactory.createTitledBorder("Output") }
     }
+
     private fun panelFormatting(): JPanel {
-        lineNumbersCheck = JCheckBox("Line Numbers", options.includeLineNumbers).apply { addActionListener { updatePreview() } }
-        removeImportsCheck = JCheckBox("Remove Imports", options.removeImports).apply { addActionListener { updatePreview() } }
-        removeCommentsCheck = JCheckBox("Remove Comments", options.removeComments).apply { addActionListener { updatePreview() } }
-        trimWhitespaceCheck = JCheckBox("Trim Whitespace", options.trimWhitespace).apply { addActionListener { updatePreview() } }
-        removeEmptyLinesCheck = JCheckBox("Remove Empty Lines", options.removeEmptyLines).apply { addActionListener { updatePreview() } }
-        singleLineOutputCheck = JCheckBox("Single-line Output", options.singleLineOutput).apply { addActionListener { updatePreview(); updateChunkUI() } }
+        lineNumbersCheck =
+            JCheckBox("Line Numbers", options.includeLineNumbers).apply { addActionListener { updatePreview() } }
+        removeImportsCheck =
+            JCheckBox("Remove Imports", options.removeImports).apply { addActionListener { updatePreview() } }
+        removeCommentsCheck =
+            JCheckBox("Remove Comments", options.removeComments).apply { addActionListener { updatePreview() } }
+        trimWhitespaceCheck =
+            JCheckBox("Trim Whitespace", options.trimWhitespace).apply { addActionListener { updatePreview() } }
+        removeEmptyLinesCheck =
+            JCheckBox("Remove Empty Lines", options.removeEmptyLines).apply { addActionListener { updatePreview() } }
+        singleLineOutputCheck = JCheckBox(
+            "Single-line Output",
+            options.singleLineOutput,
+        ).apply { addActionListener { updatePreview(); updateChunkUI() } }
         return FormBuilder.createFormBuilder()
             .addComponent(lineNumbersCheck)
             .addComponent(removeImportsCheck)
@@ -292,12 +351,19 @@ fun main() {
             .addComponent(singleLineOutputCheck)
             .panel.also { it.border = BorderFactory.createTitledBorder("Formatting") }
     }
+
     private fun panelChunking(): JPanel {
-        chunkStrategyCombo = JComboBox(ChunkStrategy.entries.toTypedArray()).apply { selectedItem = options.chunkStrategy; addActionListener { updatePreview(); updateChunkUI() } }
+        chunkStrategyCombo = ComboBox(ChunkStrategy.entries.toTypedArray()).apply {
+            selectedItem = options.chunkStrategy; addActionListener { updatePreview(); updateChunkUI() }
+        }
         chunkSizeField = JBTextField(options.chunkSize.toString(), 6).apply { document.addDocumentListener(listener) }
-        overlapCombo = JComboBox(OverlapStrategy.entries.toTypedArray()).apply { selectedItem = options.overlapStrategy; addActionListener { updatePreview() } }
-        compressionCombo = JComboBox(CompressionMode.entries.toTypedArray()).apply { selectedItem = options.compressionMode; addActionListener { updatePreview() } }
-        chunkLabel = JLabel("").apply { foreground = javax.swing.plaf.ColorUIResource.RED }
+        overlapCombo = ComboBox(OverlapStrategy.entries.toTypedArray()).apply {
+            selectedItem = options.overlapStrategy; addActionListener { updatePreview() }
+        }
+        compressionCombo = ComboBox(CompressionMode.entries.toTypedArray()).apply {
+            selectedItem = options.compressionMode; addActionListener { updatePreview() }
+        }
+        chunkLabel = JLabel("").apply { foreground = JBColor.RED }
         return FormBuilder.createFormBuilder()
             .addLabeledComponent("Chunk Strategy:", chunkStrategyCombo, 1, false)
             .addLabeledComponent("Chunk Size:", chunkSizeField, 1, false)
@@ -306,11 +372,18 @@ fun main() {
             .addComponent(chunkLabel)
             .panel.also { it.border = BorderFactory.createTitledBorder("Chunking & Overlap") }
     }
+
     private fun panelMetadata(): JPanel {
-        metadataCheck = JCheckBox("Include Metadata", options.includeMetadata).apply { addActionListener { updatePreview() } }
+        metadataCheck =
+            JCheckBox("Include Metadata", options.includeMetadata).apply { addActionListener { updatePreview() } }
         gitInfoCheck = JCheckBox("Git Info", options.includeGitInfo).apply { addActionListener { updatePreview() } }
-        autoLangCheck = JCheckBox("Auto-Detect Language", options.autoDetectLanguage).apply { addActionListener { updatePreview() } }
-        themeCombo = JComboBox(ThemeMode.entries.toTypedArray()).apply { selectedItem = options.themeMode; addActionListener { updatePreview() } }
+        autoLangCheck = JCheckBox(
+            "Auto-Detect Language",
+            options.autoDetectLanguage,
+        ).apply { addActionListener { updatePreview() } }
+        themeCombo = ComboBox(ThemeMode.entries.toTypedArray()).apply {
+            selectedItem = options.themeMode; addActionListener { updatePreview() }
+        }
         return FormBuilder.createFormBuilder()
             .addComponent(metadataCheck)
             .addComponent(gitInfoCheck)
@@ -318,19 +391,30 @@ fun main() {
             .addLabeledComponent("Theme:", themeCombo, 1, false)
             .panel.also { it.border = BorderFactory.createTitledBorder("Metadata & Language") }
     }
+
     private fun panelConcurrency(): JPanel {
-        concurrencyCombo = JComboBox(ConcurrencyMode.entries.toTypedArray()).apply { selectedItem = options.concurrencyMode; addActionListener { updateConcurrency() } }
-        maxTasksField = JBTextField(options.maxConcurrentTasks.toString(), 4).apply { document.addDocumentListener(listener) }
+        concurrencyCombo = ComboBox(ConcurrencyMode.entries.toTypedArray()).apply {
+            selectedItem = options.concurrencyMode; addActionListener { updateConcurrency() }
+        }
+        maxTasksField =
+            JBTextField(options.maxConcurrentTasks.toString(), 4).apply { document.addDocumentListener(listener) }
         return FormBuilder.createFormBuilder()
             .addLabeledComponent("Concurrency Mode:", concurrencyCombo, 1, false)
             .addLabeledComponent("Max Tasks:", maxTasksField, 1, false)
             .panel.also { it.border = BorderFactory.createTitledBorder("Concurrency") }
     }
+
     private fun panelIgnore(): JPanel {
-        gitIgnoreCheck = JCheckBox("Use .gitignore", options.useGitIgnore).apply { addActionListener { updatePreview() } }
-        additionalIgnoresField = JBTextField(options.additionalIgnorePatterns.orEmpty(), 15).apply { document.addDocumentListener(listener) }
-        invertIgnoresCheck = JCheckBox("Invert Patterns", options.invertIgnorePatterns).apply { addActionListener { updatePreview() } }
-        directoryPatternCheck = JCheckBox("Directory Matching", options.enableDirectoryPatternMatching).apply { addActionListener { updatePreview() } }
+        gitIgnoreCheck =
+            JCheckBox("Use .gitignore", options.useGitIgnore).apply { addActionListener { updatePreview() } }
+        additionalIgnoresField =
+            JBTextField(options.additionalIgnorePatterns.orEmpty(), 15).apply { document.addDocumentListener(listener) }
+        invertIgnoresCheck =
+            JCheckBox("Invert Patterns", options.invertIgnorePatterns).apply { addActionListener { updatePreview() } }
+        directoryPatternCheck = JCheckBox(
+            "Directory Matching",
+            options.enableDirectoryPatternMatching,
+        ).apply { addActionListener { updatePreview() } }
         return FormBuilder.createFormBuilder()
             .addComponent(gitIgnoreCheck)
             .addLabeledComponent("Additional Ignore Patterns:", additionalIgnoresField, 1, false)
@@ -338,18 +422,36 @@ fun main() {
             .addComponent(directoryPatternCheck)
             .panel.also { it.border = BorderFactory.createTitledBorder("Ignore Options") }
     }
+
     private fun panelBinary(): JPanel {
-        detectBinaryCheck = JCheckBox("Detect Binary Files", options.detectBinary).apply { addActionListener { updatePreview() } }
-        binaryThresholdField = JBTextField(options.binaryCheckThreshold.toString(), 5).apply { document.addDocumentListener(listener) }
+        detectBinaryCheck =
+            JCheckBox("Detect Binary Files", options.detectBinary).apply { addActionListener { updatePreview() } }
+        binaryThresholdField =
+            JBTextField(options.binaryCheckThreshold.toString(), 5).apply { document.addDocumentListener(listener) }
         return FormBuilder.createFormBuilder()
             .addComponent(detectBinaryCheck)
             .addLabeledComponent("Binary Check Threshold:", binaryThresholdField, 1, false)
             .panel.also { it.border = BorderFactory.createTitledBorder("Binary Detection") }
     }
+
     private fun panelLint(): JPanel {
         showLintCheck = JCheckBox("Show Lint Results", options.showLint).apply { addActionListener { updatePreview() } }
         return FormBuilder.createFormBuilder()
             .addComponent(showLintCheck)
             .panel.also { it.border = BorderFactory.createTitledBorder("Lint") }
+    }
+
+    // New panel for advanced options
+    private fun panelAdvanced(): JPanel {
+        includeImageFilesCheck = JCheckBox("Include Image Files", options.includeImageFiles)
+        addSnippetToQueueCheck = JCheckBox("Add Snippet to Queue", options.addSnippetToQueue)
+        lintErrorsOnlyCheck = JCheckBox("Report Only Lint Errors", options.lintErrorsOnly)
+        lintWarningsOnlyCheck = JCheckBox("Report Only Lint Warnings", options.lintWarningsOnly)
+        return FormBuilder.createFormBuilder()
+            .addComponent(includeImageFilesCheck)
+            .addComponent(addSnippetToQueueCheck)
+            .addComponent(lintErrorsOnlyCheck)
+            .addComponent(lintWarningsOnlyCheck)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Advanced Options") }
     }
 }

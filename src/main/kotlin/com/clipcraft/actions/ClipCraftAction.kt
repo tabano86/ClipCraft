@@ -20,14 +20,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import java.awt.Toolkit
-import java.io.File
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import java.awt.Toolkit
+import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -116,9 +116,10 @@ class ClipCraftAction : AnAction() {
                 fileName = file.name,
                 fileSizeBytes = file.length(),
                 lastModified = file.lastModified(),
-                content = placeholder
+                content = placeholder,
             )
-            val enriched = if (options.includeGitInfo) ClipCraftGitIntegration.enrichSnippetWithGitInfo(proj, snippet) else snippet
+            val enriched =
+                if (options.includeGitInfo) ClipCraftGitIntegration.enrichSnippetWithGitInfo(proj, snippet) else snippet
             synchronized(group) { group.snippets.add(enriched) }
             return
         }
@@ -140,21 +141,31 @@ class ClipCraftAction : AnAction() {
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
-            content = content
+            content = content,
         )
         if (options.includeGitInfo) snippet = ClipCraftGitIntegration.enrichSnippetWithGitInfo(proj, snippet)
         synchronized(group) { group.snippets.add(snippet) }
     }
 
-    private fun buildFinalOutput(group: SnippetGroup, options: ClipCraftOptions, lintResults: List<com.clipcraft.lint.LintIssue>): String {
+    private fun buildFinalOutput(
+        group: SnippetGroup,
+        options: ClipCraftOptions,
+        lintResults: List<com.clipcraft.lint.LintIssue>,
+    ): String {
         val header = options.snippetHeaderText.orEmpty()
         val footer = options.snippetFooterText.orEmpty()
         val code = CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
-        val dirStruct = if (options.includeDirectorySummary)
+        val dirStruct = if (options.includeDirectorySummary) {
             "Directory Structure:\n" + group.snippets.mapNotNull { it.relativePath }
-                .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n" else ""
-        val lintSummary = if (options.showLint && lintResults.isNotEmpty())
-            "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" } else ""
+                .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
+        } else {
+            ""
+        }
+        val lintSummary = if (options.showLint && lintResults.isNotEmpty()) {
+            "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" }
+        } else {
+            ""
+        }
         return buildString {
             if (header.isNotEmpty()) appendLine(header).appendLine()
             if (dirStruct.isNotEmpty()) appendLine(dirStruct)

@@ -11,5 +11,5 @@ data class Snippet(
     val lastModified: Long,
     val content: String,
     var language: String? = null,
-    var gitCommitHash: String? = null
+    var gitCommitHash: String? = null,
 )

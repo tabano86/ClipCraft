@@ -12,6 +12,7 @@ plugins {
 
 group = "com.clipcraft"
 
+// Configure SCM-based versioning.
 scmVersion {
     tag {
         prefix.set("v")
@@ -21,8 +22,8 @@ scmVersion {
     ignoreUncommittedChanges.set(true)
     branchVersionIncrementer.putAll(
         mapOf("main" to pl.allegro.tech.build.axion.release.domain.properties.VersionProperties.Incrementer { ctx ->
-            val message = Runtime.getRuntime().exec("git log -1 --pretty=%B")
-                .inputStream.bufferedReader().readText().trim()
+            val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
+            val message = process.inputStream.bufferedReader().readText().trim()
             when {
                 "BREAKING CHANGE" in message || Regex("^.*!:").containsMatchIn(message) -> ctx.currentVersion.incrementMajorVersion()
                 message.startsWith("feat", ignoreCase = true) -> ctx.currentVersion.incrementMinorVersion()
@@ -32,7 +33,7 @@ scmVersion {
         })
     )
     versionIncrementer("incrementPatch")
-    createReleaseCommit.set(true)
+    createReleaseCommit.set(false)
 }
 version = scmVersion.version
 
@@ -77,10 +78,24 @@ tasks.publishPlugin {
 }
 
 spotless {
-    kotlin { target("src/**/*.kt"); ktlint("0.48.2") }
-    java { target("src/**/*.java"); googleJavaFormat("1.16.0") }
-    yaml { target("**/*.yml", "**/*.yaml"); jackson() }
-    format("misc") { target("**/*.gradle", "**/*.md", "**/*.gitignore"); trimTrailingWhitespace(); indentWithSpaces(); endWithNewline() }
+    kotlin {
+        target("src/**/*.kt")
+        ktlint("0.48.2")
+    }
+    java {
+        target("src/**/*.java")
+        googleJavaFormat("1.16.0")
+    }
+    yaml {
+        target("**/*.yml", "**/*.yaml")
+        jackson()
+    }
+    format("misc") {
+        target("**/*.gradle", "**/*.md", "**/*.gitignore")
+        trimTrailingWhitespace()
+        indentWithSpaces()
+        endWithNewline()
+    }
 }
 
 detekt {
@@ -93,5 +108,8 @@ jacoco {
 }
 
 tasks.jacocoTestReport {
-    reports { xml.required.set(true); html.required.set(true) }
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }

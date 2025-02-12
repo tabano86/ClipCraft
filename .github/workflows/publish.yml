@@ -11,38 +11,7 @@ permissions:
   contents: "write"
   id-token: "write"
 jobs:
-#  build:
-#    runs-on: "ubuntu-latest"
-#    steps:
-#    - name: "Checkout Repository (Full History)"
-#      uses: "actions/checkout@v3"
-#      with:
-#        fetch-depth: 0
-#    - name: "Set up JDK 17"
-#      uses: "actions/setup-java@v3"
-#      with:
-#        distribution: "temurin"
-#        java-version: 17
-#    - name: "Ensure gradlew is Executable"
-#      run: "chmod +x ./gradlew"
-#    - name: "Cache Gradle Directories"
-#      uses: "actions/cache@v3"
-#      with:
-#        path: "~/.gradle/caches\n~/.gradle/wrapper\n.gradle\n"
-#        key: "${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties')\
-#          \ }}"
-#    - name: "Run Dependency Updates Check"
-#      run: "./gradlew dependencyUpdates --no-daemon --stacktrace --parallel"
-#    - name: "Run Quality Checks, Tests, and Build Plugin"
-#      run: "./gradlew clean test buildPlugin patchPluginXml spotlessCheck detekt jacocoTestReport\
-#        \ --no-daemon --stacktrace --parallel\n"
-#    - name: "Upload Plugin Artifact"
-#      uses: "actions/upload-artifact@v4"
-#      with:
-#        name: "plugin-distribution"
-#        path: "build/distributions/*.zip"
   release:
-#    needs: "build"
     if: "github.event_name == 'push'"
     runs-on: "ubuntu-latest"
     steps:
@@ -73,7 +42,7 @@ jobs:
       run: "git fetch --prune --tags\ngit reset --hard origin/main\n"
     - name: "Clean Working Tree"
       run: "git reset --hard\ngit clean -fdx\n"
-    - name: "Ensure gradlew is Executable"
+    - name: "Ensure gradlew is Executable (again)"
       shell: "bash"
       run: "chmod +x ./gradlew"
     - name: "Publish Plugin with Retry"
@@ -81,9 +50,9 @@ jobs:
       with:
         max_attempts: 3
         timeout_minutes: 5
-        command: "bash -c \"set -x; ./gradlew release publishPlugin --no-daemon --stacktrace\
-          \ --parallel\"\n"
-        shell: "bash"
+        command: "bash -c \"set -x; git add -A && git commit -m 'Updates something'\
+          \ && ./gradlew release publishPlugin --no-daemon --stacktrace --parallel\"\
+          \n"
       env:
         ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: "${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN\
           \ }}"

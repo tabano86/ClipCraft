@@ -35,7 +35,7 @@ jobs:
       run: "./gradlew dependencyUpdates --no-daemon --stacktrace --parallel"
     - name: "Run Quality Checks, Tests, and Build Plugin"
       run: "./gradlew clean test buildPlugin patchPluginXml spotlessCheck detekt jacocoTestReport\
-        \ --no-daemon --stacktrace --parallel"
+        \ --no-daemon --stacktrace --parallel\n"
     - name: "Upload Plugin Artifact"
       uses: "actions/upload-artifact@v4"
       with:
@@ -71,6 +71,8 @@ jobs:
         \ }}\n"
     - name: "Sync Repository with Remote"
       run: "git fetch --prune --tags\ngit reset --hard origin/main\n"
+    - name: "Clean Working Tree"
+      run: "git reset --hard\ngit clean -fdx\n"
     - name: "Ensure gradlew is Executable"
       shell: "bash"
       run: "chmod +x ./gradlew"
@@ -80,7 +82,7 @@ jobs:
         max_attempts: 3
         timeout_minutes: 5
         command: "bash -c \"set -x; ./gradlew release publishPlugin --no-daemon --stacktrace\
-          \ --parallel\""
+          \ --parallel\"\n"
         shell: "bash"
       env:
         ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: "${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN\

@@ -18,14 +18,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import java.awt.Toolkit
-import java.io.File
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import java.awt.Toolkit
+import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -116,7 +116,7 @@ class ClipCraftAction : AnAction() {
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
-            content = content
+            content = content,
         )
         if (o.includeGitInfo) s = ClipCraftGitIntegration.enrichSnippetWithGitInfo(proj, s)
         synchronized(group) { group.snippets.add(s) }
@@ -139,7 +139,9 @@ class ClipCraftAction : AnAction() {
         val dirStruct = if (o.includeDirectorySummary) {
             val sorted = group.snippets.mapNotNull { it.relativePath }.distinct().sorted()
             "Directory Structure:\n" + sorted.joinToString("\n") { "  $it" } + "\n\n"
-        } else ""
+        } else {
+            ""
+        }
         return buildString {
             if (h.isNotEmpty()) appendLine(h).appendLine()
             if (dirStruct.isNotEmpty()) appendLine(dirStruct)

@@ -13,7 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 
-class ClipCraftIgnoreUtilTest {
+class IgnoreUtilTest {
 
     @Test
     fun negativePatternOverridesPositiveMatch() {
@@ -54,7 +54,7 @@ class ClipCraftIgnoreUtilTest {
             Arguments.of("focus.txt", listOf("*.txt", "!focus.txt"), false),
             Arguments.of("readme.md", listOf("*.txt"), false),
             Arguments.of("error.log", listOf("er*or.???"), true),
-            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false)
+            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false),
         )
     }
 

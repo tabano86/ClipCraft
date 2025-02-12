@@ -88,4 +88,3 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         super.doOKAction()
     }
 }
-

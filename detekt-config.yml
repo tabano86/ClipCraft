@@ -1,72 +1,57 @@
-# detekt-config.yml
-
-# Auto-correct issues when possible.
+---
 autoCorrect: true
-# Do not fail the build immediately when issues are found.
 failFast: false
-
 build:
-  # Maximum allowed issues before failing (0 means no limit).
   maxIssues: 0
   weights:
     complexity: 2
     LongParameterList: 1
     style: 1
     formatting: 1
-
 processors:
   active: true
-  # Exclude generated code from analysis.
   exclude:
-    - '**/generated/**'
-
+  - "**/generated/**"
 config:
-  # Validate the detekt configuration.
   validation: true
-
 comments:
   CommentOverPrivateFunction:
     active: true
     allowedPatterns: []
-
 complexity:
   TooManyFunctions:
     active: true
-    # Example: flag if a class has more than 10 functions.
     threshold: 10
   LongMethod:
     active: true
-    # Example: flag methods longer than 30 lines.
     threshold: 30
   ComplexMethod:
     active: true
-    # Example: flag methods with a cyclomatic complexity over 15.
     threshold: 15
-
 formatting:
   active: true
   autoCorrect: true
-  # Set to true if you want formatting rules tailored for Android projects.
   android: false
   disabledRules: []
-
 style:
   MagicNumber:
     active: true
-    # Ignore common small numbers.
-    ignoreNumbers: [-1, 0, 1, 2]
+    ignoreNumbers:
+    - -1
+    - 0
+    - 1
+    - 2
   NamingConventionViolation:
     active: true
   ForbiddenComment:
     active: true
-    # Common patterns to flag in comments.
-    values: ["FIXME", "BUG", "TODO"]
-
+    values:
+    - "FIXME"
+    - "BUG"
+    - "TODO"
 performance:
   active: true
-
 potential-bugs:
   active: true
-
 exceptions:
   active: true

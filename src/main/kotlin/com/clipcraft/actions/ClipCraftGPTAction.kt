@@ -32,7 +32,7 @@ class ClipCraftGPTAction : AnAction("ClipCraft: Copy & Prompt GPT") {
         Messages.showInfoMessage(
             project,
             "Snippets + GPT prompt copied to clipboard!",
-            "ClipCraft"
+            "ClipCraft",
         )
     }
 }

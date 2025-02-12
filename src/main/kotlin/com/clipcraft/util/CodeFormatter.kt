@@ -5,8 +5,8 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.Snippet
-import kotlin.math.min
 import org.apache.commons.lang3.StringEscapeUtils
+import kotlin.math.min
 
 object CodeFormatter {
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
@@ -70,7 +70,7 @@ object CodeFormatter {
             content = trimWhitespace(
                 content,
                 collapse = o.collapseBlankLines,
-                removeLeading = o.removeLeadingBlankLines
+                removeLeading = o.removeLeadingBlankLines,
             )
         }
         if (o.removeEmptyLines) content = collapseConsecutiveBlankLines(content)
@@ -151,8 +151,9 @@ object CodeFormatter {
                     .replace(Regex("\\p{C}+"), "")
                     .trim()
             }.filter { line ->
-                if (!o.selectiveCompression) line.isNotBlank()
-                else {
+                if (!o.selectiveCompression) {
+                    line.isNotBlank()
+                } else {
                     val up = line.uppercase()
                     line.isNotBlank() && !up.contains("TODO") && !up.contains("DEBUG")
                 }

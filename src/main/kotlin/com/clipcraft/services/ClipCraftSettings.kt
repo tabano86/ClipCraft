@@ -13,7 +13,7 @@ class ClipCraftSettings private constructor() {
     // Fallback profile if no project-specific profile exists.
     private val fallbackProfile = ClipCraftProfile(
         profileName = "Global Default",
-        options = ClipCraftOptions()
+        options = ClipCraftOptions(),
     )
 
     // Holds all known profiles in memory.

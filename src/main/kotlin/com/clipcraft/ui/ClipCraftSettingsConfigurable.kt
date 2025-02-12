@@ -15,7 +15,6 @@ import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -257,9 +256,13 @@ fun main() {
         chunkSizeField.isEnabled = active && s == ChunkStrategy.BY_SIZE
         overlapCombo.isEnabled = active
         compressionCombo.isEnabled = true
-        if (single) chunkLabel.text = "Single-line output is active, chunking disabled"
-        else if (s == ChunkStrategy.NONE) chunkLabel.text = "Chunking disabled"
-        else chunkLabel.text = ""
+        if (single) {
+            chunkLabel.text = "Single-line output is active, chunking disabled"
+        } else if (s == ChunkStrategy.NONE) {
+            chunkLabel.text = "Chunking disabled"
+        } else {
+            chunkLabel.text = ""
+        }
     }
 
     private fun updateConcurrency() {

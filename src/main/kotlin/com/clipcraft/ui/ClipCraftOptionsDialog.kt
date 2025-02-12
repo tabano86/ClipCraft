@@ -8,6 +8,7 @@ import com.clipcraft.model.OverlapStrategy
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.util.ui.FormBuilder
+import org.slf4j.LoggerFactory
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
 import javax.swing.Box
@@ -15,7 +16,6 @@ import javax.swing.JCheckBox
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTextField
-import org.slf4j.LoggerFactory
 
 /**
  * A simple example of a dialog to edit ClipCraftOptions, not necessarily used in production.
@@ -110,7 +110,7 @@ class ClipCraftOptionsDialog(private val initialOptions: ClipCraftOptions) : Dia
             singleLineOutput = singleLineOutputCheckBox.isSelected,
             chunkStrategy = chunkStrategyComboBox.selectedItem as ChunkStrategy,
             chunkSize = chunkSizeField.text.toIntOrNull() ?: initialOptions.chunkSize,
-            overlapStrategy = overlapStrategyComboBox.selectedItem as OverlapStrategy
+            overlapStrategy = overlapStrategyComboBox.selectedItem as OverlapStrategy,
         )
 
         updated.resolveConflicts()

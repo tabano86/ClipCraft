@@ -1,7 +1,6 @@
 package com.clipcraft.util
 
 import com.clipcraft.model.CompressionMode
-import java.util.stream.Stream
 import matchesGlob
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -11,8 +10,9 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.util.stream.Stream
 
-class ClipCraftFormatterTest {
+class CodeFormatterTest {
 
     @Test
     fun `chunkContent returns single chunk when content is shorter than maxChunkSize`() {
@@ -178,7 +178,7 @@ class ClipCraftFormatterTest {
             Arguments.of("src/main/kotlin/Ex?mple.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("*Example.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("**", "any/path/should/match", true),
-            Arguments.of("no/match", "different/path", false)
+            Arguments.of("no/match", "different/path", false),
         )
     }
 }

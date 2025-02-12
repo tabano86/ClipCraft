@@ -13,7 +13,7 @@ class ClipCraftSetupWizardCore(private val project: Project) {
             includeMetadata = wizardUI.isIncludeMetadata(),
             useGitIgnore = wizardUI.isUseGitIgnore(),
             maxConcurrentTasks = wizardUI.getMaxConcurrentTasks(),
-            concurrencyEnabled = true
+            concurrencyEnabled = true,
         )
 
         val updatedProfile = currentProfile.copy(options = updatedOptions)

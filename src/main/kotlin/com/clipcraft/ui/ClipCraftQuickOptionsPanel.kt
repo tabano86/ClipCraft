@@ -42,7 +42,7 @@ class ClipCraftQuickOptionsPanel {
         val newOptions = currentProfile.options.copy(
             outputFormat = outputFormatCombo.selectedItem as OutputFormat,
             compressionMode = compressionModeCombo.selectedItem as CompressionMode,
-            removeComments = removeCommentsCheckBox.isSelected
+            removeComments = removeCommentsCheckBox.isSelected,
         )
         settingsService.addProfile(currentProfile.copy(options = newOptions))
         settingsService.setCurrentProfile(currentProfile.profileName)

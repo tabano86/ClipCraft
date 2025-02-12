@@ -15,7 +15,7 @@ data class Snippet(
     val content: String,
 
     var language: String? = null,
-    var gitCommitHash: String? = null
+    var gitCommitHash: String? = null,
 ) {
     constructor(content: String, fileName: String) : this(
         id = UUID.randomUUID().toString(),
@@ -26,7 +26,7 @@ data class Snippet(
         lastModified = System.currentTimeMillis(),
         content = content,
         language = null,
-        gitCommitHash = null
+        gitCommitHash = null,
     )
 
     constructor(content: String, fileName: String, relativePath: String) : this(
@@ -38,6 +38,6 @@ data class Snippet(
         lastModified = System.currentTimeMillis(),
         content = content,
         language = null,
-        gitCommitHash = null
+        gitCommitHash = null,
     )
 }

@@ -4,8 +4,8 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
+import java.io.File
 
 class FakeProject(private val path: String) : Project {
     override fun getBasePath() = path
@@ -42,7 +42,7 @@ class FakeProject(private val path: String) : Project {
 
     override fun <T : Any?> instantiateClass(
         className: String,
-        pluginDescriptor: com.intellij.openapi.extensions.PluginDescriptor
+        pluginDescriptor: com.intellij.openapi.extensions.PluginDescriptor,
     ): T & Any {
         throw UnsupportedOperationException()
     }
@@ -50,7 +50,7 @@ class FakeProject(private val path: String) : Project {
     override fun <T : Any?> instantiateClassWithConstructorInjection(
         aClass: Class<T>,
         key: Any,
-        pluginId: PluginId
+        pluginId: PluginId,
     ): T {
         throw UnsupportedOperationException()
     }
@@ -61,12 +61,12 @@ class FakeProject(private val path: String) : Project {
         message: String,
         error: Throwable?,
         pluginId: PluginId,
-        attachments: MutableMap<String, String>?
+        attachments: MutableMap<String, String>?,
     ) = throw UnsupportedOperationException()
 
     override fun <T : Any?> loadClass(
         className: String,
-        pluginDescriptor: com.intellij.openapi.extensions.PluginDescriptor
+        pluginDescriptor: com.intellij.openapi.extensions.PluginDescriptor,
     ): Class<T> {
         throw UnsupportedOperationException()
     }
@@ -85,7 +85,7 @@ class FakeProject(private val path: String) : Project {
 open class FakeVirtualFile(
     private val filePath: String,
     private val fileContent: String,
-    private val isDir: Boolean = false
+    private val isDir: Boolean = false,
 ) : VirtualFile() {
     override fun getName() = File(filePath).name
     override fun getFileSystem() = FakeVirtualFileSystem

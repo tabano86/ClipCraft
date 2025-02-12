@@ -11,7 +11,7 @@ import com.clipcraft.model.ThemeMode
 object CodeFormatterTestHelper {
     fun createOptions(
         compressionMode: CompressionMode,
-        selectiveCompression: Boolean = false
+        selectiveCompression: Boolean = false,
     ): ClipCraftOptions {
         return ClipCraftOptions(
             compressionMode = compressionMode,
@@ -45,7 +45,7 @@ object CodeFormatterTestHelper {
             // New fields for testing selective compression and additional ignore options:
             additionalIgnorePatterns = "",
             invertIgnorePatterns = false,
-            enableDirectoryPatternMatching = false
+            enableDirectoryPatternMatching = false,
         )
     }
 }

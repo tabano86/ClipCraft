@@ -27,8 +27,9 @@ data class ClipCraftOptions(
     var gptTemplates: MutableList<GPTPromptTemplate> = mutableListOf(
         GPTPromptTemplate(
             "ExplainThisCode",
-            "Explain this code"
-        ), GPTPromptTemplate("OptimizeSnippet", "Optimize this snippet")
+            "Explain this code",
+        ),
+        GPTPromptTemplate("OptimizeSnippet", "Optimize this snippet"),
     ),
     var autoDetectLanguage: Boolean = false,
     var overlapStrategy: OverlapStrategy = OverlapStrategy.SINGLE_LINE,
@@ -40,13 +41,17 @@ data class ClipCraftOptions(
     var ignoreFolders: List<String>? = null,
     var selectiveCompression: Boolean = false,
     var detectBinary: Boolean = false,
-    var binaryCheckThreshold: Int = 2000
+    var binaryCheckThreshold: Int = 2000,
 ) {
     fun resolveConflicts() {
-        if (concurrencyEnabled && concurrencyMode == ConcurrencyMode.DISABLED) concurrencyMode =
-            ConcurrencyMode.THREAD_POOL
-        if (!concurrencyEnabled && concurrencyMode != ConcurrencyMode.DISABLED) concurrencyMode =
-            ConcurrencyMode.DISABLED
+        if (concurrencyEnabled && concurrencyMode == ConcurrencyMode.DISABLED) {
+            concurrencyMode =
+                ConcurrencyMode.THREAD_POOL
+        }
+        if (!concurrencyEnabled && concurrencyMode != ConcurrencyMode.DISABLED) {
+            concurrencyMode =
+                ConcurrencyMode.DISABLED
+        }
         if (enableChunkingForGPT && chunkStrategy == ChunkStrategy.NONE) chunkStrategy = ChunkStrategy.BY_SIZE
         if (!enableChunkingForGPT && chunkStrategy != ChunkStrategy.NONE) chunkStrategy = ChunkStrategy.NONE
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

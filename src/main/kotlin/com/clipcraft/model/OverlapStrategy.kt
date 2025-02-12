@@ -14,5 +14,5 @@ enum class OverlapStrategy {
     /**
      * (Future use) Could prompt the user or handle dynamically; defaults to chunking for now.
      */
-    ASK
+    ASK,
 }

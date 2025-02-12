@@ -4,7 +4,6 @@ import com.clipcraft.model.ChunkStrategy
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.OverlapStrategy
-import com.clipcraft.model.Snippet
 import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
@@ -13,11 +12,13 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextField
+import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Dimension
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
+import javax.swing.BorderFactory
+import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
@@ -26,7 +27,6 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextArea
 import javax.swing.JTextField
-import javax.swing.border.TitledBorder
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
@@ -37,9 +37,10 @@ class ClipCraftSettingsConfigurable : Configurable {
     private val sampleCode = """// Example
 package test
 fun main() {
- println("Hello")
+    println("Hello")
 }"""
 
+    // UI Components
     private lateinit var headerField: JTextField
     private lateinit var footerField: JTextField
     private lateinit var directoryStructureCheck: JCheckBox
@@ -69,19 +70,32 @@ fun main() {
     private lateinit var previewArea: JTextArea
     private lateinit var mainPanel: JPanel
 
+    private val listener = object : DocumentListener {
+        override fun insertUpdate(e: DocumentEvent?) = updatePreview()
+        override fun removeUpdate(e: DocumentEvent?) = updatePreview()
+        override fun changedUpdate(e: DocumentEvent?) = updatePreview()
+    }
+
     override fun getDisplayName() = "ClipCraft"
 
     override fun createComponent(): JComponent {
         mainPanel = JPanel(BorderLayout())
         val form = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            border = JBUI.Borders.empty(8)
             add(panelOutput())
-            add(box("Formatting", panelFormatting()))
-            add(box("Chunking & Overlap", panelChunking()))
-            add(box("Metadata & Language", panelMetadata()))
-            add(box("Concurrency", panelConcurrency()))
-            add(box("Ignore Options", panelIgnore()))
-            add(box("Binary Detection", panelBinary()))
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelFormatting())
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelChunking())
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelMetadata())
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelConcurrency())
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelIgnore())
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(panelBinary())
         }
         val scrollForm = JBScrollPane(form).apply {
             verticalScrollBar.unitIncrement = 16
@@ -199,52 +213,57 @@ fun main() {
 
     override fun disposeUIResources() {}
 
-    private val listener = object : DocumentListener {
-        override fun insertUpdate(e: DocumentEvent?) = updatePreview()
-        override fun removeUpdate(e: DocumentEvent?) = updatePreview()
-        override fun changedUpdate(e: DocumentEvent?) = updatePreview()
-    }
-
     private fun updatePreview() {
-        val tmp = o.copy()
-        tmp.gptHeaderText = headerField.text
-        tmp.gptFooterText = footerField.text
-        tmp.includeDirectorySummary = directoryStructureCheck.isSelected
-        tmp.includeLineNumbers = lineNumbersCheck.isSelected
-        tmp.removeImports = removeImportsCheck.isSelected
-        tmp.removeComments = removeCommentsCheck.isSelected
-        tmp.trimWhitespace = trimWhitespaceCheck.isSelected
-        tmp.removeEmptyLines = removeEmptyLinesCheck.isSelected
-        tmp.singleLineOutput = singleLineOutputCheck.isSelected
-        tmp.chunkStrategy = chunkStrategyCombo.selectedItem as ChunkStrategy
-        tmp.chunkSize = chunkSizeField.text.toIntOrNull() ?: tmp.chunkSize
-        tmp.overlapStrategy = overlapCombo.selectedItem as OverlapStrategy
-        tmp.compressionMode = compressionCombo.selectedItem as CompressionMode
-        tmp.includeMetadata = metadataCheck.isSelected
-        tmp.includeGitInfo = gitInfoCheck.isSelected
-        tmp.autoDetectLanguage = autoLangCheck.isSelected
-        tmp.themeMode = themeCombo.selectedItem as ThemeMode
-        tmp.concurrencyMode = concurrencyCombo.selectedItem as ConcurrencyMode
-        tmp.maxConcurrentTasks = maxTasksField.text.toIntOrNull() ?: tmp.maxConcurrentTasks
-        tmp.useGitIgnore = gitIgnoreCheck.isSelected
-        tmp.additionalIgnorePatterns = additionalIgnoresField.text.ifBlank { null }
-        tmp.invertIgnorePatterns = invertIgnoresCheck.isSelected
-        tmp.enableDirectoryPatternMatching = directoryPatternCheck.isSelected
-        tmp.detectBinary = detectBinaryCheck.isSelected
-        tmp.binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: tmp.binaryCheckThreshold
+        // Create a temporary copy of options with current UI values
+        val tmp = o.copy().apply {
+            gptHeaderText = headerField.text
+            gptFooterText = footerField.text
+            includeDirectorySummary = directoryStructureCheck.isSelected
+            includeLineNumbers = lineNumbersCheck.isSelected
+            removeImports = removeImportsCheck.isSelected
+            removeComments = removeCommentsCheck.isSelected
+            trimWhitespace = trimWhitespaceCheck.isSelected
+            removeEmptyLines = removeEmptyLinesCheck.isSelected
+            singleLineOutput = singleLineOutputCheck.isSelected
+            chunkStrategy = chunkStrategyCombo.selectedItem as ChunkStrategy
+            chunkSize = chunkSizeField.text.toIntOrNull() ?: chunkSize
+            overlapStrategy = overlapCombo.selectedItem as OverlapStrategy
+            compressionMode = compressionCombo.selectedItem as CompressionMode
+            includeMetadata = metadataCheck.isSelected
+            includeGitInfo = gitInfoCheck.isSelected
+            autoDetectLanguage = autoLangCheck.isSelected
+            themeMode = themeCombo.selectedItem as ThemeMode
+            concurrencyMode = concurrencyCombo.selectedItem as ConcurrencyMode
+            maxConcurrentTasks = maxTasksField.text.toIntOrNull() ?: maxConcurrentTasks
+            useGitIgnore = gitIgnoreCheck.isSelected
+            additionalIgnorePatterns = additionalIgnoresField.text.ifBlank { null }
+            invertIgnorePatterns = invertIgnoresCheck.isSelected
+            enableDirectoryPatternMatching = directoryPatternCheck.isSelected
+            detectBinary = detectBinaryCheck.isSelected
+            binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: binaryCheckThreshold
+        }
         tmp.resolveConflicts()
-        val snippet = Snippet(content = sampleCode, fileName = "Sample.kt", relativePath = "src/Sample.kt")
-        val out = CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n\n")
-        val dir = if (tmp.includeDirectorySummary) "[DirectoryStructure]\nsrc/\n  Sample.kt\n\n" else ""
-        val full = buildString {
+
+        val snippet = com.clipcraft.model.Snippet(
+            content = sampleCode,
+            fileName = "Sample.kt",
+            relativePath = "src/Sample.kt"
+        )
+        val formattedCode = CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
+        val dirStruct = if (tmp.includeDirectorySummary) {
+            "Directory Structure:\n  src/Sample.kt\n\n"
+        } else ""
+        val fullPreview = buildString {
             val h = tmp.gptHeaderText.orEmpty()
             val f = tmp.gptFooterText.orEmpty()
             if (h.isNotEmpty()) appendLine(h).appendLine()
-            if (dir.isNotEmpty()) append(dir)
-            append(out)
-            if (f.isNotEmpty()) appendLine().appendLine().append(f)
+            if (dirStruct.isNotEmpty()) append(dirStruct)
+            append(formattedCode)
+            if (f.isNotEmpty()) {
+                appendLine().appendLine().append(f)
+            }
         }
-        previewArea.text = full
+        previewArea.text = fullPreview
         previewArea.caretPosition = 0
         updateChunkUI()
     }
@@ -256,12 +275,10 @@ fun main() {
         chunkSizeField.isEnabled = active && s == ChunkStrategy.BY_SIZE
         overlapCombo.isEnabled = active
         compressionCombo.isEnabled = true
-        if (single) {
-            chunkLabel.text = "Single-line output is active, chunking disabled"
-        } else if (s == ChunkStrategy.NONE) {
-            chunkLabel.text = "Chunking disabled"
-        } else {
-            chunkLabel.text = ""
+        chunkLabel.text = when {
+            single -> "Single-line output is active, chunking disabled"
+            s == ChunkStrategy.NONE -> "Chunking disabled"
+            else -> ""
         }
     }
 
@@ -270,229 +287,150 @@ fun main() {
         maxTasksField.isEnabled = mode != ConcurrencyMode.DISABLED
     }
 
+    // Panel builders using FormBuilder for a neat layout
     private fun panelOutput(): JPanel {
-        val g = GridBagConstraints().apply {
-            insets = JBUI.insets(4)
-            anchor = GridBagConstraints.WEST
-            gridx = 0
-            gridy = 0
+        headerField = JBTextField(o.gptHeaderText.orEmpty(), 20).apply {
+            document.addDocumentListener(listener)
         }
-        val p = JPanel(GridBagLayout())
-        directoryStructureCheck = JCheckBox("Directory Structure", o.includeDirectorySummary)
-        directoryStructureCheck.addActionListener { updatePreview() }
-        p.add(directoryStructureCheck, g)
-        g.gridy++
-        p.add(JLabel("Header:"), g)
-        g.gridx = 1
-        headerField = JTextField(o.gptHeaderText.orEmpty(), 20)
-        headerField.document.addDocumentListener(listener)
-        p.add(headerField, g)
-        g.gridx = 0
-        g.gridy++
-        p.add(JLabel("Footer:"), g)
-        g.gridx = 1
-        footerField = JTextField(o.gptFooterText.orEmpty(), 20)
-        footerField.document.addDocumentListener(listener)
-        p.add(footerField, g)
-        p.border = TitledBorder("Output")
-        return p
+        footerField = JBTextField(o.gptFooterText.orEmpty(), 20).apply {
+            document.addDocumentListener(listener)
+        }
+        directoryStructureCheck = JCheckBox("Directory Structure", o.includeDirectorySummary).apply {
+            addActionListener { updatePreview() }
+        }
+        return FormBuilder.createFormBuilder()
+            .addComponent(directoryStructureCheck)
+            .addLabeledComponent("Header:", headerField, 1, false)
+            .addLabeledComponent("Footer:", footerField, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Output") }
     }
 
     private fun panelFormatting(): JPanel {
-        val g = GridBagConstraints().apply {
-            insets = JBUI.insets(4)
-            anchor = GridBagConstraints.WEST
-            gridx = 0
-            gridy = 0
+        lineNumbersCheck = JCheckBox("Line Numbers", o.includeLineNumbers).apply {
+            addActionListener { updatePreview() }
         }
-        val p = JPanel(GridBagLayout())
-        lineNumbersCheck = JCheckBox("Line Numbers", o.includeLineNumbers)
-        lineNumbersCheck.addActionListener { updatePreview() }
-        p.add(lineNumbersCheck, g)
-        g.gridy++
-        removeImportsCheck = JCheckBox("Remove Imports", o.removeImports)
-        removeImportsCheck.addActionListener { updatePreview() }
-        p.add(removeImportsCheck, g)
-        g.gridy++
-        removeCommentsCheck = JCheckBox("Remove Comments", o.removeComments)
-        removeCommentsCheck.addActionListener { updatePreview() }
-        p.add(removeCommentsCheck, g)
-        g.gridy++
-        trimWhitespaceCheck = JCheckBox("Trim Whitespace", o.trimWhitespace)
-        trimWhitespaceCheck.addActionListener { updatePreview() }
-        p.add(trimWhitespaceCheck, g)
-        g.gridy++
-        removeEmptyLinesCheck = JCheckBox("Remove Empty Lines", o.removeEmptyLines)
-        removeEmptyLinesCheck.addActionListener { updatePreview() }
-        p.add(removeEmptyLinesCheck, g)
-        g.gridy++
-        singleLineOutputCheck = JCheckBox("Single-line Output", o.singleLineOutput)
-        singleLineOutputCheck.addActionListener {
-            updatePreview()
-            updateChunkUI()
+        removeImportsCheck = JCheckBox("Remove Imports", o.removeImports).apply {
+            addActionListener { updatePreview() }
         }
-        p.add(singleLineOutputCheck, g)
-        return p
+        removeCommentsCheck = JCheckBox("Remove Comments", o.removeComments).apply {
+            addActionListener { updatePreview() }
+        }
+        trimWhitespaceCheck = JCheckBox("Trim Whitespace", o.trimWhitespace).apply {
+            addActionListener { updatePreview() }
+        }
+        removeEmptyLinesCheck = JCheckBox("Remove Empty Lines", o.removeEmptyLines).apply {
+            addActionListener { updatePreview() }
+        }
+        singleLineOutputCheck = JCheckBox("Single-line Output", o.singleLineOutput).apply {
+            addActionListener {
+                updatePreview()
+                updateChunkUI()
+            }
+        }
+        return FormBuilder.createFormBuilder()
+            .addComponent(lineNumbersCheck)
+            .addComponent(removeImportsCheck)
+            .addComponent(removeCommentsCheck)
+            .addComponent(trimWhitespaceCheck)
+            .addComponent(removeEmptyLinesCheck)
+            .addComponent(singleLineOutputCheck)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Formatting") }
     }
 
     private fun panelChunking(): JPanel {
-        val g = GridBagConstraints().apply {
-            insets = JBUI.insets(4)
-            anchor = GridBagConstraints.WEST
-            gridx = 0
-            gridy = 0
+        chunkStrategyCombo = ComboBox(ChunkStrategy.entries.toTypedArray()).apply {
+            selectedItem = o.chunkStrategy
+            addActionListener {
+                updatePreview()
+                updateChunkUI()
+            }
         }
-        val p = JPanel(GridBagLayout())
-        p.border = TitledBorder("Chunking")
-        p.add(JLabel("Strategy:"), g)
-        g.gridx = 1
-        chunkStrategyCombo = ComboBox(ChunkStrategy.values())
-        chunkStrategyCombo.selectedItem = o.chunkStrategy
-        chunkStrategyCombo.addActionListener {
-            updatePreview()
-            updateChunkUI()
+        chunkSizeField = JBTextField(o.chunkSize.toString(), 6).apply {
+            document.addDocumentListener(listener)
         }
-        p.add(chunkStrategyCombo, g)
-        g.gridx = 0
-        g.gridy++
-        p.add(JLabel("Chunk Size:"), g)
-        g.gridx = 1
-        chunkSizeField = JTextField(o.chunkSize.toString(), 6)
-        chunkSizeField.document.addDocumentListener(listener)
-        p.add(chunkSizeField, g)
-        g.gridx = 0
-        g.gridy++
-        p.add(JLabel("Overlap:"), g)
-        g.gridx = 1
-        overlapCombo = ComboBox(OverlapStrategy.values())
-        overlapCombo.selectedItem = o.overlapStrategy
-        overlapCombo.addActionListener { updatePreview() }
-        p.add(overlapCombo, g)
-        g.gridx = 0
-        g.gridy++
-        p.add(JLabel("Compression:"), g)
-        g.gridx = 1
-        compressionCombo = ComboBox(CompressionMode.values())
-        compressionCombo.selectedItem = o.compressionMode
-        compressionCombo.addActionListener { updatePreview() }
-        p.add(compressionCombo, g)
-        g.gridx = 0
-        g.gridy++
-        g.gridwidth = 2
-        chunkLabel = JLabel("")
-        chunkLabel.foreground = JBColor.RED
-        p.add(chunkLabel, g)
-        return p
+        overlapCombo = ComboBox(OverlapStrategy.entries.toTypedArray()).apply {
+            selectedItem = o.overlapStrategy
+            addActionListener { updatePreview() }
+        }
+        compressionCombo = ComboBox(CompressionMode.entries.toTypedArray()).apply {
+            selectedItem = o.compressionMode
+            addActionListener { updatePreview() }
+        }
+        chunkLabel = JLabel("").apply { foreground = JBColor.RED }
+        return FormBuilder.createFormBuilder()
+            .addLabeledComponent("Chunk Strategy:", chunkStrategyCombo, 1, false)
+            .addLabeledComponent("Chunk Size:", chunkSizeField, 1, false)
+            .addLabeledComponent("Overlap Strategy:", overlapCombo, 1, false)
+            .addLabeledComponent("Compression Mode:", compressionCombo, 1, false)
+            .addComponent(chunkLabel)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Chunking & Overlap") }
     }
 
     private fun panelMetadata(): JPanel {
-        val g = GridBagConstraints().apply {
-            insets = JBUI.insets(4)
-            anchor = GridBagConstraints.WEST
-            gridx = 0
-            gridy = 0
+        metadataCheck = JCheckBox("Include Metadata", o.includeMetadata).apply {
+            addActionListener { updatePreview() }
         }
-        val p = JPanel(GridBagLayout())
-        p.border = TitledBorder("Metadata")
-        metadataCheck = JCheckBox("Include Metadata", o.includeMetadata)
-        metadataCheck.addActionListener { updatePreview() }
-        p.add(metadataCheck, g)
-        g.gridy++
-        gitInfoCheck = JCheckBox("Git Info", o.includeGitInfo)
-        gitInfoCheck.addActionListener { updatePreview() }
-        p.add(gitInfoCheck, g)
-        g.gridy++
-        autoLangCheck = JCheckBox("Auto-Detect Language", o.autoDetectLanguage)
-        autoLangCheck.addActionListener { updatePreview() }
-        p.add(autoLangCheck, g)
-        g.gridy++
-        p.add(JLabel("Theme:"), g)
-        g.gridx = 1
-        themeCombo = ComboBox(ThemeMode.values())
-        themeCombo.selectedItem = o.themeMode
-        themeCombo.addActionListener { updatePreview() }
-        p.add(themeCombo, g)
-        return p
+        gitInfoCheck = JCheckBox("Git Info", o.includeGitInfo).apply {
+            addActionListener { updatePreview() }
+        }
+        autoLangCheck = JCheckBox("Auto-Detect Language", o.autoDetectLanguage).apply {
+            addActionListener { updatePreview() }
+        }
+        themeCombo = ComboBox(ThemeMode.entries.toTypedArray()).apply {
+            selectedItem = o.themeMode
+            addActionListener { updatePreview() }
+        }
+        return FormBuilder.createFormBuilder()
+            .addComponent(metadataCheck)
+            .addComponent(gitInfoCheck)
+            .addComponent(autoLangCheck)
+            .addLabeledComponent("Theme:", themeCombo, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Metadata & Language") }
     }
 
     private fun panelConcurrency(): JPanel {
-        val g = GridBagConstraints().apply {
-            insets = JBUI.insets(4)
-            anchor = GridBagConstraints.WEST
-            gridx = 0
-            gridy = 0
+        concurrencyCombo = ComboBox(ConcurrencyMode.entries.toTypedArray()).apply {
+            selectedItem = o.concurrencyMode
+            addActionListener { updateConcurrency() }
         }
-        val p = JPanel(GridBagLayout())
-        p.border = TitledBorder("Concurrency")
-        p.add(JLabel("Mode:"), g)
-        g.gridx = 1
-        concurrencyCombo = ComboBox(ConcurrencyMode.values())
-        concurrencyCombo.selectedItem = o.concurrencyMode
-        concurrencyCombo.addActionListener { updateConcurrency() }
-        p.add(concurrencyCombo, g)
-        g.gridx = 0
-        g.gridy++
-        p.add(JLabel("Max Tasks:"), g)
-        g.gridx = 1
-        maxTasksField = JTextField(o.maxConcurrentTasks.toString(), 4)
-        p.add(maxTasksField, g)
-        return p
+        maxTasksField = JBTextField(o.maxConcurrentTasks.toString(), 4)
+        return FormBuilder.createFormBuilder()
+            .addLabeledComponent("Concurrency Mode:", concurrencyCombo, 1, false)
+            .addLabeledComponent("Max Tasks:", maxTasksField, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Concurrency") }
     }
 
     private fun panelIgnore(): JPanel {
-        val g = GridBagConstraints().apply {
-            insets = JBUI.insets(4)
-            anchor = GridBagConstraints.WEST
-            gridx = 0
-            gridy = 0
+        gitIgnoreCheck = JCheckBox("Use .gitignore", o.useGitIgnore).apply {
+            addActionListener { updatePreview() }
         }
-        val p = JPanel(GridBagLayout())
-        p.border = TitledBorder("Ignore")
-        gitIgnoreCheck = JCheckBox("Use .gitignore", o.useGitIgnore)
-        gitIgnoreCheck.addActionListener { updatePreview() }
-        p.add(gitIgnoreCheck, g)
-        g.gridy++
-        p.add(JLabel("Additional Patterns:"), g)
-        g.gridx = 1
-        additionalIgnoresField = JTextField(o.additionalIgnorePatterns.orEmpty(), 15)
-        additionalIgnoresField.document.addDocumentListener(listener)
-        p.add(additionalIgnoresField, g)
-        g.gridx = 0
-        g.gridy++
-        invertIgnoresCheck = JCheckBox("Invert Patterns", o.invertIgnorePatterns)
-        invertIgnoresCheck.addActionListener { updatePreview() }
-        p.add(invertIgnoresCheck, g)
-        g.gridy++
-        directoryPatternCheck = JCheckBox("Directory Matching", o.enableDirectoryPatternMatching)
-        directoryPatternCheck.addActionListener { updatePreview() }
-        p.add(directoryPatternCheck, g)
-        return p
+        additionalIgnoresField = JBTextField(o.additionalIgnorePatterns.orEmpty(), 15).apply {
+            document.addDocumentListener(listener)
+        }
+        invertIgnoresCheck = JCheckBox("Invert Patterns", o.invertIgnorePatterns).apply {
+            addActionListener { updatePreview() }
+        }
+        directoryPatternCheck = JCheckBox("Directory Matching", o.enableDirectoryPatternMatching).apply {
+            addActionListener { updatePreview() }
+        }
+        return FormBuilder.createFormBuilder()
+            .addComponent(gitIgnoreCheck)
+            .addLabeledComponent("Additional Ignore Patterns:", additionalIgnoresField, 1, false)
+            .addComponent(invertIgnoresCheck)
+            .addComponent(directoryPatternCheck)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Ignore Options") }
     }
 
     private fun panelBinary(): JPanel {
-        val g = GridBagConstraints().apply {
-            insets = JBUI.insets(4)
-            anchor = GridBagConstraints.WEST
-            gridx = 0
-            gridy = 0
+        detectBinaryCheck = JCheckBox("Detect Binary Files", o.detectBinary).apply {
+            addActionListener { updatePreview() }
         }
-        val p = JPanel(GridBagLayout())
-        p.border = TitledBorder("Binary Detection")
-        detectBinaryCheck = JCheckBox("Detect Binary Files", o.detectBinary)
-        detectBinaryCheck.addActionListener { updatePreview() }
-        p.add(detectBinaryCheck, g)
-        g.gridx = 0
-        g.gridy++
-        p.add(JLabel("Byte Check Threshold:"), g)
-        g.gridx = 1
-        binaryThresholdField = JTextField(o.binaryCheckThreshold.toString(), 5)
-        binaryThresholdField.document.addDocumentListener(listener)
-        p.add(binaryThresholdField, g)
-        return p
-    }
-
-    private fun box(title: String, c: JPanel) = JPanel(BorderLayout()).also {
-        it.border = TitledBorder(title)
-        it.add(c, BorderLayout.CENTER)
+        binaryThresholdField = JBTextField(o.binaryCheckThreshold.toString(), 5).apply {
+            document.addDocumentListener(listener)
+        }
+        return FormBuilder.createFormBuilder()
+            .addComponent(detectBinaryCheck)
+            .addLabeledComponent("Binary Check Threshold:", binaryThresholdField, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Binary Detection") }
     }
 }

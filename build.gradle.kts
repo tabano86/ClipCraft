@@ -3,6 +3,7 @@ import pl.allegro.tech.build.axion.release.domain.properties.VersionProperties
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.21"
     id("org.jetbrains.intellij") version "1.17.4"
     id("pl.allegro.tech.build.axion-release") version "1.18.16"
     id("com.diffplug.spotless") version "6.20.0"
@@ -50,11 +51,25 @@ scmVersion {
 }
 version = scmVersion.version
 
+// Define versions for Ktor and Serialization dependencies
+val ktorVersion = "2.2.4"
+val kotlinxSerializationVersion = "1.5.1"
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    // Ktor dependencies for HTTP client, JSON serialization, and logging
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-json:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging:$ktorVersion")
+    // Kotlinx Serialization dependency for JSON processing
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+
+    // IntelliJ Plugin dependencies (if any additional ones are needed, add them here)
+
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
@@ -100,7 +115,6 @@ spotless {
     }
     // Miscellaneous Formatting
     format("misc") {
-        // Examples of other file types: Gradle scripts, Markdown, .gitignore, etc.
         target("**/*.gradle", "**/*.md", "**/*.gitignore")
         trimTrailingWhitespace()
         indentWithSpaces()

@@ -14,63 +14,60 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
 
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
+
     override fun actionPerformed(event: AnActionEvent) {
-        // Retrieve the editor and file from the event context.
-        val editor: Editor? = event.getData(CommonDataKeys.EDITOR)
-        val psiFile: PsiFile? = event.getData(CommonDataKeys.PSI_FILE)
+        val editor = event.getData(CommonDataKeys.EDITOR)
+        val psiFile = event.getData(CommonDataKeys.PSI_FILE)
         if (editor == null || psiFile == null) {
             notify("No editor or file found.", NotificationType.WARNING)
             return
         }
-
-        val snippetText = extractSnippet(editor, psiFile)
-        if (snippetText == null || snippetText.trim().isEmpty()) {
+        val snippetText = editor.extractSnippetOrMethod(psiFile)
+        if (snippetText.isBlank()) {
             notify("No valid snippet could be extracted.", NotificationType.WARNING)
             return
         }
-
-        val formattedSnippet = formatSnippet(snippetText)
-        ClipCraftSnippetManager.getInstance().addSnippet(formattedSnippet)
+        val finalSnippet = snippetText.withClipCraftHeaders()
+        ClipCraftSnippetManager.getInstance().addSnippet(finalSnippet)
         notify("Snippet added successfully.", NotificationType.INFORMATION)
     }
 
     /**
-     * Extracts a snippet either from the current selection or, if absent,
-     * finds the enclosing method using UAST.
+     * Simplified function that returns either the selected text
+     * or the source of the enclosing method if no selection exists.
      */
-    private fun extractSnippet(editor: Editor, psiFile: PsiFile): String? {
-        if (editor.selectionModel.hasSelection()) {
-            return editor.selectionModel.selectedText
-        }
-
-        val caretOffset = editor.caretModel.offset
-        val elementAtCaret = psiFile.findElementAt(caretOffset) ?: return null
-
-        // Use UastFacade to convert the PSI element to a UAST method.
-        val uMethod: UMethod? = UastFacade.convertElementWithParent(elementAtCaret, UMethod::class.java) as? UMethod
-        return uMethod?.sourcePsi?.text
+    private fun Editor.extractSnippetOrMethod(psiFile: PsiFile): String {
+        return selectionModel.selectedText
+            ?.takeIf { it.isNotBlank() }
+            ?: caretModel.offset.let { offset ->
+                psiFile.findElementAt(offset)
+                    ?.let { element ->
+                        (UastFacade.convertElementWithParent(element, UMethod::class.java) as? UMethod)
+                            ?.sourcePsi
+                            ?.text
+                    }
+            }.orEmpty()
     }
 
     /**
-     * Applies user-defined header and footer to the snippet.
+     * Inserts user-defined ClipCraft header and footer around snippet text.
      */
-    private fun formatSnippet(snippet: String): String {
+    private fun String.withClipCraftHeaders(): String {
         val settings = ClipCraftSettings.getInstance()
-        val header: String = settings.getHeader()
-        val footer: String = settings.getFooter()
+        val header = settings.getHeader().trim()
+        val footer = settings.getFooter().trim()
         return buildString {
-            if (header.isNotBlank()) {
-                append(header.trim()).append("\n\n")
-            }
-            append(snippet)
-            if (footer.isNotBlank()) {
-                append("\n\n").append(footer.trim())
+            if (header.isNotEmpty()) appendLine(header).appendLine()
+            append(this@withClipCraftHeaders)
+            if (footer.isNotEmpty()) {
+                appendLine().appendLine(footer)
             }
         }
     }
 
     private fun notify(message: String, type: NotificationType) {
-        val notification = Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type)
-        Notifications.Bus.notify(notification)
+        Notifications.Bus.notify(
+            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type)
+        )
     }
 }

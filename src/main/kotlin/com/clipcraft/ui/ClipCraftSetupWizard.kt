@@ -2,8 +2,8 @@ package com.clipcraft.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.util.ui.JBUI
 import java.awt.CardLayout
-import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -11,9 +11,6 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-/**
- * A multi-step setup wizard using DialogWrapper and CardLayout.
- */
 class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
 
     private val wizardCore = ClipCraftSetupWizardCore(project)
@@ -22,18 +19,16 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
     private val cardLayout = CardLayout()
     private val wizardPanel = JPanel(cardLayout)
 
-    private val welcomePanel = JPanel().apply {
+    private val welcomePanel: JPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        add(Box.createVerticalStrut(20))
-        val label = JLabel("Welcome to ClipCraft Setup Wizard!")
-        label.alignmentX = 0.5f
-        add(label)
-        add(Box.createVerticalStrut(20))
-        add(JLabel("This wizard helps configure basic ClipCraft settings:"))
-        add(Box.createVerticalStrut(10))
-        add(JLabel("• Metadata Inclusion"))
-        add(JLabel("• GitIgnore usage"))
-        add(JLabel("• Concurrency"))
+        border = JBUI.Borders.empty(20)
+        add(JLabel("Welcome to ClipCraft Setup Wizard!").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
+        add(Box.createVerticalStrut(JBUI.scale(20)))
+        add(JLabel("This wizard helps configure basic ClipCraft settings:").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
+        add(Box.createVerticalStrut(JBUI.scale(10)))
+        add(JLabel("• Metadata Inclusion").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
+        add(JLabel("• GitIgnore usage").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
+        add(JLabel("• Concurrency").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalGlue())
     }
     private val settingsPanel = wizardUI.getMainPanel()
@@ -41,7 +36,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
     private var stepIndex = 0
 
     private val backAction = object : DialogWrapperAction("Back") {
-        override fun doAction(e: ActionEvent?) {
+        override fun doAction(e: java.awt.event.ActionEvent?) {
             if (stepIndex > 0) {
                 stepIndex--
                 updateStepUI()
@@ -49,7 +44,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         }
     }
     private val nextAction = object : DialogWrapperAction("Next") {
-        override fun doAction(e: ActionEvent?) {
+        override fun doAction(e: java.awt.event.ActionEvent?) {
             if (stepIndex < 1) {
                 stepIndex++
                 updateStepUI()
@@ -57,7 +52,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         }
     }
     private val finishAction = object : DialogWrapperAction("Finish") {
-        override fun doAction(e: ActionEvent?) {
+        override fun doAction(e: java.awt.event.ActionEvent?) {
             applyWizardResults()
             close(OK_EXIT_CODE)
         }

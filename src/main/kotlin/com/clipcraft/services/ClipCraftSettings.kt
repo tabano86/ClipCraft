@@ -2,12 +2,14 @@ package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ClipCraftProfile
+import com.intellij.openapi.components.Service
 
 /**
  * Global, application-level settings for ClipCraft.
  *
  * In this example, profiles are stored in memory only (non-persistent).
  */
+@Service
 class ClipCraftSettings private constructor() {
 
     // Fallback profile if no project-specific profile exists.

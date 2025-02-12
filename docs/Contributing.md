@@ -51,7 +51,7 @@ For ideas or suggestions on how to improve ClipCraft, feel free to open an issue
 
 ### Submitting Pull Requests
 
-1.  **Fork the Repository:**  
+1.  **Fork the Repository:**
     Create your own fork of ClipCraft on GitHub.
 
 2.  **Clone Your Fork:**
@@ -62,7 +62,7 @@ For ideas or suggestions on how to improve ClipCraft, feel free to open an issue
 
     `git clone https://github.com/tabano86/ClipCraft.git cd ClipCraft`
 
-3.  **Create a Feature Branch:**  
+3.  **Create a Feature Branch:**
     Use a descriptive name for your branch:
 
     bash
@@ -71,10 +71,10 @@ For ideas or suggestions on how to improve ClipCraft, feel free to open an issue
 
     `git checkout -b feature/your-feature-name`
 
-4.  **Make Your Changes:**  
+4.  **Make Your Changes:**
     Ensure that your code follows the project’s style guidelines and includes tests for new functionality.
 
-5.  **Run the Tests Locally:**  
+5.  **Run the Tests Locally:**
     Verify your changes by running:
 
     bash
@@ -91,7 +91,7 @@ For ideas or suggestions on how to improve ClipCraft, feel free to open an issue
 
     `./gradlew spotlessApply`
 
-6.  **Commit Your Changes:**  
+6.  **Commit Your Changes:**
     Use Conventional Commits for your commit messages:
 
     *   `feat: add new snippet formatting`
@@ -115,11 +115,11 @@ Development Guidelines
 
 ### Branching Model
 
-*   **Main:**  
+*   **Main:**
     The `main` branch contains production-ready code.
-*   **Feature Branches:**  
+*   **Feature Branches:**
     Create separate branches for each feature or bug fix.
-*   **Pull Requests:**  
+*   **Pull Requests:**
     All contributions should be merged via pull requests targeting `main`.
 
 ### Code Style

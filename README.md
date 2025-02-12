@@ -8,22 +8,22 @@ ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code sn
 
 ## Features
 
-- **Concurrency Modes**  
+- **Concurrency Modes**
   Choose between disabled, thread pool, or Kotlin coroutines to process files in parallel.
 
-- **Chunking & Overlap**  
+- **Chunking & Overlap**
   Split code by size or methods. Ideal for GPT-based flows, large code generation, or partial refactors.
 
-- **Directory & File Ignores**  
+- **Directory & File Ignores**
   Automatic `.gitignore` usage, plus custom ignore patterns or folder-level ignoring.
 
-- **GPT Integration (Stubs)**  
+- **GPT Integration (Stubs)**
   Send snippet text plus a prompt to a GPT-based service (mocked for demonstration). Great for code explanation or quick generation.
 
-- **User-Friendly UI**  
+- **User-Friendly UI**
   A dedicated settings page with chunk/overlap preview, plus a snippet queue window, wizard for initial setup, and multiple actions in the context menus.
 
-- **Additional Goodies**  
+- **Additional Goodies**
   Pre-commit Git hooks (for Conventional Commits) set up by default, code style checks, Detekt for static analysis, and Spotless for code formatting.
 
 ## Quick Start
@@ -41,11 +41,11 @@ ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code sn
 
 ## Repository Layout
 
-- **`settings.gradle.kts`**  
+- **`settings.gradle.kts`**
   Applies the Gradle pre-commit Git hooks plugin and sets up Conventional Commits.
-- **`build.gradle.kts`**  
+- **`build.gradle.kts`**
   Configures dependencies, Axion release versioning, IntelliJ plugin details, Detekt, Spotless, and more.
-- **`src/`**  
+- **`src/`**
   Core plugin code, including:
     - **`actions`**: IntelliJ actions (e.g., `ClipCraftAction` for copying snippets, `ClipCraftGPTAction`, etc.).
     - **`model`**: Data classes like `Snippet`, `ClipCraftOptions`, concurrency modes, etc.

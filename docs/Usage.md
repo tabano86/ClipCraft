@@ -2,7 +2,7 @@
 
 ## Basic Usage
 
-1. **Select File(s) or Directory**  
+1. **Select File(s) or Directory**
    Right-click on one or more files/folders in the Project or Editor context menus.
 
 2. **Invoke ClipCraft Copy**

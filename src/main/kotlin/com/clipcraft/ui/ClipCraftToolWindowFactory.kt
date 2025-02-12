@@ -9,15 +9,15 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextArea
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
 /**
  * Creates a tool window containing a simple GPT chat interface (stub).

@@ -23,7 +23,7 @@
     ]]></change-notes>
 
     <!-- Version constraints -->
-    <idea-version since-build="223" until-build="243.*" />
+    <idea-version since-build="223" until-build="243.*"/>
 
     <!-- If plugin requires Java classes -->
     <depends>com.intellij.modules.java</depends>
@@ -33,13 +33,13 @@
     <!-- Registering extensions in a single block for clarity -->
     <extensions defaultExtensionNs="com.intellij">
         <!-- Notification group for our plugin's balloons -->
-        <notificationGroup id="ClipCraft" displayType="BALLOON" />
+        <notificationGroup id="ClipCraft" displayType="BALLOON"/>
 
         <!-- Settings UI registration -->
         <applicationConfigurable
                 id="clipcraft.settings"
                 instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
-                displayName="ClipCraft" />
+                displayName="ClipCraft"/>
 
         <!-- Because ClipCraftPerformanceMetrics is annotated with @Service(Service.Level.PROJECT),
              we do NOT register it here. IntelliJ loads it automatically. -->
@@ -49,7 +49,7 @@
                     factoryClass="com.clipcraft.ui.ClipCraftToolWindowFactory"
                     anchor="left"
                     icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_24"
-                    secondary="true" />
+                    secondary="true"/>
     </extensions>
 
     <!-- Unified action definitions -->
@@ -61,8 +61,8 @@
                 description="Copies, formats, and merges code snippets"
                 icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
             <!-- Appear in both Project and Editor context menus -->
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last" />
-            <add-to-group group-id="EditorPopupMenu" anchor="last" />
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
         <!-- Submenu group for other actions -->
@@ -71,8 +71,8 @@
                description="All ClipCraft plugin features"
                popup="true"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last" />
-            <add-to-group group-id="EditorPopupMenu" anchor="last" />
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </group>
 
         <!-- Setup Wizard action -->
@@ -96,14 +96,6 @@
                 class="com.clipcraft.actions.ClipCraftSwitchProfileAction"
                 text="Switch Profile"
                 description="Switch among multiple ClipCraft profiles">
-            <add-to-group group-id="ClipCraft.Submenu" anchor="last"/>
-        </action>
-
-        <!-- GPT prompt action -->
-        <action id="ClipCraftGPTAction"
-                class="com.clipcraft.actions.ClipCraftGPTAction"
-                text="Copy &amp; Prompt GPT"
-                description="Copies snippet(s) plus GPT prompt to the clipboard">
             <add-to-group group-id="ClipCraft.Submenu" anchor="last"/>
         </action>
 

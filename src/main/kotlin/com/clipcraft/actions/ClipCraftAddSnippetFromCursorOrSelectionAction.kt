@@ -67,7 +67,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
 
     private fun notify(message: String, type: NotificationType) {
         Notifications.Bus.notify(
-            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type)
+            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type),
         )
     }
 }

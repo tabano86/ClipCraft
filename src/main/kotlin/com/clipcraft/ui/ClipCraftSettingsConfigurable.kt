@@ -247,12 +247,14 @@ fun main() {
         val snippet = com.clipcraft.model.Snippet(
             content = sampleCode,
             fileName = "Sample.kt",
-            relativePath = "src/Sample.kt"
+            relativePath = "src/Sample.kt",
         )
         val formattedCode = CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
         val dirStruct = if (tmp.includeDirectorySummary) {
             "Directory Structure:\n  src/Sample.kt\n\n"
-        } else ""
+        } else {
+            ""
+        }
         val fullPreview = buildString {
             val h = tmp.gptHeaderText.orEmpty()
             val f = tmp.gptFooterText.orEmpty()

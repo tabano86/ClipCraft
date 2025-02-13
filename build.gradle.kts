@@ -1,4 +1,3 @@
-
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
@@ -47,7 +46,7 @@ version = scmVersion.version
 val ktorVersion = "2.2.4"
 val kotlinxSerializationVersion = "1.5.1"
 
-// Repositories (grouped into one block)
+// Repositories configuration
 repositories {
     mavenCentral()
     intellijPlatform {
@@ -55,12 +54,12 @@ repositories {
     }
 }
 
-// Kotlin configuration
+// Kotlin JVM configuration
 kotlin {
     jvmToolchain(17)
 }
 
-// Task configurations (grouped together)
+// Task configurations
 tasks {
     test {
         useJUnitPlatform()
@@ -80,28 +79,23 @@ tasks {
     }
 }
 
-// Plugin-specific configuration blocks
+// Spotless configuration for formatting
 spotless {
     kotlin {
-        target("src/**/*.kt")
-        ktlint("0.48.2")
-    }
-    java {
-        target("src/**/*.java")
-        googleJavaFormat("1.16.0")
-    }
-    format("misc") {
-        target("**/*.gradle", "**/*.md", "**/*.gitignore")
-        trimTrailingWhitespace()
-        indentWithSpaces()
-        endWithNewline()
+        target("**/*.kt")
+        ktlint("0.48.2").userData(mapOf("indent_size" to "4", "max_line_length" to "120"))
     }
 }
 
 
-detekt.config.setFrom("detekt-config.yml")
-detekt.buildUponDefaultConfig = true
+// Detekt configuration with auto-correct enabled (useful in CI, though pre-commit may only run checks)
+detekt {
+    config.setFrom(files("detekt-config.yml"))
+    buildUponDefaultConfig = true
+    autoCorrect = true
+}
 
+// Jacoco configuration
 jacoco {
     toolVersion = "0.8.12"
 }
@@ -113,7 +107,6 @@ dependencies {
         bundledPlugin("com.intellij.java")
         pluginVerifier()
         zipSigner()
-        instrumentationTools()
         testFramework(TestFrameworkType.Platform)
     }
     testImplementation("junit:junit:4.13.2")

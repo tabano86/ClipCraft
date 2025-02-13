@@ -40,6 +40,7 @@ scmVersion {
     versionIncrementer("incrementPatch")
     createReleaseCommit.set(false)
 }
+
 version = scmVersion.version
 
 // Version variables
@@ -87,8 +88,7 @@ spotless {
     }
 }
 
-
-// Detekt configuration with auto-correct enabled (useful in CI, though pre-commit may only run checks)
+// Detekt configuration
 detekt {
     config.setFrom(files("detekt-config.yml"))
     buildUponDefaultConfig = true
@@ -103,7 +103,7 @@ jacoco {
 // Dependencies configuration
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2024.3.2.2")
+        intellijIdeaCommunity("2023.2.1")
         bundledPlugin("com.intellij.java")
         pluginVerifier()
         zipSigner()

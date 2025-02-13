@@ -145,7 +145,7 @@ jobs:
       - name: "Generate Release Tag (for branch push)"
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
         run: |
-          TAG="auto-v$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+          TAG="auto-v$(date +%Y%m%d%H%M%S)-${GITHUB_SHA:0:7}"
           echo "Generated tag: $TAG"
           git tag "$TAG"
           git push origin "$TAG"

@@ -8,7 +8,7 @@ gitHooks {
     }
     preCommit {
         from {
-            "gradlew spotlessApply"
+            "./gradlew spotlessApply"
         }
     }
 

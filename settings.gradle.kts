@@ -8,13 +8,9 @@ gitHooks {
     }
     preCommit {
         from {
-            "spotlessApply"
+            "gradlew spotlessApply"
         }
     }
 
     createHooks()
-}
-
-gitHooks.preCommit {
-    tasks("ktlintCheck")
 }

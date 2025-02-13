@@ -52,7 +52,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "Set up JDK 17"
+      - name: "Set up JDK 23"
         uses: actions/setup-java@v3
         with:
           distribution: temurin
@@ -76,6 +76,19 @@ jobs:
       - name: "Run Quality Checks, Tests, and Build Plugin"
         run: ./gradlew clean test buildPlugin patchPluginXml spotlessCheck detekt jacocoTestReport --no-daemon --stacktrace --parallel
 
+      - name: "Publish Test Report"
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: "JUnit Tests"
+          path: build/test-results/test
+          reporter: "java-junit"
+          list-suites: 'all'
+          list-tests: 'all'
+          max-annotations: '10'
+          fail-on-error: 'true'
+          fail-on-empty: 'true'
+
       - name: "Upload Plugin Artifact"
         uses: actions/upload-artifact@v4
         with:
@@ -83,10 +96,6 @@ jobs:
           path: build/distributions/*.zip
 
   release:
-    # Run release job if manually triggered,
-    # or if the push event is either:
-    #   - A tag push (valid release tag), or
-    #   - A push to main by the repository owner.
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && github.actor == github.repository_owner)))
     needs: build
     runs-on: ubuntu-latest
@@ -96,13 +105,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "Set up JDK 23 (Temurin)"
+      - name: "Set up JDK 23"
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 23
 
-      - name: "Make gradlew Executable"
+      - name: "Ensure gradlew is Executable"
         run: chmod +x ./gradlew
 
       - name: "Cache Gradle Dependencies"
@@ -130,8 +139,7 @@ jobs:
           git reset --hard
           git clean -fdx
 
-      - name: "Recheck gradlew Executable Permission"
-        shell: bash
+      - name: "Ensure gradlew is Executable"
         run: chmod +x ./gradlew
 
       - name: "Generate Release Tag (for branch push)"
@@ -146,7 +154,6 @@ jobs:
       - name: "Set Release Tag"
         run: |
           if [ -z "${RELEASE_TAG}" ]; then
-            # For tag push events, extract the tag name from GITHUB_REF
             TAG_NAME="${GITHUB_REF#refs/tags/}"
             echo "Using tag from push event: $TAG_NAME"
             echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
@@ -171,7 +178,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: Release ${{ env.RELEASE_TAG }}
+          name: "Release ${{ env.RELEASE_TAG }}"
           body: "New release of the plugin published—enjoy the automated goodness!"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -210,7 +217,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: 1  # Adjust to your designated announcement issue number
+          issue-number: 1
           body: |
             :tada: A new release [${{ env.RELEASE_TAG }}](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}) has been published!
             - Build, Test, and Publish workflow executed successfully.

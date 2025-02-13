@@ -9,33 +9,20 @@ gitHooks {
             """
             #!/usr/bin/env bash
             cd "$(git rev-parse --show-toplevel)" || exit 1
-            """
+            """.trimIndent()
         }
         // Run the required tasks
         tasks("spotlessCheck", "detekt")
-        // Append a custom message if checks fail
         appendScript {
             """
-            if [ $? -ne 0 ]; then
+            if [ ${'$'}? -ne 0 ]; then
               echo "❌ Pre-commit checks failed! Please run './gradlew spotlessCheck detekt' for more details and fix the issues before committing."
             fi
-            """
+            """.trimIndent()
         }
     }
     commitMsg {
-        // Initialize with a header to ensure the script is created
-        from {
-            """
-            # Enforce Conventional Commits format.
-            """
-        }
-        // Append a reminder message to help developers format commit messages correctly
-        appendScript {
-            """
-            echo "💡 Reminder: Your commit message should follow Conventional Commits (see https://www.conventionalcommits.org/)."
-            """
-        }
+        conventionalCommits { }
     }
-    // Overwrite any existing hook files automatically
     createHooks(overwriteExisting = true)
 }

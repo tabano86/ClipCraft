@@ -1,8 +1,7 @@
 package com.clipcraft.integration
 
 import com.clipcraft.model.Snippet
-import com.intellij.openapi.project.Project
-import git4idea.repo.GitRepositoryManager
+
 
 object ClipCraftGitIntegration {
     fun enrichSnippetWithGitInfo(project: Project, snippet: Snippet): Snippet {

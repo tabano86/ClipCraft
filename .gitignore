@@ -52,3 +52,21 @@ tmp/
 
 # Environment configuration (customize as needed)
 .env
+/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.libraries.microba-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.performanceTesting.vcs-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.platform.vcs.impl-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.platform.vcs.log.impl-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.copyright-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.java-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.modules.json-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.platform.images-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.properties-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.jetbrains.performancePlugin-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.jetbrains.sh-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.intellij.intelliLang-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.intellij.plugins.markdown-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.jetbrains.plugins.terminal-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.jetbrains.plugins.yaml-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.toml.lang-IC-243.23654.189.xml
+/.intellijPlatform/localPlatformArtifacts/bundledPlugin-tanvd.grazi-IC-243.23654.189.xml
+/.intellijPlatform/self-update.lock

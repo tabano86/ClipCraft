@@ -106,13 +106,16 @@ repositories {
         defaultRepositories()
     }
 }
-
-
+tasks.patchPluginXml {
+    sinceBuild.set("241.*")
+    untilBuild.set("299.*")
+}
 
 // Dependencies configuration
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2024.1")
+        // Only include the Java plugin; skip cwm-plugin and others
         bundledPlugin("com.intellij.java")
         pluginVerifier()
         zipSigner()

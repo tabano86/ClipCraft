@@ -3,8 +3,11 @@ plugins {
 }
 
 gitHooks {
+    commitMsg {
+        conventionalCommits { }
+    }
     preCommit {
-        appendScript {
+        from {
             "spotlessApply"
         }
     }

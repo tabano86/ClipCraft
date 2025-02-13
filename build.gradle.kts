@@ -1,8 +1,11 @@
+
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     java
     id("org.jetbrains.kotlin.jvm") version "1.9.23"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.21"
-    id("org.jetbrains.intellij") version "1.17.4"
+    id("org.jetbrains.intellij.platform") version "2.2.1"
     id("pl.allegro.tech.build.axion-release") version "1.18.16"
     id("com.diffplug.spotless") version "6.20.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
@@ -12,7 +15,7 @@ plugins {
 
 group = "com.clipcraft"
 
-// Configure SCM-based versioning.
+// SCM-based versioning configuration
 scmVersion {
     tag {
         prefix.set("v")
@@ -40,43 +43,44 @@ scmVersion {
 }
 version = scmVersion.version
 
+// Version variables
 val ktorVersion = "2.2.4"
 val kotlinxSerializationVersion = "1.5.1"
 
+// Repositories (grouped into one block)
 repositories {
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
-dependencies {
-    implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("io.ktor:ktor-client-json:$ktorVersion")
-    implementation("io.ktor:ktor-client-logging:$ktorVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
-    testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
-}
-
-intellij {
-    version.set("2023.2")
-    type.set("IC")
-    plugins.set(listOf("Git4Idea", "java"))
-    updateSinceUntilBuild.set(true)
-}
-
+// Kotlin configuration
 kotlin {
     jvmToolchain(17)
 }
 
-tasks.test {
-    useJUnitPlatform()
+// Task configurations (grouped together)
+tasks {
+    test {
+        useJUnitPlatform()
+    }
+    compileKotlin {
+        kotlinOptions.jvmTarget = "17"
+    }
+    publishPlugin {
+        channels = listOf("beta")
+        token = providers.gradleProperty("intellijPlatformPublishingToken")
+    }
+    jacocoTestReport {
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+    }
 }
 
-tasks.publishPlugin {
-    channels = listOf("beta")
-    token = providers.gradleProperty("intellijPlatformPublishingToken")
-}
-
+// Plugin-specific configuration blocks
 spotless {
     kotlin {
         target("src/**/*.kt")
@@ -94,18 +98,23 @@ spotless {
     }
 }
 
-detekt {
-    config = files("detekt-config.yml")
-    buildUponDefaultConfig = true
-}
+
+detekt.config.setFrom("detekt-config.yml")
+detekt.buildUponDefaultConfig = true
 
 jacoco {
     toolVersion = "0.8.12"
 }
 
-tasks.jacocoTestReport {
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
+// Dependencies configuration
+dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity("2024.3.2.2")
+        bundledPlugin("com.intellij.java")
+        pluginVerifier()
+        zipSigner()
+        instrumentationTools()
+        testFramework(TestFrameworkType.Platform)
     }
+    testImplementation("junit:junit:4.13.2")
 }

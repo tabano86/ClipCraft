@@ -78,10 +78,11 @@ jobs:
 
       - name: "Publish Test Report"
         if: always()
+        continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
           name: "JUnit Tests"
-          path: build/test-results/test
+          path: build/test-results/test/*.xml
           reporter: "java-junit"
           list-suites: 'all'
           list-tests: 'all'

@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>2024.1</version>
+    <version>241</version>
     <vendor url="https://github.com/tabano86/ClipCraft" email="support@clipcraft.com">ClipCraft Inc.</vendor>
     <description><![CDATA[
       ClipCraft extracts and formats code from multiple files or directories, supports concurrency modes,

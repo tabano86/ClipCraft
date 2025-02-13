@@ -1,15 +1,19 @@
 package com.clipcraft
 
+import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 
 class FakeProject(private val path: String) : Project {
     override fun getBasePath() = path
     override fun getName() = "FakeProject"
-    fun getCoroutineScope(): CoroutineScope {
-        TODO("Not yet implemented")
+
+    @Deprecated("Deprecated in Java", ReplaceWith("{ } as CoroutineScope", "kotlinx.coroutines.CoroutineScope"))
+    override fun getCoroutineScope(): CoroutineScope {
+        return { } as CoroutineScope
     }
 
     @Deprecated("Deprecated in Java", ReplaceWith("throw UnsupportedOperationException()"))
@@ -30,7 +34,7 @@ class FakeProject(private val path: String) : Project {
 
     override fun <T : Any?> instantiateClass(
         className: String,
-        pluginDescriptor: com.intellij.openapi.extensions.PluginDescriptor,
+        pluginDescriptor: PluginDescriptor,
     ): T & Any = throw UnsupportedOperationException()
 
     override fun <T : Any?> instantiateClassWithConstructorInjection(
@@ -50,7 +54,7 @@ class FakeProject(private val path: String) : Project {
 
     override fun <T : Any?> loadClass(
         className: String,
-        pluginDescriptor: com.intellij.openapi.extensions.PluginDescriptor,
+        pluginDescriptor: PluginDescriptor,
     ): Class<T> = throw UnsupportedOperationException()
 
     override fun getActivityCategory(isExtension: Boolean) = throw UnsupportedOperationException()
@@ -62,6 +66,6 @@ class FakeProject(private val path: String) : Project {
     override fun getMessageBus() = throw UnsupportedOperationException()
     override fun dispose() {}
     override fun getExtensionArea() = throw UnsupportedOperationException()
-    override fun <T : Any?> getUserData(key: com.intellij.openapi.util.Key<T>) = null
-    override fun <T : Any?> putUserData(key: com.intellij.openapi.util.Key<T>, value: T?) {}
+    override fun <T : Any?> getUserData(key: Key<T>) = null
+    override fun <T : Any?> putUserData(key: Key<T>, value: T?) {}
 }

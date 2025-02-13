@@ -3,10 +3,14 @@ package com.clipcraft
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.CoroutineScope
 
 class FakeProject(private val path: String) : Project {
     override fun getBasePath() = path
     override fun getName() = "FakeProject"
+    fun getCoroutineScope(): CoroutineScope {
+        TODO("Not yet implemented")
+    }
 
     @Deprecated("Deprecated in Java", ReplaceWith("throw UnsupportedOperationException()"))
     override fun getBaseDir(): VirtualFile = throw UnsupportedOperationException()

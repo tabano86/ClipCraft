@@ -100,10 +100,19 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
+repositories {
+    mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
+}
+
+
+
 // Dependencies configuration
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2023.2.1")
+        intellijIdeaCommunity("2024.1")
         bundledPlugin("com.intellij.java")
         pluginVerifier()
         zipSigner()

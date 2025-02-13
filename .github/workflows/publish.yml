@@ -56,7 +56,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 23
 
       - name: "Ensure gradlew is Executable"
         run: chmod +x ./gradlew
@@ -96,11 +96,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "Set up JDK 17 (Temurin)"
+      - name: "Set up JDK 23 (Temurin)"
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 23
 
       - name: "Make gradlew Executable"
         run: chmod +x ./gradlew

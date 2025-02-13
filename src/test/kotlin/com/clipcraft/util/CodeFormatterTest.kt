@@ -2,15 +2,15 @@ package com.clipcraft.util
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class CodeFormatterTest {
     @Test
@@ -128,10 +128,10 @@ class CodeFormatterTest {
 
     @Test
     fun `chunkContent throws IllegalArgumentException for non-positive maxChunkSize`() {
-        val exception = assertFailsWith<IllegalArgumentException> {
-            CodeFormatter.chunkBySize("any content", 0, preserveWords = false)
+        val exception = assertThrows<IllegalArgumentException> {
+            CodeFormatter.chunkBySize("test", 0, preserveWords = false)
         }
-        assertTrue(exception.message!!.contains("maxChunkSize must be positive"))
+        assertEquals("maxChunkSize must be positive", exception.message)
     }
 
     @Test

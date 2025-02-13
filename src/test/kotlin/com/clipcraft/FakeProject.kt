@@ -3,14 +3,14 @@ package com.clipcraft
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.CoroutineScope
 
 class FakeProject(private val path: String) : Project {
     override fun getBasePath() = path
     override fun getName() = "FakeProject"
+
+    @Deprecated("Deprecated in Java", ReplaceWith("throw UnsupportedOperationException()"))
     override fun getBaseDir(): VirtualFile = throw UnsupportedOperationException()
     override fun isInitialized() = true
-    override fun getCoroutineScope(): CoroutineScope = throw UnsupportedOperationException()
     override fun isOpen() = true
     override fun isDisposed() = false
     override fun getProjectFile(): VirtualFile = throw UnsupportedOperationException()
@@ -20,7 +20,6 @@ class FakeProject(private val path: String) : Project {
     override fun save() = throw UnsupportedOperationException()
     override fun getDisposed() = throw UnsupportedOperationException()
 
-    @Suppress("UNCHECKED_CAST")
     override fun <T : Any?> getService(serviceClass: Class<T>): T? = null
     override fun <T : Any?> instantiateClass(aClass: Class<T>, pluginId: PluginId): T =
         throw UnsupportedOperationException()
@@ -51,6 +50,8 @@ class FakeProject(private val path: String) : Project {
     ): Class<T> = throw UnsupportedOperationException()
 
     override fun getActivityCategory(isExtension: Boolean) = throw UnsupportedOperationException()
+
+    @Deprecated("Deprecated in Java", ReplaceWith("throw UnsupportedOperationException()"))
     override fun <T : Any?> getComponent(interfaceClass: Class<T>): T = throw UnsupportedOperationException()
     override fun hasComponent(interfaceClass: Class<*>): Boolean = throw UnsupportedOperationException()
     override fun isInjectionForExtensionSupported() = throw UnsupportedOperationException()

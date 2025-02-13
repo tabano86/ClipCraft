@@ -1,12 +1,12 @@
 package com.clipcraft.ui
 
 import com.clipcraft.services.ClipCraftSettings
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import javax.swing.JCheckBox
 import javax.swing.JTextArea
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class ClipCraftSettingsConfigurableTest {
     private lateinit var configurable: ClipCraftSettingsConfigurable

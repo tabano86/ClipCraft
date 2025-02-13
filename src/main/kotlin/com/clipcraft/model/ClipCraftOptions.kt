@@ -32,13 +32,15 @@ data class ClipCraftOptions(
     var detectBinary: Boolean = false,
     var binaryCheckThreshold: Int = 2000,
     var showLint: Boolean = false,
-    var snippetHeaderText: String? = "/* ClipCraft Snippet */",
-    var snippetFooterText: String? = "/* End of Snippet */",
-    // New options:
-    var includeImageFiles: Boolean = false, // if false, image files are replaced with a placeholder
-    var lintErrorsOnly: Boolean = false, // if true, only errors are reported in lint results
-    var lintWarningsOnly: Boolean = false, // if true, only warnings are reported in lint results
-    var addSnippetToQueue: Boolean = false, // if true, snippets from caret are added to a queue
+    var snippetHeaderText: String? = "",
+    var snippetFooterText: String? = "",
+    var includeImageFiles: Boolean = false,
+    var lintErrorsOnly: Boolean = false,
+    var lintWarningsOnly: Boolean = false,
+    var addSnippetToQueue: Boolean = false,
+    // New fields:
+    var includeLintInOutput: Boolean = false, // Optionally merge lint results into the final output
+    var outputMacroTemplate: String? = null, // A macro template (e.g. with placeholders) for customizable output
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

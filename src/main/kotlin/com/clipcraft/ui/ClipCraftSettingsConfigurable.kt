@@ -7,7 +7,11 @@ import com.clipcraft.model.OverlapStrategy
 import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.fileTypes.PlainTextFileType
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
@@ -33,18 +37,18 @@ class ClipCraftSettingsConfigurable : Configurable {
     private val manager = ClipCraftProfileManager()
     private val savedProfile = manager.currentProfile().copy()
     private val options = savedProfile.options
-    private val sampleCode = """// Example
-package test
-fun main() {
-    println("Hello")
-}"""
+    private val sampleCode = """
+        package test
+        fun main() {
+            println("Hello")
+        }
+    """.trimIndent()
 
-    // Outer panels
     private lateinit var mainPanel: JPanel
-    private lateinit var previewArea: JTextArea
 
-    // Existing fields (input controls)
-    // Use JBTextArea for header and footer to allow multi‑line input.
+    // Use an EditorTextField for a code-aware preview pane
+    private lateinit var previewEditor: com.intellij.ui.EditorTextField
+
     private lateinit var headerArea: JTextArea
     private lateinit var footerArea: JTextArea
     private lateinit var directoryStructureCheck: JCheckBox
@@ -71,11 +75,7 @@ fun main() {
     private lateinit var detectBinaryCheck: JCheckBox
     private lateinit var binaryThresholdField: JTextField
     private lateinit var showLintCheck: JCheckBox
-
-    // For the chunking panel
     private lateinit var chunkLabel: JLabel
-
-    // New options controls
     private lateinit var includeImageFilesCheck: JCheckBox
     private lateinit var lintErrorsOnlyCheck: JCheckBox
     private lateinit var lintWarningsOnlyCheck: JCheckBox
@@ -90,12 +90,9 @@ fun main() {
     override fun getDisplayName() = "ClipCraft"
 
     override fun createComponent(): JComponent {
-        // Outer panel with extra padding.
         mainPanel = JPanel(BorderLayout()).apply {
             border = JBUI.Borders.empty(16)
         }
-
-        // Create a vertical form panel using BoxLayout.
         val formPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = JBUI.Borders.empty(12)
@@ -121,24 +118,22 @@ fun main() {
             verticalScrollBar.unitIncrement = 16
             preferredSize = Dimension(480, 620)
         }
-
-        // Preview area on the right with padding.
-        previewArea = JTextArea().apply {
-            isEditable = false
-            lineWrap = true
-            wrapStyleWord = true
-            border = JBUI.Borders.empty(10)
+        // Create an EditorTextField for preview (code-aware, internal scrolling)
+        val document = EditorFactory.getInstance().createDocument("")
+        previewEditor = com.intellij.ui.EditorTextField(
+            document,
+            ProjectManager.getInstance().defaultProject,
+            PlainTextFileType.INSTANCE, // use FileType here
+            true,
+            false,
+        ).apply {
+            isViewer = true
+            setOneLineMode(false)
         }
-        val previewScroll = JBScrollPane(previewArea).apply {
-            verticalScrollBar.unitIncrement = 16
-            preferredSize = Dimension(480, 620)
-            border = JBUI.Borders.empty(5)
-        }
-
-        // Splitter to allow flexible resizing between the form and preview.
+        previewEditor.preferredSize = Dimension(480, 620)
         val splitter = JBSplitter(true, 0.5f).apply {
             firstComponent = formScroll
-            secondComponent = previewScroll
+            secondComponent = previewEditor
             dividerWidth = JBUI.scale(5)
         }
         mainPanel.add(splitter, BorderLayout.CENTER)
@@ -146,7 +141,6 @@ fun main() {
         return mainPanel
     }
 
-    // New panel for additional options.
     private fun panelAdditionalOptions(): JPanel {
         includeImageFilesCheck = JCheckBox("Include Image Files", options.includeImageFiles)
         lintErrorsOnlyCheck = JCheckBox("Report Only Lint Errors", options.lintErrorsOnly)
@@ -161,7 +155,6 @@ fun main() {
     }
 
     private fun panelOutput(): JPanel {
-        // Replace header and footer fields with multi-line text areas.
         headerArea = JBTextArea(options.snippetHeaderText.orEmpty(), 3, 20).apply {
             lineWrap = true
             wrapStyleWord = true
@@ -175,14 +168,12 @@ fun main() {
         directoryStructureCheck = JCheckBox("Directory Structure", options.includeDirectorySummary).apply {
             addActionListener { updatePreview() }
         }
-
         val headerScroll = JBScrollPane(headerArea).apply {
             preferredSize = Dimension(200, JBUI.scale(60))
         }
         val footerScroll = JBScrollPane(footerArea).apply {
             preferredSize = Dimension(200, JBUI.scale(60))
         }
-
         return FormBuilder.createFormBuilder()
             .addComponent(directoryStructureCheck)
             .addLabeledComponent("Header:", headerScroll, 1, false)
@@ -362,11 +353,12 @@ fun main() {
         options.lintErrorsOnly = lintErrorsOnlyCheck.isSelected
         options.lintWarningsOnly = lintWarningsOnlyCheck.isSelected
         options.addSnippetToQueue = addSnippetToQueueCheck.isSelected
-
         options.resolveConflicts()
         manager.deleteProfile(savedProfile.profileName)
         manager.addProfile(savedProfile.copy(options = options))
         manager.switchProfile(savedProfile.profileName)
+        // Persist settings via the application’s save mechanism
+        ApplicationManager.getApplication().saveAll()
     }
 
     override fun reset() {
@@ -400,7 +392,6 @@ fun main() {
         lintErrorsOnlyCheck.isSelected = options.lintErrorsOnly
         lintWarningsOnlyCheck.isSelected = options.lintWarningsOnly
         addSnippetToQueueCheck.isSelected = options.addSnippetToQueue
-
         updatePreview()
         updateChunkUI()
         updateConcurrency()
@@ -465,11 +456,9 @@ fun main() {
                 appendLine()
                 appendLine(tmp.snippetFooterText)
             }
-            // Add extra information to preview (for debugging/demo purposes)
             appendLine("\n---\n[Preview Info] Concurrency: ${tmp.concurrencyMode}, Chunk Strategy: ${tmp.chunkStrategy}")
         }
-        previewArea.text = fullPreview
-        previewArea.caretPosition = 0
+        previewEditor.text = fullPreview
         updateChunkUI()
     }
 

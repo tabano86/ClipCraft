@@ -6,6 +6,7 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.Snippet
 import com.clipcraft.model.SnippetGroup
+import com.clipcraft.services.ClipCraftMacroManager
 import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftPerformanceMetrics
 import com.clipcraft.services.ClipCraftProjectProfileManager
@@ -52,7 +53,7 @@ class ClipCraftAction : AnAction() {
         paths.forEach { processFileOrDir(File(it), proj, options, group) }
         val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
         proj.getService(LintResultsService::class.java)?.storeResults(lintResults)
-        val finalOutput = buildFinalOutput(group, options, lintResults)
+        val finalOutput = buildFinalOutput(proj, group, options, lintResults)
         copyToClipboard(proj, finalOutput)
         metrics?.stopProcessingAndLog("ClipCraftAction(sequential)")
     }
@@ -69,7 +70,7 @@ class ClipCraftAction : AnAction() {
                 pool.awaitTermination(15, TimeUnit.MINUTES)
                 val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
                 proj.getService(LintResultsService::class.java)?.storeResults(lintResults)
-                val finalOutput = buildFinalOutput(group, options, lintResults)
+                val finalOutput = buildFinalOutput(proj, group, options, lintResults)
                 copyToClipboard(proj, finalOutput)
                 metrics?.stopProcessingAndLog("ClipCraftAction(thread pool)")
             }
@@ -87,7 +88,7 @@ class ClipCraftAction : AnAction() {
                 }
                 val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
                 proj.getService(LintResultsService::class.java)?.storeResults(lintResults)
-                val finalOutput = buildFinalOutput(group, options, lintResults)
+                val finalOutput = buildFinalOutput(proj, group, options, lintResults)
                 copyToClipboard(proj, finalOutput)
                 metrics?.stopProcessingAndLog("ClipCraftAction(coroutines)")
             }
@@ -100,7 +101,6 @@ class ClipCraftAction : AnAction() {
             file.listFiles()?.forEach { processFileOrDir(it, proj, options, group) }
             return
         }
-        // If the file is an image and we are not including image content, use a placeholder.
         val ext = file.extension.lowercase()
         if (ext in listOf("svg", "png", "jpg", "jpeg", "gif") && !options.includeImageFiles) {
             val placeholder = "[Image file: ${file.name} not included]"
@@ -123,7 +123,6 @@ class ClipCraftAction : AnAction() {
             synchronized(group) { group.snippets.add(enriched) }
             return
         }
-        // Regular file processing
         val content = try {
             file.readText()
         } catch (ex: Exception) {
@@ -148,6 +147,7 @@ class ClipCraftAction : AnAction() {
     }
 
     private fun buildFinalOutput(
+        proj: Project,
         group: SnippetGroup,
         options: ClipCraftOptions,
         lintResults: List<com.clipcraft.lint.LintIssue>,
@@ -161,18 +161,26 @@ class ClipCraftAction : AnAction() {
         } else {
             ""
         }
-        val lintSummary = if (options.showLint && lintResults.isNotEmpty()) {
+        val lintSummary = if (options.showLint && lintResults.isNotEmpty() && options.includeLintInOutput) {
             "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" }
         } else {
             ""
         }
-        return buildString {
+        var output = buildString {
             if (header.isNotEmpty()) appendLine(header).appendLine()
             if (dirStruct.isNotEmpty()) appendLine(dirStruct)
             append(code)
             if (footer.isNotEmpty()) appendLine().appendLine(footer)
             if (lintSummary.isNotEmpty()) appendLine(lintSummary)
         }
+        if (!options.outputMacroTemplate.isNullOrBlank()) {
+            val context = mapOf(
+                "output" to output,
+                "timestamp" to System.currentTimeMillis().toString(),
+            )
+            output = ClipCraftMacroManager.getInstance(proj).expandMacro(options.outputMacroTemplate!!, context)
+        }
+        return output
     }
 
     private fun copyToClipboard(proj: Project, output: String) {

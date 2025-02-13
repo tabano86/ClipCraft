@@ -56,8 +56,17 @@ object IgnoreUtil {
     }
 
     private fun toRelative(absPath: String, basePath: String): String {
-        val base = File(basePath).absolutePath
-        return if (!absPath.startsWith(base)) absPath else absPath.substring(base.length).trimStart(File.separatorChar)
+        if (basePath.isEmpty()) return absPath
+        return try {
+            val base = File(basePath).absolutePath
+            if (absPath.length < base.length || !absPath.startsWith(base)) {
+                absPath
+            } else {
+                absPath.substring(base.length).trimStart(File.separatorChar)
+            }
+        } catch (e: Exception) {
+            absPath
+        }
     }
 
     private fun loadIgnoreFile(p: Path, opts: ClipCraftOptions) {

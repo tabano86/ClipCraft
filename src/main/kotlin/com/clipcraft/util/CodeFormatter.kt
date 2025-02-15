@@ -4,8 +4,8 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.Snippet
-import org.apache.commons.lang3.StringEscapeUtils
 import kotlin.math.min
+import org.apache.commons.lang3.StringEscapeUtils
 
 object CodeFormatter {
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
@@ -67,7 +67,6 @@ object CodeFormatter {
             "python" -> text.lines().filterNot {
                 it.trim().startsWith("import ") || it.trim().startsWith("from ")
             }.joinToString("\n")
-
             else -> text.lines().filterNot {
                 it.trim().lowercase().startsWith("import ")
             }.joinToString("\n")
@@ -95,13 +94,13 @@ object CodeFormatter {
         text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
 
     fun singleLineOutput(text: String): String = text.replace(Regex("\\s+"), " ").trim()
+
     fun applyCompression(input: String, o: ClipCraftOptions): String {
         return when (o.compressionMode) {
             CompressionMode.NONE -> input
             CompressionMode.MINIMAL -> input.lines().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
-
             CompressionMode.ULTRA -> input.lines().map { line ->
                 line.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
             }.filter {

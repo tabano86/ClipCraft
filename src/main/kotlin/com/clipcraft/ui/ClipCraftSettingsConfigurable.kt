@@ -1,8 +1,6 @@
 package com.clipcraft.ui
 
 import com.clipcraft.model.ChunkStrategy
-import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.model.ClipCraftProfile
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.OverlapStrategy
@@ -113,9 +111,7 @@ fun main() {
             add(panelLint())
             add(Box.createVerticalStrut(JBUI.scale(12)))
             add(panelAdditionalOptions())
-            // NEW: Replace the previous ShowSettingsAction call with a proper settings dialog call.
             val codeStyleLink = LinkLabel.create("Open Code Style Settings") {
-                // Use ShowSettingsUtil to open the Code Style settings dialog.
                 ShowSettingsUtil.getInstance().showSettingsDialog(ProjectManager.getInstance().defaultProject, "Editor | Code Style")
             }
             add(Box.createVerticalStrut(JBUI.scale(12)))

@@ -10,6 +10,7 @@ import java.nio.file.Paths
 
 object IgnoreUtil {
     private val logger = Logger.getInstance(IgnoreUtil::class.java)
+
     private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
         if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
     }
@@ -36,7 +37,7 @@ object IgnoreUtil {
             val pattern = p.removePrefix("!").removePrefix("/").let {
                 if (it.endsWith("/") && !it.endsWith("/**")) "$it**" else it
             }
-            if (globToRegex(pattern).matches(rel)) ignored = !neg
+            if (standardGlobToRegex(pattern).matches(rel)) ignored = !neg
         }
         return if (opts.invertIgnorePatterns) !ignored else ignored
     }

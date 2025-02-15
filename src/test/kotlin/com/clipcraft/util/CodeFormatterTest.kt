@@ -2,6 +2,7 @@ package com.clipcraft.util
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
+import java.util.stream.Stream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,9 +11,9 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.stream.Stream
 
 class CodeFormatterTest {
+
     @Test
     fun `chunkContent returns single chunk when content is shorter than maxChunkSize`() {
         val content = "Short content"
@@ -65,7 +66,7 @@ class CodeFormatterTest {
 
     @Test
     fun `removeComments for Java removes block and line comments`() {
-        val input = "int a = 5;\n// This is a comment\nint b = 6; /* block comment */\nint c = 7;"
+        val input = "int a = 5;\n// comment line\nint b = 6; /* block comment */\nint c = 7;"
         val expected = "int a = 5;\nint b = 6;\nint c = 7;"
         val result = CodeFormatter.removeComments(input, "java")
         assertEquals(expected, result)
@@ -153,24 +154,25 @@ class CodeFormatterTest {
     @ParameterizedTest(name = "Glob \"{0}\" matching path \"{1}\" should be {2}")
     @MethodSource("globTestProvider")
     fun `matchesGlob works correctly`(glob: String, fullPath: String, expected: Boolean) {
-        val result = globToRegex(glob).matches(fullPath)
+        val result = matchesGlob(glob, fullPath)
         assertEquals(expected, result, "Glob: \"$glob\" vs Path: \"$fullPath\"")
     }
 
     companion object {
         @JvmStatic
         fun globTestProvider(): Stream<Arguments> = Stream.of(
+            Arguments.of("src/main/kotlin/Example.kt", "src/main/kotlin/Example.kt", true),
+            Arguments.of("src/main/kotlin/Ex?mple.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("***.java", "src/main/kotlin/Example.kt", false),
             Arguments.of("srcExample.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("src*.kt", "src/Example.kt", false),
-            Arguments.of("src/main/kotlin/Example.kt", "src/main/kotlin/Example.kt", true),
-            Arguments.of("src/main/kotlin/Ex?mple.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("*Example.kt", "src/main/kotlin/Example.kt", true),
             Arguments.of("**", "any/path/should/match", true),
-            Arguments.of("no/match", "different/path", false),
+            Arguments.of("no/match", "different/path", false)
         )
 
         private fun createOpts(mode: CompressionMode, selective: Boolean = false) =
             ClipCraftOptions(compressionMode = mode, selectiveCompression = selective)
     }
+
 }

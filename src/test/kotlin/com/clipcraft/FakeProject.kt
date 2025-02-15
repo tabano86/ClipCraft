@@ -15,7 +15,6 @@ class FakeProject(private val path: String) : Project {
     override fun getCoroutineScope(): CoroutineScope {
         return CoroutineScope(Dispatchers.Default + Job())
     }
-
     override fun getBaseDir(): VirtualFile = FakeVirtualFile(path, "", true)
     override fun isInitialized() = true
     override fun isOpen() = true
@@ -29,18 +28,15 @@ class FakeProject(private val path: String) : Project {
     override fun <T : Any?> getService(serviceClass: Class<T>): T? = null
     override fun <T : Any?> instantiateClass(aClass: Class<T>, pluginId: PluginId): T =
         throw UnsupportedOperationException()
-
     override fun <T : Any?> instantiateClass(
         className: String,
         pluginDescriptor: PluginDescriptor,
     ): T & Any = throw UnsupportedOperationException()
-
     override fun <T : Any?> instantiateClassWithConstructorInjection(
         aClass: Class<T>,
         key: Any,
         pluginId: PluginId,
     ): T = throw UnsupportedOperationException()
-
     override fun createError(error: Throwable, pluginId: PluginId) = throw UnsupportedOperationException()
     override fun createError(message: String, pluginId: PluginId) = throw UnsupportedOperationException()
     override fun createError(
@@ -49,12 +45,10 @@ class FakeProject(private val path: String) : Project {
         pluginId: PluginId,
         attachments: MutableMap<String, String>?,
     ): RuntimeException = throw UnsupportedOperationException()
-
     override fun <T : Any?> loadClass(
         className: String,
         pluginDescriptor: PluginDescriptor,
     ): Class<T> = throw UnsupportedOperationException()
-
     override fun getActivityCategory(isExtension: Boolean) = throw UnsupportedOperationException()
     override fun <T : Any?> getComponent(interfaceClass: Class<T>): T = throw UnsupportedOperationException()
     override fun hasComponent(interfaceClass: Class<*>): Boolean = throw UnsupportedOperationException()

@@ -10,7 +10,6 @@ data class GitRepository(val root: VirtualFile, val currentRevision: String?)
 
 class ClipCraftGitRepositoryManager private constructor(private val project: Project) {
     val repositories: List<GitRepository> by lazy { discoverRepositories() }
-
     private fun discoverRepositories(): List<GitRepository> {
         val repos = mutableListOf<GitRepository>()
         val projectBaseDir = project.baseDir
@@ -37,7 +36,6 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
         }
         return repos
     }
-
     private fun retrieveCurrentRevision(root: VirtualFile): String? {
         return try {
             val process = ProcessBuilder("git", "rev-parse", "HEAD")
@@ -56,7 +54,6 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
             null
         }
     }
-
     companion object {
         private val LOG = Logger.getInstance(ClipCraftGitRepositoryManager::class.java)
         fun getInstance(project: Project): ClipCraftGitRepositoryManager {

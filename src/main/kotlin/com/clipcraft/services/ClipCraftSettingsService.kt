@@ -13,20 +13,15 @@ class ClipCraftSettingsService : PersistentStateComponent<ClipCraftSettingsServi
         var activeProfileName: String = "Default",
         var profilesJson: String = "",
     )
-
     private var state = State()
-
     override fun getState() = state
-
     override fun loadState(state: State) {
         this.state = state
     }
-
     companion object {
         fun getInstance(): ClipCraftSettingsService =
             ApplicationManager.getApplication().getService(ClipCraftSettingsService::class.java)
     }
-
     fun persist() {
         ApplicationManager.getApplication().saveSettings()
     }

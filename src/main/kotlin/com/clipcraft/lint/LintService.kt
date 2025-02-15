@@ -24,21 +24,18 @@ object LintService {
                     num,
                     "Line exceeds 120 characters (${line.length} chars).",
                 )
-
                 line.contains('\t') -> LintIssue(
                     LintSeverity.ERROR,
                     snippet.filePath,
                     num,
                     "Tabs are not allowed; use spaces instead.",
                 )
-
                 line.endsWith(" ") || line.endsWith("\t") -> LintIssue(
                     LintSeverity.WARNING,
                     snippet.filePath,
                     num,
                     "Trailing whitespace found.",
                 )
-
                 else -> null
             }
         }

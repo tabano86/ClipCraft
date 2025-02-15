@@ -21,14 +21,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import java.awt.Toolkit
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -37,10 +37,7 @@ class ClipCraftAction : AnAction() {
         val mgr = project.getService(ClipCraftProjectProfileManager::class.java)
         val profile = mgr?.getActiveProfile() ?: ClipCraftSettings.getInstance().getCurrentProfile()
         val options = profile.options.also { it.resolveConflicts() }
-
-        // Parse ignore rules
         IgnoreUtil.parseCustomIgnoreFiles(options, project.basePath ?: "", emptyList())
-
         val paths = files.map { it.path }
         when (options.concurrencyMode) {
             ConcurrencyMode.DISABLED -> runSequential(project, paths, options)
@@ -71,7 +68,6 @@ class ClipCraftAction : AnAction() {
                 paths.forEach { pool.submit { processFileOrDir(File(it), proj, options, group) } }
                 pool.shutdown()
                 pool.awaitTermination(15, TimeUnit.MINUTES)
-
                 val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
                 proj.getService(LintResultsService::class.java)?.storeResults(lintResults)
                 val finalOutput = buildFinalOutput(proj, group, options, lintResults)
@@ -127,14 +123,12 @@ class ClipCraftAction : AnAction() {
             synchronized(group) { group.snippets.add(enriched) }
             return
         }
-
         val content = try {
             file.readText()
         } catch (ex: Exception) {
             ClipCraftNotificationCenter.warn("Failed to read file '${file.absolutePath}': ${ex.message}")
             "<Error: ${ex.message}>"
         }
-
         var snippet = Snippet(
             filePath = file.absolutePath,
             relativePath = proj.basePath?.let {

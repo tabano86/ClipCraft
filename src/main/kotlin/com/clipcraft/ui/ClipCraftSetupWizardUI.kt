@@ -14,7 +14,6 @@ class ClipCraftSetupWizardUI {
         row("Use .gitignore:") { cell(useGitIgnoreCheck) }
         row("Max Concurrent Tasks:") { cell(concurrencyField) }
     }
-
     fun getMainPanel(): JPanel = mainPanel
     fun isIncludeMetadata() = includeMetadataCheck.isSelected
     fun isUseGitIgnore() = useGitIgnoreCheck.isSelected

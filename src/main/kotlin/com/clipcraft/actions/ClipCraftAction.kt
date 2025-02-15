@@ -21,14 +21,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import java.awt.Toolkit
-import java.io.File
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import java.awt.Toolkit
+import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {

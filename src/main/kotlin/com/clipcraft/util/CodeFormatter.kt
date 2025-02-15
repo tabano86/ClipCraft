@@ -4,8 +4,8 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.Snippet
-import kotlin.math.min
 import org.apache.commons.lang3.StringEscapeUtils
+import kotlin.math.min
 
 object CodeFormatter {
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {

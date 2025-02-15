@@ -44,7 +44,7 @@ package test
 fun main() {
     println("Hello")
 }
-""".trimIndent()
+    """.trimIndent()
     private lateinit var mainPanel: JPanel
     private lateinit var previewEditor: com.intellij.ui.EditorTextField
     private lateinit var headerArea: JTextArea
@@ -127,7 +127,7 @@ fun main() {
             ProjectManager.getInstance().defaultProject,
             PlainTextFileType.INSTANCE,
             true,
-            false
+            false,
         ).apply {
             isViewer = true
             setOneLineMode(false)

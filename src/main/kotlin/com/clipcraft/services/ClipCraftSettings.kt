@@ -11,6 +11,7 @@ class ClipCraftSettings private constructor() {
     private var currentProfileName: String
     companion object {
         private val instance = ClipCraftSettings()
+
         @JvmStatic
         fun getInstance(): ClipCraftSettings = instance
     }

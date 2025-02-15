@@ -39,7 +39,7 @@ data class ClipCraftOptions(
     var lintWarningsOnly: Boolean = false,
     var addSnippetToQueue: Boolean = false,
     var includeLintInOutput: Boolean = false,
-    var outputMacroTemplate: String? = null,
+    var outputMacroTemplate: String? = null
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

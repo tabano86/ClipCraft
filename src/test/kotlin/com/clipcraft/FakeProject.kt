@@ -12,15 +12,10 @@ import kotlinx.coroutines.Job
 class FakeProject(private val path: String) : Project {
     override fun getBasePath() = path
     override fun getName() = "FakeProject"
-
-    // Updated to return a valid CoroutineScope
     override fun getCoroutineScope(): CoroutineScope {
         return CoroutineScope(Dispatchers.Default + Job())
     }
-
-    // Updated to return a valid FakeVirtualFile representing the base directory
     override fun getBaseDir(): VirtualFile = FakeVirtualFile(path, "", true)
-
     override fun isInitialized() = true
     override fun isOpen() = true
     override fun isDisposed() = false
@@ -30,38 +25,31 @@ class FakeProject(private val path: String) : Project {
     override fun getLocationHash() = throw UnsupportedOperationException()
     override fun save() = throw UnsupportedOperationException()
     override fun getDisposed() = throw UnsupportedOperationException()
-
     override fun <T : Any?> getService(serviceClass: Class<T>): T? = null
     override fun <T : Any?> instantiateClass(aClass: Class<T>, pluginId: PluginId): T =
         throw UnsupportedOperationException()
-
     override fun <T : Any?> instantiateClass(
         className: String,
-        pluginDescriptor: PluginDescriptor,
+        pluginDescriptor: PluginDescriptor
     ): T & Any = throw UnsupportedOperationException()
-
     override fun <T : Any?> instantiateClassWithConstructorInjection(
         aClass: Class<T>,
         key: Any,
-        pluginId: PluginId,
+        pluginId: PluginId
     ): T = throw UnsupportedOperationException()
-
     override fun createError(error: Throwable, pluginId: PluginId) = throw UnsupportedOperationException()
     override fun createError(message: String, pluginId: PluginId) = throw UnsupportedOperationException()
     override fun createError(
         message: String,
         error: Throwable?,
         pluginId: PluginId,
-        attachments: MutableMap<String, String>?,
+        attachments: MutableMap<String, String>?
     ): RuntimeException = throw UnsupportedOperationException()
-
     override fun <T : Any?> loadClass(
         className: String,
-        pluginDescriptor: PluginDescriptor,
+        pluginDescriptor: PluginDescriptor
     ): Class<T> = throw UnsupportedOperationException()
-
     override fun getActivityCategory(isExtension: Boolean) = throw UnsupportedOperationException()
-
     override fun <T : Any?> getComponent(interfaceClass: Class<T>): T = throw UnsupportedOperationException()
     override fun hasComponent(interfaceClass: Class<*>): Boolean = throw UnsupportedOperationException()
     override fun isInjectionForExtensionSupported() = throw UnsupportedOperationException()

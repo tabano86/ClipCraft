@@ -3,6 +3,8 @@ package com.clipcraft.util
 import com.clipcraft.FakeProject
 import com.clipcraft.FakeVirtualFile
 import com.clipcraft.model.ClipCraftOptions
+import java.io.File
+import java.util.stream.Stream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,8 +12,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.io.File
-import java.util.stream.Stream
 
 class IgnoreUtilTest {
     @Test
@@ -53,7 +53,7 @@ class IgnoreUtilTest {
             Arguments.of("focus.txt", listOf("*.txt", "!focus.txt"), false),
             Arguments.of("readme.md", listOf("*.txt"), false),
             Arguments.of("error.log", listOf("er*or.???"), true),
-            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false),
+            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false)
         )
     }
 
@@ -95,21 +95,18 @@ class IgnoreUtilTest {
         val opts = ClipCraftOptions(ignorePatterns = mutableListOf("*.log", "!debug.log"), useGitIgnore = true)
         val proj = FakeProject(d.absolutePath)
         IgnoreUtil.mergeGitIgnoreRules(opts, proj)
-
         val f1 = File(FakeVirtualFile(File(d, "private/a.txt").absolutePath, "data").path)
         val f2 = File(FakeVirtualFile(File(d, "notes.secret").absolutePath, "data").path)
         val f3 = File(FakeVirtualFile(File(d, "public.secret").absolutePath, "data").path)
         val f4 = File(FakeVirtualFile(File(d, "doom.log").absolutePath, "data").path)
         val f5 = File(FakeVirtualFile(File(d, "debug.log").absolutePath, "data").path)
         val f6 = File(FakeVirtualFile(File(d, "readme.txt").absolutePath, "data").path)
-
         assertTrue(IgnoreUtil.shouldIgnore(f1, opts, proj.basePath))
         assertTrue(IgnoreUtil.shouldIgnore(f2, opts, proj.basePath))
         assertFalse(IgnoreUtil.shouldIgnore(f3, opts, proj.basePath))
         assertTrue(IgnoreUtil.shouldIgnore(f4, opts, proj.basePath))
         assertFalse(IgnoreUtil.shouldIgnore(f5, opts, proj.basePath))
         assertFalse(IgnoreUtil.shouldIgnore(f6, opts, proj.basePath))
-
         gf.delete()
         d.deleteRecursively()
     }

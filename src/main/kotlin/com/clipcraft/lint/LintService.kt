@@ -12,7 +12,6 @@ object LintService {
             else -> allIssues
         }
     }
-
     fun lintSnippet(snippet: com.clipcraft.model.Snippet): List<LintIssue> {
         val lines = snippet.content.lines()
         return lines.mapIndexedNotNull { index, line ->
@@ -22,19 +21,19 @@ object LintService {
                     LintSeverity.WARNING,
                     snippet.filePath,
                     num,
-                    "Line exceeds 120 characters (${line.length} chars).",
+                    "Line exceeds 120 characters (${line.length} chars)."
                 )
                 line.contains('\t') -> LintIssue(
                     LintSeverity.ERROR,
                     snippet.filePath,
                     num,
-                    "Tabs are not allowed; use spaces instead.",
+                    "Tabs are not allowed; use spaces instead."
                 )
                 line.endsWith(" ") || line.endsWith("\t") -> LintIssue(
                     LintSeverity.WARNING,
                     snippet.filePath,
                     num,
-                    "Trailing whitespace found.",
+                    "Trailing whitespace found."
                 )
                 else -> null
             }

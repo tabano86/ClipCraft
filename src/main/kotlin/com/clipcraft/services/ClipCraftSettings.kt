@@ -19,11 +19,10 @@ class ClipCraftSettings private constructor() {
     init {
         allProfiles += fallbackProfile
         currentProfileName = fallbackProfile.profileName
-        // NEW: After load, we also read from ClipCraftSettingsService
         loadFromService()
     }
 
-    // NEW: Convenience toggles (to reduce code for the user)
+    // Convenience toggles
     fun toggleLint(): Boolean {
         val profile = getCurrentProfile()
         profile.options.showLint = !profile.options.showLint
@@ -41,7 +40,6 @@ class ClipCraftSettings private constructor() {
         saveToService()
     }
 
-    // For retrieving the current profile
     fun getCurrentProfile(): ClipCraftProfile {
         return allProfiles.find { it.profileName == currentProfileName } ?: fallbackProfile
     }
@@ -63,7 +61,6 @@ class ClipCraftSettings private constructor() {
         } else {
             allProfiles += profile
         }
-        // If we were still using fallback, switch to the new one
         if (getCurrentProfile() == fallbackProfile && currentProfileName == fallbackProfile.profileName) {
             currentProfileName = profile.profileName
         }
@@ -79,29 +76,24 @@ class ClipCraftSettings private constructor() {
         saveToService()
     }
 
-    // These provide snippet prefix/suffix
     fun getSnippetPrefix(): String {
-        return getCurrentProfile().options.snippetHeaderText ?: "/* Default Header */"
+        return getCurrentProfile().options.snippetHeaderText ?: ""
     }
 
     fun getSnippetSuffix(): String {
-        return getCurrentProfile().options.snippetFooterText ?: "/* Default Footer */"
+        return getCurrentProfile().options.snippetFooterText ?: ""
     }
 
-    // NEW: Save to persistent service
     private fun saveToService() {
         val svc = ClipCraftSettingsService.getInstance()
         val state = svc.getState()
         state.activeProfileName = currentProfileName
-        // We'll convert all profiles to JSON
         val profilesJson = Json.encodeToString(allProfiles)
         state.profilesJson = profilesJson
-        svc.loadState(state) // update in memory
-        // trigger store
+        svc.loadState(state)
         svc.persist()
     }
 
-    // NEW: Load from persistent service
     private fun loadFromService() {
         val svc = ClipCraftSettingsService.getInstance()
         val state = svc.getState()

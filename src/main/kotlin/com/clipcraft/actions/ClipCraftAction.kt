@@ -131,7 +131,6 @@ class ClipCraftAction : AnAction() {
         val content = try {
             file.readText()
         } catch (ex: Exception) {
-            // Enhancement: log a warning on read failure
             ClipCraftNotificationCenter.warn("Failed to read file '${file.absolutePath}': ${ex.message}")
             "<Error: ${ex.message}>"
         }
@@ -160,12 +159,11 @@ class ClipCraftAction : AnAction() {
         proj: Project,
         group: SnippetGroup,
         options: ClipCraftOptions,
-        lintResults: List<com.clipcraft.lint.LintIssue>,
+        lintResults: List<com.clipcraft.lint.LintIssue>
     ): String {
         val header = options.snippetHeaderText.orEmpty()
         val footer = options.snippetFooterText.orEmpty()
         val code = CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
-
         val dirStruct = if (options.includeDirectorySummary) {
             "Directory Structure:\n" + group.snippets.mapNotNull { it.relativePath }
                 .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
@@ -187,7 +185,7 @@ class ClipCraftAction : AnAction() {
         if (!options.outputMacroTemplate.isNullOrBlank()) {
             val context = mapOf(
                 "output" to output,
-                "timestamp" to System.currentTimeMillis().toString(),
+                "timestamp" to System.currentTimeMillis().toString()
             )
             output = ClipCraftMacroManager.getInstance(proj).expandMacro(options.outputMacroTemplate!!, context)
         }

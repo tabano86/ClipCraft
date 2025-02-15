@@ -40,7 +40,7 @@ class ClipCraftSettingsConfigurable : Configurable {
     private val sampleCode = """
 package test
 fun main() {
-println("Hello")
+    println("Hello")
 }
 """.trimIndent()
 
@@ -122,7 +122,7 @@ println("Hello")
             ProjectManager.getInstance().defaultProject,
             PlainTextFileType.INSTANCE,
             true,
-            false,
+            false
         ).apply {
             isViewer = true
             setOneLineMode(false)
@@ -354,10 +354,8 @@ println("Hello")
         manager.deleteProfile(savedProfile.profileName)
         manager.addProfile(savedProfile.copy(options = options))
         manager.switchProfile(savedProfile.profileName)
-        // Persist settings via the application’s save mechanism
         ApplicationManager.getApplication().saveAll()
     }
-
     override fun reset() {
         headerArea.text = options.snippetHeaderText.orEmpty()
         footerArea.text = options.snippetFooterText.orEmpty()

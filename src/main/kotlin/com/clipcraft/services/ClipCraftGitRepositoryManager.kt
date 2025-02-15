@@ -18,8 +18,6 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
             LOG.warn("Project base directory is null.")
             return repos
         }
-
-        // Recursively search for ".git" folders
         VfsUtilCore.iterateChildrenRecursively(
             projectBaseDir,
             { true },
@@ -32,7 +30,7 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
                 } else {
                     true
                 }
-            },
+            }
         )
         if (repos.isEmpty()) {
             LOG.warn("No Git repositories found in project.")

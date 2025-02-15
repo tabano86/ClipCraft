@@ -14,7 +14,6 @@ plugins {
 
 group = "com.clipcraft"
 
-// SCM-based versioning configuration
 scmVersion {
     tag {
         prefix.set("v")
@@ -43,7 +42,6 @@ scmVersion {
 
 version = scmVersion.version
 
-// Version variables
 val ktorVersion = "2.2.4"
 val kotlinxSerializationVersion = "1.5.1"
 

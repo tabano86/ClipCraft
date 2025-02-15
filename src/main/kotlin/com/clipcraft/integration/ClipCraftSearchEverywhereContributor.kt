@@ -14,12 +14,10 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
     fun setProject(project: Project?) {
         this.project = project
     }
-
     override fun getSearchProviderId(): String = "ClipCraftSearch"
     override fun getGroupName(): String = "ClipCraft"
     override fun getSortWeight(): Int = 50
     override fun showInFindResults(): Boolean = false
-
     override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in Any>) {
         val mgr = project?.getService(ClipCraftProjectProfileManager::class.java) ?: return
         val matches = mgr.listProfiles().filter { StringUtil.containsIgnoreCase(it.profileName, pattern) }
@@ -27,7 +25,6 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
             if (!consumer.process(profile)) return
         }
     }
-
     override fun processSelectedItem(selected: Any, modifiers: Int, searchText: String): Boolean = true
     override fun getElementPriority(element: Any, pattern: String): Int = 0
     override fun getElementsRenderer(): ListCellRenderer<Any> = SearchEverywherePsiRenderer(DisposableHolder.disposable)

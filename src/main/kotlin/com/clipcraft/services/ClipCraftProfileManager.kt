@@ -4,7 +4,6 @@ import com.clipcraft.model.ClipCraftProfile
 
 class ClipCraftProfileManager {
     private val settings = ClipCraftSettings.getInstance()
-
     fun currentProfile(): ClipCraftProfile = settings.getCurrentProfile()
     fun switchProfile(name: String) = settings.setCurrentProfile(name)
     fun listProfiles(): List<ClipCraftProfile> = settings.getAllProfiles()

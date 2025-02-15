@@ -1,6 +1,8 @@
 package com.clipcraft.ui
 
 import com.clipcraft.model.ChunkStrategy
+import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.ClipCraftProfile
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.OverlapStrategy
@@ -11,11 +13,13 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileTypes.PlainTextFileType
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.components.labels.LinkLabel
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
@@ -43,10 +47,8 @@ fun main() {
     println("Hello")
 }
 """.trimIndent()
-
     private lateinit var mainPanel: JPanel
     private lateinit var previewEditor: com.intellij.ui.EditorTextField
-
     private lateinit var headerArea: JTextArea
     private lateinit var footerArea: JTextArea
     private lateinit var directoryStructureCheck: JCheckBox
@@ -111,6 +113,13 @@ fun main() {
             add(panelLint())
             add(Box.createVerticalStrut(JBUI.scale(12)))
             add(panelAdditionalOptions())
+            // NEW: Replace the previous ShowSettingsAction call with a proper settings dialog call.
+            val codeStyleLink = LinkLabel.create("Open Code Style Settings") {
+                // Use ShowSettingsUtil to open the Code Style settings dialog.
+                ShowSettingsUtil.getInstance().showSettingsDialog(ProjectManager.getInstance().defaultProject, "Editor | Code Style")
+            }
+            add(Box.createVerticalStrut(JBUI.scale(12)))
+            add(codeStyleLink)
         }
         val formScroll = JBScrollPane(formPanel).apply {
             verticalScrollBar.unitIncrement = 16
@@ -356,6 +365,7 @@ fun main() {
         manager.switchProfile(savedProfile.profileName)
         ApplicationManager.getApplication().saveAll()
     }
+
     override fun reset() {
         headerArea.text = options.snippetHeaderText.orEmpty()
         footerArea.text = options.snippetFooterText.orEmpty()

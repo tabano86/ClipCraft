@@ -16,9 +16,9 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import java.awt.Toolkit
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
+import java.awt.Toolkit
 
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
@@ -62,7 +62,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         val finalOutput = aggregateFinalOutput(project, group, options, lintResults)
         Toolkit.getDefaultToolkit().systemClipboard.setContents(
             java.awt.datatransfer.StringSelection(finalOutput),
-            null
+            null,
         )
         notify("Snippet added and aggregated output copied to clipboard.", NotificationType.INFORMATION)
     }
@@ -71,7 +71,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         project: Project,
         group: SnippetGroup,
         options: com.clipcraft.model.ClipCraftOptions,
-        lintResults: List<com.clipcraft.lint.LintIssue>
+        lintResults: List<com.clipcraft.lint.LintIssue>,
     ): String {
         val header = options.snippetHeaderText.orEmpty()
         val footer = options.snippetFooterText.orEmpty()
@@ -97,7 +97,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         if (!options.outputMacroTemplate.isNullOrBlank()) {
             val context = mapOf(
                 "output" to output,
-                "timestamp" to System.currentTimeMillis().toString()
+                "timestamp" to System.currentTimeMillis().toString(),
             )
             output = ClipCraftMacroManager.getInstance(project).expandMacro(options.outputMacroTemplate!!, context)
         }
@@ -125,7 +125,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
 
     private fun notify(message: String, type: NotificationType) {
         Notifications.Bus.notify(
-            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type)
+            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type),
         )
     }
 }

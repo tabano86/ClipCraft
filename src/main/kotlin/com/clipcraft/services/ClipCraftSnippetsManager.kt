@@ -14,14 +14,18 @@ class ClipCraftSnippetsManager(private val project: Project) {
         snippets.add(snippet)
         logger.info("Snippet added: ${snippet.id} from ${snippet.fileName}")
     }
+
     fun removeSnippet(snippet: Snippet) {
         snippets.remove(snippet)
     }
+
     fun getAllSnippets(): List<Snippet> = snippets.toList()
     fun clearAll() {
         snippets.clear()
     }
+
     companion object {
-        fun getInstance(project: Project): ClipCraftSnippetsManager = project.getService(ClipCraftSnippetsManager::class.java)
+        fun getInstance(project: Project): ClipCraftSnippetsManager =
+            project.getService(ClipCraftSnippetsManager::class.java)
     }
 }

@@ -10,6 +10,7 @@ class ClipCraftMacroManager(private val project: Project) {
         context.forEach { (k, v) -> result = result.replace("{$k}", v) }
         return result
     }
+
     companion object {
         fun getInstance(project: Project): ClipCraftMacroManager {
             return project.getService(ClipCraftMacroManager::class.java)

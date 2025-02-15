@@ -30,7 +30,7 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
                 } else {
                     true
                 }
-            }
+            },
         )
         if (repos.isEmpty()) {
             LOG.warn("No Git repositories found in project.")

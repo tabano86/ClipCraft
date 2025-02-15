@@ -28,8 +28,8 @@ class ClipCraftLintToolWindowFactory : ToolWindowFactory, DumbAware {
             toolWindow.contentManager.factory.createContent(
                 panel,
                 "Lint Results",
-                false
-            )
+                false,
+            ),
         )
     }
 }

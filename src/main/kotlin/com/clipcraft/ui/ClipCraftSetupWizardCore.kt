@@ -12,7 +12,7 @@ class ClipCraftSetupWizardCore(private val project: Project) {
             includeMetadata = wizardUI.isIncludeMetadata(),
             useGitIgnore = wizardUI.isUseGitIgnore(),
             maxConcurrentTasks = wizardUI.getMaxConcurrentTasks(),
-            concurrencyMode = if (wizardUI.getMaxConcurrentTasks() > 1) ConcurrencyMode.THREAD_POOL else ConcurrencyMode.DISABLED
+            concurrencyMode = if (wizardUI.getMaxConcurrentTasks() > 1) ConcurrencyMode.THREAD_POOL else ConcurrencyMode.DISABLED,
         )
         val updatedProfile = current.copy(options = updatedOptions)
         mgr.addOrUpdateProfile(updatedProfile)

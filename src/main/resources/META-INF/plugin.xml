@@ -17,9 +17,11 @@
     <depends>com.intellij.modules.java</depends>
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="ClipCraft" displayType="BALLOON"/>
-        <applicationConfigurable id="clipcraft.settings" instance="com.clipcraft.ui.ClipCraftSettingsConfigurable" displayName="ClipCraft"/>
+        <applicationConfigurable id="clipcraft.settings" instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
+                                 displayName="ClipCraft"/>
         <!-- <toolWindow id="ClipCraft.Lint" factoryClass="com.clipcraft.ui.ClipCraftLintToolWindowFactory" anchor="left" icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_24" secondary="true"/> -->
-        <searchEverywhereContributor implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory"/>
+        <searchEverywhereContributor
+                implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory"/>
     </extensions>
     <actions>
         <group id="ClipCraft.Submenu"

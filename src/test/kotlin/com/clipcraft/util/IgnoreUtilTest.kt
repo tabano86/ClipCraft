@@ -3,8 +3,6 @@ package com.clipcraft.util
 import com.clipcraft.FakeProject
 import com.clipcraft.FakeVirtualFile
 import com.clipcraft.model.ClipCraftOptions
-import java.io.File
-import java.util.stream.Stream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -12,6 +10,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.io.File
+import java.util.stream.Stream
 
 class IgnoreUtilTest {
     @Test
@@ -53,7 +53,7 @@ class IgnoreUtilTest {
             Arguments.of("focus.txt", listOf("*.txt", "!focus.txt"), false),
             Arguments.of("readme.md", listOf("*.txt"), false),
             Arguments.of("error.log", listOf("er*or.???"), true),
-            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false)
+            Arguments.of("misc.txt", listOf("*.txt", "!misc.txt"), false),
         )
     }
 

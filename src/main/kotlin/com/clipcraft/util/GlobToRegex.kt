@@ -2,37 +2,22 @@ package com.clipcraft.util
 
 import java.io.File
 
-/**
- * Returns true if the given filePath matches the glob pattern.
- *
- * - If the glob contains a "/" or any explicit wildcard characters ("*" or "?"),
- *   then standard glob matching is used:
- *     - If the glob contains "/", the full filePath is matched.
- *     - Otherwise, the basename is matched.
- * - If the glob contains no wildcards and no "/", then a fuzzy match is performed on the
- *   flattened filePath (all "/" removed) by interleaving ".*" between each character.
- */
 fun matchesGlob(glob: String, filePath: String): Boolean {
     return if (glob.contains("/") || glob.contains("*") || glob.contains("?")) {
         if (glob.contains("/")) {
             standardGlobToRegex(glob).matches(filePath)
         } else {
-            // When wildcards are present, match against the file's basename.
             val baseName = File(filePath).name
             standardGlobToRegex(glob).matches(baseName)
         }
     } else {
-        // No wildcards and no directory separator: perform fuzzy matching on the flattened filePath.
-        val flattenedPath = filePath.replace("/", "")
-        // Build a regex that allows any characters in between the letters of the glob.
+        // Remove both forward and backslashes so that the directory structure is ignored.
+        val flattenedPath = filePath.replace("[/\\\\]".toRegex(), "")
         val fuzzyPattern = glob.toCharArray().joinToString(".*") { Regex.escape(it.toString()) }
         Regex("^$fuzzyPattern\$").matches(flattenedPath)
     }
 }
 
-/**
- * Converts a glob pattern to a [Regex] using the given options.
- */
 fun standardGlobToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
     val (extended, globstar, flags) = options
     val sb = StringBuilder()

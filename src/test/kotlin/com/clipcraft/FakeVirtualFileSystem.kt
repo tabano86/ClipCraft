@@ -11,7 +11,9 @@ object FakeVirtualFileSystem : VirtualFileSystem() {
     override fun refresh(asynchronous: Boolean) {}
     override fun addVirtualFileListener(listener: VirtualFileListener) {}
     override fun removeVirtualFileListener(listener: VirtualFileListener) {}
-    override fun deleteFile(requestor: Any?, vFile: VirtualFile) = throw UnsupportedOperationException()
+    override fun deleteFile(requestor: Any?, vFile: VirtualFile) =
+        throw UnsupportedOperationException()
+
     override fun moveFile(requestor: Any?, vFile: VirtualFile, newParent: VirtualFile) =
         throw UnsupportedOperationException()
 

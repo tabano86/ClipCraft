@@ -19,7 +19,7 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
             return repos
         }
 
-        // Recursively search for ".git" folders starting at the project base directory.
+        // Recursively search for ".git" folders
         VfsUtilCore.iterateChildrenRecursively(
             projectBaseDir,
             { true },
@@ -28,14 +28,12 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
                     val gitRoot = file.parent
                     val commitHash = retrieveCurrentRevision(gitRoot)
                     repos.add(GitRepository(gitRoot, commitHash))
-                    // Don't traverse inside the .git directory
                     false
                 } else {
                     true
                 }
             },
         )
-
         if (repos.isEmpty()) {
             LOG.warn("No Git repositories found in project.")
         }
@@ -43,17 +41,11 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
     }
 
     private fun retrieveCurrentRevision(root: VirtualFile): String? {
-        // This implementation runs the "git rev-parse HEAD" command in the repository root.
-        // In a real-world scenario, consider using IntelliJ's Git integration API to handle VCS info.
         return try {
             val process = ProcessBuilder("git", "rev-parse", "HEAD")
                 .directory(File(root.path))
                 .start()
-
-            // Read the output of the process.
             val output = process.inputStream.bufferedReader().readLine()?.trim()
-
-            // Wait for the process to finish and check for errors.
             val exitCode = process.waitFor()
             if (exitCode != 0) {
                 LOG.warn("Git command exited with code $exitCode for repository at ${root.path}")

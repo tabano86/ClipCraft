@@ -16,9 +16,9 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import java.awt.Toolkit
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
-import java.awt.Toolkit
 
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
@@ -35,6 +35,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         }
         val finalSnippetContent = snippetText.withClipCraftHeaders()
         val project = event.project ?: return
+
         // Create snippet
         val snippet = Snippet(
             filePath = "InMemory",
@@ -44,6 +45,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             lastModified = System.currentTimeMillis(),
             content = finalSnippetContent,
         )
+
         // Add snippet to the appropriate manager
         val options = ClipCraftSettings.getInstance().getCurrentProfile().options
         if (options.addSnippetToQueue) {
@@ -51,6 +53,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         } else {
             ClipCraftSnippetsManager.getInstance(project).addSnippet(snippet)
         }
+
         // Aggregate all snippets, format output, and update clipboard
         val snippets = ClipCraftSnippetsManager.getInstance(project).getAllSnippets()
         val group = SnippetGroup("Aggregated Snippets")
@@ -66,7 +69,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
 
     private fun aggregateFinalOutput(
         project: Project,
-        group: com.clipcraft.model.SnippetGroup,
+        group: SnippetGroup,
         options: com.clipcraft.model.ClipCraftOptions,
         lintResults: List<com.clipcraft.lint.LintIssue>,
     ): String {

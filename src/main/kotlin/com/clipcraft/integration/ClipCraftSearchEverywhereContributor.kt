@@ -19,6 +19,7 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
     override fun getGroupName(): String = "ClipCraft"
     override fun getSortWeight(): Int = 50
     override fun showInFindResults(): Boolean = false
+
     override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in Any>) {
         val mgr = project?.getService(ClipCraftProjectProfileManager::class.java) ?: return
         val matches = mgr.listProfiles().filter { StringUtil.containsIgnoreCase(it.profileName, pattern) }

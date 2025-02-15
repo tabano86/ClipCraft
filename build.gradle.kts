@@ -47,7 +47,6 @@ version = scmVersion.version
 val ktorVersion = "2.2.4"
 val kotlinxSerializationVersion = "1.5.1"
 
-// Repositories configuration
 repositories {
     mavenCentral()
     intellijPlatform {
@@ -55,12 +54,10 @@ repositories {
     }
 }
 
-// Kotlin JVM configuration
 kotlin {
     jvmToolchain(17)
 }
 
-// Task configurations
 tasks {
     test {
         useJUnitPlatform()
@@ -80,7 +77,6 @@ tasks {
     }
 }
 
-// Spotless configuration for formatting
 spotless {
     kotlin {
         target("**/*.kt")
@@ -88,39 +84,25 @@ spotless {
     }
 }
 
-// Detekt configuration
 detekt {
     config.setFrom(files("detekt-config.yml"))
     buildUponDefaultConfig = true
     autoCorrect = true
 }
 
-// Jacoco configuration
 jacoco {
     toolVersion = "0.8.12"
 }
 
-repositories {
-    mavenCentral()
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-tasks.patchPluginXml {
-    sinceBuild.set("241.*")
-    untilBuild.set("299.*")
-}
-
-// Dependencies configuration
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2024.1")
-        // Only include the Java plugin; skip cwm-plugin and others
         bundledPlugin("com.intellij.java")
         pluginVerifier()
         zipSigner()
         testFramework(TestFrameworkType.Platform)
     }
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")

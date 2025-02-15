@@ -38,15 +38,13 @@ class ClipCraftSettingsConfigurable : Configurable {
     private val savedProfile = manager.currentProfile().copy()
     private val options = savedProfile.options
     private val sampleCode = """
-        package test
-        fun main() {
-            println("Hello")
-        }
-    """.trimIndent()
+package test
+fun main() {
+println("Hello")
+}
+""".trimIndent()
 
     private lateinit var mainPanel: JPanel
-
-    // Use an EditorTextField for a code-aware preview pane
     private lateinit var previewEditor: com.intellij.ui.EditorTextField
 
     private lateinit var headerArea: JTextArea
@@ -118,12 +116,11 @@ class ClipCraftSettingsConfigurable : Configurable {
             verticalScrollBar.unitIncrement = 16
             preferredSize = Dimension(480, 620)
         }
-        // Create an EditorTextField for preview (code-aware, internal scrolling)
         val document = EditorFactory.getInstance().createDocument("")
         previewEditor = com.intellij.ui.EditorTextField(
             document,
             ProjectManager.getInstance().defaultProject,
-            PlainTextFileType.INSTANCE, // use FileType here
+            PlainTextFileType.INSTANCE,
             true,
             false,
         ).apply {

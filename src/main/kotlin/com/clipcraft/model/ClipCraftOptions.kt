@@ -38,9 +38,8 @@ data class ClipCraftOptions(
     var lintErrorsOnly: Boolean = false,
     var lintWarningsOnly: Boolean = false,
     var addSnippetToQueue: Boolean = false,
-    // New fields:
-    var includeLintInOutput: Boolean = false, // Optionally merge lint results into the final output
-    var outputMacroTemplate: String? = null, // A macro template (e.g. with placeholders) for customizable output
+    var includeLintInOutput: Boolean = false,
+    var outputMacroTemplate: String? = null,
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

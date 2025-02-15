@@ -6,18 +6,21 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 
 class FakeProject(private val path: String) : Project {
     override fun getBasePath() = path
     override fun getName() = "FakeProject"
 
-    @Deprecated("Deprecated in Java", ReplaceWith("{ } as CoroutineScope", "kotlinx.coroutines.CoroutineScope"))
+    // Updated to return a valid CoroutineScope
     override fun getCoroutineScope(): CoroutineScope {
-        return { } as CoroutineScope
+        return CoroutineScope(Dispatchers.Default + Job())
     }
 
-    @Deprecated("Deprecated in Java", ReplaceWith("throw UnsupportedOperationException()"))
-    override fun getBaseDir(): VirtualFile = throw UnsupportedOperationException()
+    // Updated to return a valid FakeVirtualFile representing the base directory
+    override fun getBaseDir(): VirtualFile = FakeVirtualFile(path, "", true)
+
     override fun isInitialized() = true
     override fun isOpen() = true
     override fun isDisposed() = false
@@ -59,7 +62,6 @@ class FakeProject(private val path: String) : Project {
 
     override fun getActivityCategory(isExtension: Boolean) = throw UnsupportedOperationException()
 
-    @Deprecated("Deprecated in Java", ReplaceWith("throw UnsupportedOperationException()"))
     override fun <T : Any?> getComponent(interfaceClass: Class<T>): T = throw UnsupportedOperationException()
     override fun hasComponent(interfaceClass: Class<*>): Boolean = throw UnsupportedOperationException()
     override fun isInjectionForExtensionSupported() = throw UnsupportedOperationException()

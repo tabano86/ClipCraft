@@ -1,23 +1,11 @@
 # IntelliJ IDEA project settings & metadata
-.idea/
+/.idea/
 *.iws
 *.iml
 *.ipr
 .idea_modules/
 
 # Exclude workspace configuration and local settings (do not share)
-.idea/**/workspace.xml
-.idea/**/tasks.xml
-.idea/**/usage.statistics.xml
-.idea/**/dictionaries/
-.idea/**/libraries/
-.idea/**/shelf/
-.idea/**/modules.xml
-.idea/**/dataSources.ids
-.idea/**/dataSources.local.xml
-.idea/**/sqlDataSources.xml
-.idea/**/vcs.xml
-
 # User-specific temporary files
 *.swp
 *.swo
@@ -50,35 +38,16 @@ tmp/
 *.bak
 *.backup
 
-# Environment configuration (customize as needed)
+# Environment configuration
 .env
-/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.libraries.microba-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.performanceTesting.vcs-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.platform.vcs.impl-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledModule-intellij.platform.vcs.log.impl-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.copyright-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.java-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.modules.json-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.platform.images-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.properties-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.jetbrains.performancePlugin-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.jetbrains.sh-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.intellij.intelliLang-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.intellij.plugins.markdown-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.jetbrains.plugins.terminal-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.jetbrains.plugins.yaml-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-org.toml.lang-IC-243.23654.189.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-tanvd.grazi-IC-243.23654.189.xml
-/.intellijPlatform/self-update.lock
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.copyright-IC-232.9559.62.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.copyright-IC-241.14494.240.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.java-IC-232.9559.62.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.java-IC-241.14494.240.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.platform.images-IC-232.9559.62.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.intellij.platform.images-IC-241.14494.240.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.jetbrains.performancePlugin-IC-232.9559.62.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-com.jetbrains.performancePlugin-IC-241.14494.240.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-Git4Idea-IC-232.9559.62.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-Git4Idea-IC-241.14494.240.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-training-IC-232.9559.62.xml
-/.intellijPlatform/localPlatformArtifacts/bundledPlugin-training-IC-241.14494.240.xml
+
+# IntelliJ Platform local platform artifacts
+.intelliJPlatform/localPlatformArtifacts/
+.intelliJPlatform/self-update.lock
+
+# Kotlin specific files
+*.kotlin_metadata
+
+# Miscellaneous
+*.lock
+/.idea/

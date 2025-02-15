@@ -1,21 +1,3 @@
-# CI/CD Workflow: Build, Test, Publish & Enhance Repository UI
-#
-# This workflow automates:
-#  - Building, testing, and packaging the plugin.
-#  - Publishing a release when the repository owner pushes directly to main,
-#    either via an auto-generated release tag or a manually pushed tag.
-#  - Enhancing the repository UI by updating topics and description.
-#  - Posting a release announcement as a comment.
-#
-# It runs on:
-#  - Pull requests targeting main.
-#  - Pushes to main (build only) or with a valid tag.
-#  - Manual triggering via workflow_dispatch for flexible release management.
-#
-# Note:
-#  - When the repo owner pushes directly to main, an auto-release tag is created.
-#  - UI update and announcement steps use continue-on-error so failures there don’t fail the overall pipeline.
-
 name: "Build, Test, Publish & Enhance Repository UI"
 
 on:

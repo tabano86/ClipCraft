@@ -10,6 +10,7 @@ import java.nio.file.Paths
 
 object IgnoreUtil {
     private val logger = Logger.getInstance(IgnoreUtil::class.java)
+
     private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
         if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
     }
@@ -28,13 +29,15 @@ object IgnoreUtil {
         if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
         var rel = toRelative(file.absolutePath, projectBase).replace('\\', '/').removePrefix("/")
+
         val patterns = gatherAllPatterns(opts)
         var ignored = false
         for (p in patterns) {
             if (p.isBlank()) continue
             val neg = p.startsWith("!")
-            val pattern = p.removePrefix("!").removePrefix("/")
-                .let { if (it.endsWith("/") && !it.endsWith("/**")) "$it**" else it }
+            val pattern = p.removePrefix("!").removePrefix("/").let {
+                if (it.endsWith("/") && !it.endsWith("/**")) "$it**" else it
+            }
             if (globToRegex(pattern).matches(rel)) ignored = !neg
         }
         return if (opts.invertIgnorePatterns) !ignored else ignored
@@ -50,8 +53,7 @@ object IgnoreUtil {
     }
 
     private fun gatherAllPatterns(opts: ClipCraftOptions): List<String> {
-        val addl =
-            opts.additionalIgnorePatterns?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        val addl = opts.additionalIgnorePatterns?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
         return (opts.ignorePatterns + addl).filter { it.isNotBlank() }
     }
 
@@ -73,9 +75,12 @@ object IgnoreUtil {
         val file = p.toFile()
         if (!file.exists() || !file.isFile) return
         try {
-            file.readLines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }.forEach {
-                if (it !in opts.ignorePatterns) opts.ignorePatterns.add(it)
-            }
+            file.readLines()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("#") }
+                .forEach {
+                    if (it !in opts.ignorePatterns) opts.ignorePatterns.add(it)
+                }
         } catch (e: IOException) {
             logger.warn("Error reading ${file.absolutePath}", e)
         }

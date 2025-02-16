@@ -1,12 +1,14 @@
 Contributing to ClipCraft
 =========================
 
-Thank you for your interest in contributing to ClipCraft! We appreciate your help in making this project better. Please review the guidelines below before submitting your contributions.
+Thank you for your interest in contributing to ClipCraft! We appreciate your help in making this project better. Please
+review the guidelines below before submitting your contributions.
 
 * * *
 
 Table of Contents
 -----------------
+
 * [Code of Conduct](#code-of-conduct)
 * [Business Source License 1.1](#business-source-license-11)
 * [How to Contribute](#how-to-contribute)
@@ -25,13 +27,16 @@ Table of Contents
 
 Code of Conduct
 ---------------
-Please take a moment to read our [Code of Conduct](CODE_OF_CONDUCT.md). We strive to create a welcoming and supportive community for everyone. By contributing, you agree to abide by these guidelines.
+Please take a moment to read our [Code of Conduct](CODE_OF_CONDUCT.md). We strive to create a welcoming and supportive
+community for everyone. By contributing, you agree to abide by these guidelines.
 
 * * *
 
 Business Source License 1.1
 ---------------------------
-ClipCraft is released under the Business Source License 1.1. This license governs how the source code can be used and modified. Before contributing, please review the license details in the [LICENSE](../LICENSE) file. By submitting a contribution, you agree that your changes will be licensed under the Business Source License 1.1.
+ClipCraft is released under the Business Source License 1.1. This license governs how the source code can be used and
+modified. Before contributing, please review the license details in the [LICENSE](../LICENSE) file. By submitting a
+contribution, you agree that your changes will be licensed under the Business Source License 1.1.
 
 * * *
 
@@ -39,10 +44,14 @@ How to Contribute
 -----------------
 
 ### Reporting Issues
-If you encounter a bug or have a feature request, please check our [issue tracker](https://github.com/clipcraft/clipcraft/issues).
+
+If you encounter a bug or have a feature request, please check
+our [issue tracker](https://github.com/clipcraft/clipcraft/issues).
 
 ### Suggesting Enhancements
-For ideas or suggestions on how to improve ClipCraft, feel free to open an issue or join the discussion in our community channels. Your input is valuable and helps shape the future of the project.
+
+For ideas or suggestions on how to improve ClipCraft, feel free to open an issue or join the discussion in our community
+channels. Your input is valuable and helps shape the future of the project.
 
 ### Submitting Pull Requests
 
@@ -107,6 +116,7 @@ Development Guidelines
   All contributions should be merged via pull requests targeting the main branch.
 
 ### Code Style
+
 - Follow Kotlin coding conventions.
 - Format your code with Spotless:
   ```bash
@@ -115,6 +125,7 @@ Development Guidelines
 - Ensure that your code adheres to the style rules defined in the project.
 
 ### Testing
+
 - Add tests for every new feature or bug fix.
 - Run tests locally with:
   ```bash
@@ -123,15 +134,19 @@ Development Guidelines
 - Follow the existing testing conventions.
 
 ### Commit Messages
+
 We follow Conventional Commits for clear and consistent commit messages.
 
 ### Review Process
-Your pull request will be reviewed by one or more maintainers. Feedback may be provided, and you might be asked to make changes before merging. We appreciate your responsiveness during this process.
+
+Your pull request will be reviewed by one or more maintainers. Feedback may be provided, and you might be asked to make
+changes before merging. We appreciate your responsiveness during this process.
 
 * * *
 
 Questions and Feedback
 -----------------------
-If you have any questions, need clarification, or would like to provide feedback, please open an issue or reach out through our community channels. Your contributions help improve ClipCraft for everyone.
+If you have any questions, need clarification, or would like to provide feedback, please open an issue or reach out
+through our community channels. Your contributions help improve ClipCraft for everyone.
 
 Thank you for contributing to ClipCraft!

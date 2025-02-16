@@ -1,6 +1,8 @@
 # ClipCraft
 
-ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code snippets quickly—across multiple files or directories. It supports concurrency (thread pools or coroutines), GPT integration stubs, a snippet queue, chunking, ignoring files/folders (including `.gitignore`), and a live preview in settings.
+ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code snippets quickly—across multiple files or
+directories. It supports concurrency (thread pools or coroutines), GPT integration stubs, a snippet queue, chunking,
+ignoring files/folders (including `.gitignore`), and a live preview in settings.
 
 <p style="display: flex; justify-content: center;">
   <img src="src/main/resources/icons/clipcraft_32.svg" alt="ClipCraft Logo" width="150"/>
@@ -18,13 +20,16 @@ ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code sn
   Automatic `.gitignore` usage, plus custom ignore patterns or folder-level ignoring.
 
 - **GPT Integration (Stubs)**
-  Send snippet text plus a prompt to a GPT-based service (mocked for demonstration). Great for code explanation or quick generation.
+  Send snippet text plus a prompt to a GPT-based service (mocked for demonstration). Great for code explanation or quick
+  generation.
 
 - **User-Friendly UI**
-  A dedicated settings page with chunk/overlap preview, plus a snippet queue window, wizard for initial setup, and multiple actions in the context menus.
+  A dedicated settings page with chunk/overlap preview, plus a snippet queue window, wizard for initial setup, and
+  multiple actions in the context menus.
 
 - **Additional Goodies**
-  Pre-commit Git hooks (for Conventional Commits) set up by default, code style checks, Detekt for static analysis, and Spotless for code formatting.
+  Pre-commit Git hooks (for Conventional Commits) set up by default, code style checks, Detekt for static analysis, and
+  Spotless for code formatting.
 
 ## Quick Start
 
@@ -63,7 +68,8 @@ ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code sn
 
 ## Contributing
 
-We welcome pull requests and suggestions. Please see [Contributing.md](./docs/Contributing.md) for details on how to contribute, run tests, or share ideas.
+We welcome pull requests and suggestions. Please see [Contributing.md](./docs/Contributing.md) for details on how to
+contribute, run tests, or share ideas.
 
 ## License
 

@@ -13,9 +13,11 @@ class ClipCraftProjectProfileManager(val project: Project) {
         profiles[profile.profileName] = profile
         if (activeProfile == null) activeProfile = profile
     }
+
     fun switchActiveProfile(name: String) {
         activeProfile = profiles[name]
     }
+
     fun getActiveProfile(): ClipCraftProfile? = activeProfile
     fun listProfiles(): List<ClipCraftProfile> = profiles.values.toList()
 }

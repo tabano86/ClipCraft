@@ -11,8 +11,8 @@ fun matchesGlob(glob: String, filePath: String): Boolean {
             standardGlobToRegex(glob).matches(baseName)
         }
     } else {
-        // Remove both forward and backslashes so that the directory structure is ignored.
-        val flattenedPath = filePath.replace("[/\\\\]".toRegex(), "")
+        // Remove both forward and backslashes so that directory structure is ignored.
+        val flattenedPath = filePath.replace(Regex("[/\\\\]"), "")
         val fuzzyPattern = glob.toCharArray().joinToString(".*") { Regex.escape(it.toString()) }
         Regex("^$fuzzyPattern\$").matches(flattenedPath)
     }
@@ -33,11 +33,13 @@ fun standardGlobToRegex(glob: String, options: GlobOptions = GlobOptions()): Reg
             } else {
                 sb.append("\\{")
             }
+
             '}' -> if (extended) {
                 inGroup = false; sb.append(')')
             } else {
                 sb.append("\\}")
             }
+
             ',' -> if (inGroup) sb.append('|') else sb.append("\\,")
             '*' -> {
                 var starCount = 1
@@ -46,6 +48,7 @@ fun standardGlobToRegex(glob: String, options: GlobOptions = GlobOptions()): Reg
                 }
                 if (!globstar) sb.append(".*") else sb.append("([^/]*)")
             }
+
             else -> sb.append(c)
         }
         i++

@@ -112,7 +112,8 @@ fun main() {
             add(Box.createVerticalStrut(JBUI.scale(12)))
             add(panelAdditionalOptions())
             val codeStyleLink = LinkLabel.create("Open Code Style Settings") {
-                ShowSettingsUtil.getInstance().showSettingsDialog(ProjectManager.getInstance().defaultProject, "Editor | Code Style")
+                ShowSettingsUtil.getInstance()
+                    .showSettingsDialog(ProjectManager.getInstance().defaultProject, "Editor | Code Style")
             }
             add(Box.createVerticalStrut(JBUI.scale(12)))
             add(codeStyleLink)
@@ -184,11 +185,16 @@ fun main() {
     }
 
     private fun panelFormatting(): JPanel {
-        lineNumbersCheck = JCheckBox("Line Numbers", options.includeLineNumbers).apply { addActionListener { updatePreview() } }
-        removeImportsCheck = JCheckBox("Remove Imports", options.removeImports).apply { addActionListener { updatePreview() } }
-        removeCommentsCheck = JCheckBox("Remove Comments", options.removeComments).apply { addActionListener { updatePreview() } }
-        trimWhitespaceCheck = JCheckBox("Trim Whitespace", options.trimWhitespace).apply { addActionListener { updatePreview() } }
-        removeEmptyLinesCheck = JCheckBox("Remove Empty Lines", options.removeEmptyLines).apply { addActionListener { updatePreview() } }
+        lineNumbersCheck =
+            JCheckBox("Line Numbers", options.includeLineNumbers).apply { addActionListener { updatePreview() } }
+        removeImportsCheck =
+            JCheckBox("Remove Imports", options.removeImports).apply { addActionListener { updatePreview() } }
+        removeCommentsCheck =
+            JCheckBox("Remove Comments", options.removeComments).apply { addActionListener { updatePreview() } }
+        trimWhitespaceCheck =
+            JCheckBox("Trim Whitespace", options.trimWhitespace).apply { addActionListener { updatePreview() } }
+        removeEmptyLinesCheck =
+            JCheckBox("Remove Empty Lines", options.removeEmptyLines).apply { addActionListener { updatePreview() } }
         singleLineOutputCheck = JCheckBox("Single-line Output", options.singleLineOutput).apply {
             addActionListener {
                 updatePreview()
@@ -213,7 +219,8 @@ fun main() {
                 updateChunkUI()
             }
         }
-        chunkSizeField = JBTextField(options.chunkSize.toString(), 6).apply { document.addDocumentListener(docListener) }
+        chunkSizeField =
+            JBTextField(options.chunkSize.toString(), 6).apply { document.addDocumentListener(docListener) }
         overlapCombo = JComboBox(OverlapStrategy.entries.toTypedArray()).apply {
             selectedItem = options.overlapStrategy
             addActionListener { updatePreview() }
@@ -233,9 +240,13 @@ fun main() {
     }
 
     private fun panelMetadata(): JPanel {
-        metadataCheck = JCheckBox("Include Metadata", options.includeMetadata).apply { addActionListener { updatePreview() } }
+        metadataCheck =
+            JCheckBox("Include Metadata", options.includeMetadata).apply { addActionListener { updatePreview() } }
         gitInfoCheck = JCheckBox("Git Info", options.includeGitInfo).apply { addActionListener { updatePreview() } }
-        autoLangCheck = JCheckBox("Auto-Detect Language", options.autoDetectLanguage).apply { addActionListener { updatePreview() } }
+        autoLangCheck = JCheckBox(
+            "Auto-Detect Language",
+            options.autoDetectLanguage,
+        ).apply { addActionListener { updatePreview() } }
         themeCombo = JComboBox(ThemeMode.entries.toTypedArray()).apply {
             selectedItem = options.themeMode
             addActionListener { updatePreview() }
@@ -253,7 +264,8 @@ fun main() {
             selectedItem = options.concurrencyMode
             addActionListener { updateConcurrency() }
         }
-        maxTasksField = JBTextField(options.maxConcurrentTasks.toString(), 4).apply { document.addDocumentListener(docListener) }
+        maxTasksField =
+            JBTextField(options.maxConcurrentTasks.toString(), 4).apply { document.addDocumentListener(docListener) }
         return FormBuilder.createFormBuilder()
             .addLabeledComponent("Concurrency Mode:", concurrencyCombo, 1, false)
             .addLabeledComponent("Max Tasks:", maxTasksField, 1, false)
@@ -261,10 +273,18 @@ fun main() {
     }
 
     private fun panelIgnore(): JPanel {
-        gitIgnoreCheck = JCheckBox("Use .gitignore", options.useGitIgnore).apply { addActionListener { updatePreview() } }
-        additionalIgnoresField = JBTextField(options.additionalIgnorePatterns.orEmpty(), 15).apply { document.addDocumentListener(docListener) }
-        invertIgnoresCheck = JCheckBox("Invert Patterns", options.invertIgnorePatterns).apply { addActionListener { updatePreview() } }
-        directoryPatternCheck = JCheckBox("Directory Matching", options.enableDirectoryPatternMatching).apply { addActionListener { updatePreview() } }
+        gitIgnoreCheck =
+            JCheckBox("Use .gitignore", options.useGitIgnore).apply { addActionListener { updatePreview() } }
+        additionalIgnoresField = JBTextField(
+            options.additionalIgnorePatterns.orEmpty(),
+            15,
+        ).apply { document.addDocumentListener(docListener) }
+        invertIgnoresCheck =
+            JCheckBox("Invert Patterns", options.invertIgnorePatterns).apply { addActionListener { updatePreview() } }
+        directoryPatternCheck = JCheckBox(
+            "Directory Matching",
+            options.enableDirectoryPatternMatching,
+        ).apply { addActionListener { updatePreview() } }
         return FormBuilder.createFormBuilder()
             .addComponent(gitIgnoreCheck)
             .addLabeledComponent("Additional Ignore Patterns:", additionalIgnoresField, 1, false)
@@ -274,8 +294,10 @@ fun main() {
     }
 
     private fun panelBinary(): JPanel {
-        detectBinaryCheck = JCheckBox("Detect Binary Files", options.detectBinary).apply { addActionListener { updatePreview() } }
-        binaryThresholdField = JBTextField(options.binaryCheckThreshold.toString(), 5).apply { document.addDocumentListener(docListener) }
+        detectBinaryCheck =
+            JCheckBox("Detect Binary Files", options.detectBinary).apply { addActionListener { updatePreview() } }
+        binaryThresholdField =
+            JBTextField(options.binaryCheckThreshold.toString(), 5).apply { document.addDocumentListener(docListener) }
         return FormBuilder.createFormBuilder()
             .addComponent(detectBinaryCheck)
             .addLabeledComponent("Binary Check Threshold:", binaryThresholdField, 1, false)
@@ -464,7 +486,8 @@ fun main() {
     }
 
     private fun updateChunkUI() {
-        val active = !singleLineOutputCheck.isSelected && (chunkStrategyCombo.selectedItem as ChunkStrategy) != ChunkStrategy.NONE
+        val active =
+            !singleLineOutputCheck.isSelected && (chunkStrategyCombo.selectedItem as ChunkStrategy) != ChunkStrategy.NONE
         chunkSizeField.isEnabled = active && (chunkStrategyCombo.selectedItem == ChunkStrategy.BY_SIZE)
         overlapCombo.isEnabled = active
         compressionCombo.isEnabled = true

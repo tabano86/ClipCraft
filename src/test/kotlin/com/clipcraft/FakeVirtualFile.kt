@@ -18,6 +18,7 @@ open class FakeVirtualFile(
     override fun getChildren() = emptyArray<VirtualFile>()
     override fun getOutputStream(requestor: Any?, newModificationStamp: Long, newTimeStamp: Long) =
         throw UnsupportedOperationException()
+
     override fun contentsToByteArray() = fileContent.toByteArray(Charsets.UTF_8)
     override fun getTimeStamp() = 0L
     override fun getLength() = fileContent.length.toLong()

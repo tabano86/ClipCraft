@@ -13,15 +13,21 @@ object FakeVirtualFileSystem : VirtualFileSystem() {
     override fun removeVirtualFileListener(listener: VirtualFileListener) {}
     override fun deleteFile(requestor: Any?, vFile: VirtualFile) =
         throw UnsupportedOperationException()
+
     override fun moveFile(requestor: Any?, vFile: VirtualFile, newParent: VirtualFile) =
         throw UnsupportedOperationException()
+
     override fun renameFile(requestor: Any?, vFile: VirtualFile, newName: String) =
         throw UnsupportedOperationException()
+
     override fun createChildFile(requestor: Any?, vDir: VirtualFile, fileName: String) =
         throw UnsupportedOperationException()
+
     override fun createChildDirectory(requestor: Any?, vDir: VirtualFile, dirName: String) =
         throw UnsupportedOperationException()
+
     override fun copyFile(requestor: Any?, virtualFile: VirtualFile, newParent: VirtualFile, copyName: String) =
         throw UnsupportedOperationException()
+
     override fun isReadOnly() = true
 }

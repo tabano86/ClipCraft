@@ -67,6 +67,7 @@ object CodeFormatter {
             "python" -> text.lines().filterNot {
                 it.trim().startsWith("import ") || it.trim().startsWith("from ")
             }.joinToString("\n")
+
             else -> text.lines().filterNot {
                 it.trim().lowercase().startsWith("import ")
             }.joinToString("\n")
@@ -101,6 +102,7 @@ object CodeFormatter {
             CompressionMode.MINIMAL -> input.lines().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
+
             CompressionMode.ULTRA -> input.lines().map { line ->
                 line.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
             }.filter {

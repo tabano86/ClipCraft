@@ -94,7 +94,10 @@ detekt {
 jacoco {
     toolVersion = "0.8.12"
 }
-
+tasks.patchPluginXml {
+    sinceBuild.set("241.*")
+    untilBuild.set("299.*")
+}
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2024.1")

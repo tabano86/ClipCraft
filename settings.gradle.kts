@@ -2,7 +2,6 @@ plugins {
     id("org.danilopianini.gradle-pre-commit-git-hooks") version "2.0.20"
 }
 
-// Only configure Git hooks if not running in a CI/CD environment.
 if (System.getenv("CI") == null) {
     gitHooks {
         preCommit {
@@ -22,7 +21,10 @@ if (System.getenv("CI") == null) {
             }
         }
         commitMsg {
-            conventionalCommits { }
+            conventionalCommits {
+                // Enable full conventional commit types: fix, feat, build, chore, ci, docs, perf, refactor, revert, style, test.
+                defaultTypes()
+            }
         }
         createHooks(overwriteExisting = true)
     }

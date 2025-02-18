@@ -3,7 +3,8 @@
 *.iws
 *.iml
 *.ipr
-.idea_modules/
+/.idea_modules/
+/.intellijPlatform/
 
 # Exclude workspace configuration and local settings (do not share)
 # User-specific temporary files
@@ -42,12 +43,9 @@ tmp/
 .env
 
 # IntelliJ Platform local platform artifacts
-.intelliJPlatform/localPlatformArtifacts/
-.intelliJPlatform/self-update.lock
 
 # Kotlin specific files
 *.kotlin_metadata
 
 # Miscellaneous
 *.lock
-/.idea/

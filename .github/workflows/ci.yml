@@ -1,24 +1,15 @@
 name: "Build, Test, Publish & Enhance Repository UI"
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
     tags:
       - "v*"
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
-    inputs:
-      release_only:
-        description: "Run only the release job (skip build and extras)"
-        required: false
-        default: "false"
-      skip_extras:
-        description: "Skip UI update and release announcement steps"
-        required: false
-        default: "false"
 
 permissions:
   contents: write
@@ -26,8 +17,8 @@ permissions:
   id-token: write
 
 jobs:
-  build:
-    if: github.event_name != 'workflow_dispatch' || (github.event_name == 'workflow_dispatch' && github.event.inputs.release_only != 'true')
+  test-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Repository (Full History)"
@@ -35,11 +26,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "Set up JDK 23"
+      - name: "Set up JDK"
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 23
+          java-version: 17
 
       - name: "Ensure gradlew is Executable"
         run: chmod +x ./gradlew
@@ -53,15 +44,14 @@ jobs:
             .gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
 
-      - name: "Run Dependency Updates Check"
+      - name: "Run Dependency Updates"
         run: ./gradlew dependencyUpdates --no-daemon --stacktrace --parallel
 
-      - name: "Run Quality Checks, Tests, and Build Plugin"
-        run: ./gradlew clean test buildPlugin patchPluginXml spotlessCheck detekt jacocoTestReport --no-daemon --stacktrace --parallel
+      - name: "Run Tests, Quality Checks"
+        run: ./gradlew clean test patchPluginXml spotlessCheck detekt jacocoTestReport --no-daemon --stacktrace --parallel
 
       - name: "Publish Test Report"
         if: always()
-        continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
           name: "JUnit Tests"
@@ -73,32 +63,25 @@ jobs:
           fail-on-error: 'true'
           fail-on-empty: 'true'
 
-      - name: "Upload Plugin Artifact"
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugin-distribution
-          path: build/distributions/*.zip
-
   release:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && github.actor == github.repository_owner)))
-    needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: "Checkout Full Repository History"
+      - name: "Checkout Repository (Full History)"
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: "Set up JDK 23"
+      - name: "Set up JDK"
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 23
+          java-version: 17
 
       - name: "Ensure gradlew is Executable"
         run: chmod +x ./gradlew
 
-      - name: "Cache Gradle Dependencies"
+      - name: "Cache Gradle Directories"
         uses: actions/cache@v3
         with:
           path: |
@@ -107,27 +90,14 @@ jobs:
             .gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
 
-      - name: "Configure Git Remote for Authenticated Push"
+      - name: "Configure Git Remote"
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-      - name: "Synchronize Repository with Remote"
-        run: |
-          git fetch --prune --tags
-          git reset --hard origin/main
-
-      - name: "Clean Workspace"
-        run: |
-          git reset --hard
-          git clean -fdx
-
-      - name: "Ensure gradlew is Executable"
-        run: chmod +x ./gradlew
-
-      - name: "Generate Release Tag (for branch push)"
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
+      - name: "Auto-tag if pushing to 'main' without a tag"
+        if: startsWith(github.ref, 'refs/heads/main')
         run: |
           TAG="auto-v$(date +%Y%m%d%H%M%S)-${GITHUB_SHA:0:7}"
           echo "Generated tag: $TAG"
@@ -135,38 +105,33 @@ jobs:
           git push origin "$TAG"
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-      - name: "Set Release Tag"
+      - name: "Set RELEASE_TAG"
         run: |
           if [ -z "${RELEASE_TAG}" ]; then
-            TAG_NAME="${GITHUB_REF#refs/tags/}"
-            echo "Using tag from push event: $TAG_NAME"
-            echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
-          else
-            echo "Using generated tag: ${RELEASE_TAG}"
+            if [[ "${GITHUB_REF}" == "refs/tags/"* ]]; then
+              TAG_NAME="${GITHUB_REF#refs/tags/}"
+              echo "Using existing tag: $TAG_NAME"
+              echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+            else
+              echo "No tag found. Using fallback 'dev-build'"
+              echo "RELEASE_TAG=dev-build" >> $GITHUB_ENV
+            fi
           fi
 
-      - name: "Commit version file changes if any"
+      - name: "Minimal Build (skip tests) & Publish"
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git add -A
-          if ! git diff-index --quiet HEAD; then
-            git commit -m 'chore: update version files pre-release'
-            git push origin main
-          else
-            echo 'No changes to commit'
-          fi
+          ./gradlew clean buildPlugin patchPluginXml --no-daemon --stacktrace --parallel
+          ls -lah build/distributions
 
-      - name: "Publish Plugin with Retry"
-        uses: nick-fields/retry@v3
+      - name: "Upload Plugin Artifact"
+        uses: actions/upload-artifact@v4
         with:
-          max_attempts: 3
-          timeout_minutes: 5
-          command: |
-            bash -c "set -x; \
-            git add -A && (git commit -m 'chore: update version files pre-release' || echo 'No changes to commit') && \
-            git push origin main && \
-            ./gradlew release publishPlugin --no-daemon --stacktrace --parallel"
+          name: plugin-distribution
+          path: build/distributions/*.zip
+
+      - name: "Publish Plugin"
+        run: |
+          ./gradlew publishPlugin --no-daemon --stacktrace
         env:
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
 
@@ -175,22 +140,20 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: "Release ${{ env.RELEASE_TAG }}"
-          body: "New release of the plugin published—enjoy the automated goodness!"
+          body: "Plugin published. Automated release."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-ui:
-    if: (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && github.actor == github.repository_owner))) ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.skip_extras != 'true' && github.event.inputs.release_only != 'true')
+    if: github.event_name != 'pull_request'
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - name: "Update Repository Topics and Description"
-        continue-on-error: true
+      - name: "Update Repo Topics & Description"
         uses: actions/github-script@v6
         with:
           script: |
-            const topics = ['plugin', 'ci', 'automation', 'goodies', 'release'];
+            const topics = ['plugin','ci','automation','release'];
             await github.rest.repos.replaceAllTopics({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -199,22 +162,15 @@ jobs:
             await github.rest.repos.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              description: "Automated Build, Test, Publish & UI Enhancements workflow powered by prebuilt actions."
+              description: "Automated Build, Test, Publish & UI Enhancements workflow."
             });
-
-  post-release-comment:
-    if: (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && github.actor == github.repository_owner))) ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.skip_extras != 'true' && github.event.inputs.release_only != 'true')
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Post Release Announcement Comment"
-        continue-on-error: true
+      - name: "Create or Update Release Announcement"
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: 1
           body: |
-            :tada: A new release [${{ env.RELEASE_TAG }}](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}) has been published!
-            - Build, Test, and Publish workflow executed successfully.
-            - Repository UI has been enhanced with updated topics and description.
+            :tada: A new release [${{ env.RELEASE_TAG }}](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}) is available.
+            - Pushed directly to main or triggered by tag.
+            - Minimal build performed. 
+            - Repository UI updated (topics, description).

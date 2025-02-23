@@ -1,5 +1,6 @@
 package com.clipcraft.util
 
+import com.clipcraft.model.ChunkStrategy
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
@@ -8,19 +9,26 @@ import org.apache.commons.lang3.StringEscapeUtils
 import kotlin.math.min
 
 object CodeFormatter {
+
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
         options.resolveConflicts()
         val merged = snippets.joinToString("\n\n") { formatSingleSnippet(it, options) }.trim()
+
         return when (options.chunkStrategy) {
-            com.clipcraft.model.ChunkStrategy.NONE -> listOf(merged)
-            com.clipcraft.model.ChunkStrategy.BY_SIZE -> chunkBySize(merged, options.chunkSize, true)
-            com.clipcraft.model.ChunkStrategy.BY_METHODS -> chunkByMethods(merged)
+            ChunkStrategy.NONE -> listOf(merged)
+            ChunkStrategy.BY_SIZE -> chunkBySize(merged, options.chunkSize, true)
+            ChunkStrategy.BY_METHODS -> chunkByMethods(merged)
         }
     }
 
-    fun formatSingleSnippet(snippet: Snippet, o: ClipCraftOptions): String {
-        val lang =
-            if (o.autoDetectLanguage && snippet.language.isNullOrBlank()) guessLang(snippet.fileName) else snippet.language
+    private fun formatSingleSnippet(snippet: Snippet, o: ClipCraftOptions): String {
+        // If snippet.language is null or blank, fallback to naive guess
+        val lang = if (!snippet.language.isNullOrBlank()) {
+            snippet.language
+        } else {
+            guessLang(snippet.fileName)
+        }
+
         var content = snippet.content
         if (o.removeImports) content = removeImports(content, lang)
         if (o.removeComments) content = removeComments(content, lang)
@@ -28,7 +36,11 @@ object CodeFormatter {
         if (o.removeEmptyLines) content = collapseConsecutiveBlankLines(content)
         if (o.singleLineOutput) content = singleLineOutput(content)
         content = applyCompression(content, o)
-        if (o.includeLineNumbers) content = addLineNumbers(content)
+
+        if (o.includeLineNumbers) {
+            content = addLineNumbers(content)
+        }
+
         val meta = if (o.includeMetadata) formatMetadata(snippet, content, o) else content
         return wrap(meta, o.outputFormat, lang)
     }
@@ -43,14 +55,15 @@ object CodeFormatter {
     }
 
     private fun formatMetadata(snippet: Snippet, content: String, o: ClipCraftOptions): String {
-        return StringBuilder().apply {
+        return buildString {
             append("**File:** ${snippet.relativePath ?: snippet.fileName} | **Size:** ${snippet.fileSizeBytes} bytes | **Modified:** ${snippet.lastModified}\n\n")
             append(content)
-        }.toString()
+        }
     }
 
+    // Simple extension-based fallback if PSI detection was null:
     fun guessLang(filename: String?): String {
-        val ext = filename?.substringAfterLast('.', "")?.lowercase() ?: return "java"
+        val ext = filename?.substringAfterLast('.', "")?.lowercase() ?: return "none"
         return when (ext) {
             "java" -> "java"
             "kt", "kts" -> "kotlin"
@@ -58,14 +71,18 @@ object CodeFormatter {
             "ts" -> "typescript"
             "py" -> "python"
             "cpp", "cxx", "cc" -> "cpp"
-            else -> "java"
+            "cs" -> "csharp"
+            "html" -> "html"
+            "css" -> "css"
+            else -> "none"
         }
     }
 
     fun removeImports(text: String, lang: String?): String {
         return when (lang?.lowercase()) {
             "python" -> text.lines().filterNot {
-                it.trim().startsWith("import ") || it.trim().startsWith("from ")
+                val trimmed = it.trim()
+                trimmed.startsWith("import ") || trimmed.startsWith("from ")
             }.joinToString("\n")
 
             else -> text.lines().filterNot {
@@ -75,12 +92,11 @@ object CodeFormatter {
     }
 
     fun removeComments(text: String, lang: String?): String {
-        return if (lang?.lowercase()?.contains("python") == true) {
+        return if (lang?.contains("python", ignoreCase = true) == true) {
             text.lines().filterNot { it.trim().startsWith("#") }.joinToString("\n")
         } else {
             val noBlock = text.replace(Regex("(?s)/\\*.*?\\*/"), "")
             noBlock.lines().map { it.replace(Regex("//.*$"), "").trimEnd() }
-                .filter { it.isNotBlank() }
                 .joinToString("\n")
         }
     }
@@ -104,7 +120,10 @@ object CodeFormatter {
             }
 
             CompressionMode.ULTRA -> input.lines().map { line ->
-                line.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
+                line.replace("\uFEFF", "")
+                    .replace("\u200B", "")
+                    .replace(Regex("\\p{C}+"), "")
+                    .trim()
             }.filter {
                 if (!o.selectiveCompression) {
                     it.isNotBlank()
@@ -123,7 +142,7 @@ object CodeFormatter {
             throw IllegalArgumentException("maxChunkSize must be positive")
         }
         if (text.length <= maxChunkSize) return listOf(text)
-        if (!preserveWords) {
+        return if (!preserveWords) {
             val chunks = mutableListOf<String>()
             var index = 0
             while (index < text.length) {
@@ -131,24 +150,25 @@ object CodeFormatter {
                 chunks.add(text.substring(index, end))
                 index = end
             }
-            return chunks
-        }
-        val result = mutableListOf<String>()
-        var idx = 0
-        while (idx < text.length) {
-            var end = min(idx + maxChunkSize, text.length)
-            if (end < text.length) {
-                val lastSpace = text.lastIndexOf(' ', end - 1)
-                if (lastSpace >= idx) end = lastSpace + 1
+            chunks
+        } else {
+            val result = mutableListOf<String>()
+            var idx = 0
+            while (idx < text.length) {
+                var end = min(idx + maxChunkSize, text.length)
+                if (end < text.length) {
+                    val lastSpace = text.lastIndexOf(' ', end - 1)
+                    if (lastSpace >= idx) end = lastSpace + 1
+                }
+                result.add(text.substring(idx, end))
+                idx = end
             }
-            result.add(text.substring(idx, end))
-            idx = end
+            result
         }
-        return result
     }
 
     fun chunkByMethods(text: String): List<String> {
-        val parts = text.split(Regex("(?m)(?=^\\s*(fun |public |private |def ))"))
+        val parts = text.split(Regex("(?m)(?=^\\s*(fun |public |private |def |class ))"))
         return if (parts.size <= 1) listOf(text) else parts.filter { it.isNotBlank() }
     }
 }

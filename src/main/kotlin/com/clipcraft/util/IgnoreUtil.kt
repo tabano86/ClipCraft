@@ -12,7 +12,9 @@ object IgnoreUtil {
     private val logger = Logger.getInstance(IgnoreUtil::class.java)
 
     private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
-        if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
+        if (opts.useGitIgnore) {
+            loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
+        }
     }
 
     fun mergeGitIgnoreRules(opts: ClipCraftOptions, project: Project) {
@@ -24,12 +26,17 @@ object IgnoreUtil {
     }
 
     fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
+        // No longer skipping automatically if file.name starts with a dot:
         parseGitIgnoreIfNeeded(opts, projectBase)
-        if (file.name.startsWith(".")) return true
+
+        // If a user wants to skip hidden files/folders, consider a separate option. Removed for now.
+
         if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
-        var rel = toRelative(file.absolutePath, projectBase).replace('\\', '/').removePrefix("/")
+
+        val rel = toRelative(file.absolutePath, projectBase).replace('\\', '/').removePrefix("/")
         val patterns = gatherAllPatterns(opts)
+
         var ignored = false
         for (p in patterns) {
             if (p.isBlank()) continue
@@ -37,7 +44,9 @@ object IgnoreUtil {
             val pattern = p.removePrefix("!").removePrefix("/").let {
                 if (it.endsWith("/") && !it.endsWith("/**")) "$it**" else it
             }
-            if (standardGlobToRegex(pattern).matches(rel)) ignored = !neg
+            if (standardGlobToRegex(pattern).matches(rel)) {
+                ignored = !neg
+            }
         }
         return if (opts.invertIgnorePatterns) !ignored else ignored
     }
@@ -52,8 +61,11 @@ object IgnoreUtil {
     }
 
     private fun gatherAllPatterns(opts: ClipCraftOptions): List<String> {
-        val addl =
-            opts.additionalIgnorePatterns?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        val addl = opts.additionalIgnorePatterns
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList()
         return (opts.ignorePatterns + addl).filter { it.isNotBlank() }
     }
 
@@ -79,7 +91,9 @@ object IgnoreUtil {
                 .map { it.trim() }
                 .filter { it.isNotEmpty() && !it.startsWith("#") }
                 .forEach {
-                    if (it !in opts.ignorePatterns) opts.ignorePatterns.add(it)
+                    if (it !in opts.ignorePatterns) {
+                        opts.ignorePatterns.add(it)
+                    }
                 }
         } catch (e: IOException) {
             logger.warn("Error reading ${file.absolutePath}", e)

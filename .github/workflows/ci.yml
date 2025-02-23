@@ -15,6 +15,7 @@ permissions:
   contents: write
   checks: write
   id-token: write
+  administration: write
 
 jobs:
   test-pr:

@@ -95,7 +95,7 @@ jacoco {
     toolVersion = "0.8.12"
 }
 tasks.patchPluginXml {
-    sinceBuild.set("241.*")
+    sinceBuild.set("239.*")
     untilBuild.set("299.*")
 }
 dependencies {

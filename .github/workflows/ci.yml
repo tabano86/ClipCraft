@@ -15,7 +15,6 @@ permissions:
   contents: write
   checks: write
   id-token: write
-  metadata: write
 
 jobs:
   test-pr:
@@ -150,8 +149,10 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - name: "Update Repo Topics & Description"
+      - name: "Update Repository Topics and Description"
         uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const topics = ['plugin','ci','automation','release'];
@@ -163,7 +164,7 @@ jobs:
             await github.rest.repos.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              description: "Automated Build, Test, Publish & UI Enhancements workflow."
+              description: "Automated Build, Test, Publish & UI Enhancements workflow powered by prebuilt actions."
             });
       - name: "Create or Update Release Announcement"
         uses: peter-evans/create-or-update-comment@v3

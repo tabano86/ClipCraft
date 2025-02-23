@@ -2,7 +2,6 @@ package com.clipcraft.util
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
-import java.util.stream.Stream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.util.stream.Stream
 
 class CodeFormatterTest {
 
@@ -36,7 +36,9 @@ class CodeFormatterTest {
         val content = "Line one. Line two is a bit longer. Line three."
         val maxChunkSize = 25
         val chunks = CodeFormatter.chunkBySize(content, maxChunkSize, preserveWords = false)
-        chunks.forEach { assertTrue(it.length <= maxChunkSize, "Chunk exceeds max size: \"$it\"") }
+        chunks.forEach {
+            assertTrue(it.length <= maxChunkSize, "Chunk exceeds max size: \"$it\"")
+        }
         val reassembled = chunks.joinToString("") { it }
         assertEquals(content, reassembled)
     }
@@ -49,28 +51,28 @@ class CodeFormatterTest {
     }
 
     @Test
-    fun `addLineNumbers prefixes each line with line number`() {
+    fun `lineNumbers prefixes each line with line number`() {
         val input = "line1\nline2\nline3"
         val expected = "1: line1\n2: line2\n3: line3"
-        val result = CodeFormatter.addLineNumbers(input)
+        val result = CodeFormatter.lineNumbers(input)
         assertEquals(expected, result)
     }
 
     @Test
-    fun `collapseConsecutiveBlankLines collapses multiple blank lines into one`() {
+    fun `collapseEmpty collapses multiple blank lines into one`() {
         val input = "line1\n\n\n\nline2\n\nline3\n\n\n"
         val expected = "line1\n\nline2\n\nline3"
-        val result = CodeFormatter.collapseConsecutiveBlankLines(input)
+        val result = CodeFormatter.collapseEmpty(input)
         assertEquals(expected, result)
     }
 
-//    @Test
-//    fun `removeComments for Java removes block and line comments`() {
-//        val input = "int a = 5;\n// comment line\nint b = 6; /* block comment */\nint c = 7;"
-//        val expected = "int a = 5;\nint b = 6;\nint c = 7;"
-//        val result = CodeFormatter.removeComments(input, "java")
-//        assertEquals(expected, result)
-//    }
+    @Test
+    fun `removeComments for Java removes block and line comments`() {
+        val input = "int a = 5;\n// comment line\nint b = 6; /* block comment */\nint c = 7;"
+        val expected = "int a = 5;\nint b = 6;\nint c = 7;"
+        val result = CodeFormatter.removeComments(input, "java")
+        assertEquals(expected, result)
+    }
 
     @Test
     fun `removeComments for Python removes hash comments`() {
@@ -98,31 +100,31 @@ class CodeFormatterTest {
     }
 
     @Test
-    fun `applyCompression returns original text for NONE mode`() {
+    fun `compress returns original text for NONE mode`() {
         val input = "Some   text with   extra spaces"
-        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.NONE))
+        val result = CodeFormatter.compress(input, createOpts(CompressionMode.NONE))
         assertEquals(input, result)
     }
 
     @Test
-    fun `applyCompression minimizes whitespace for MINIMAL mode`() {
+    fun `compress minimizes whitespace for MINIMAL mode`() {
         val input = "a  b\t\tc\u200B\u200Bd"
-        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.MINIMAL))
+        val result = CodeFormatter.compress(input, createOpts(CompressionMode.MINIMAL))
         assertEquals("a b c d", result)
     }
 
     @Test
-    fun `applyCompression ultra mode without selective compression compresses newlines and spaces`() {
+    fun `compress ultra mode without selective compression compresses newlines and spaces`() {
         val input = "Line    with  spaces\n\n\nAnother    line"
-        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.ULTRA, false))
+        val result = CodeFormatter.compress(input, createOpts(CompressionMode.ULTRA, false))
         val expected = "Line with spaces Another line"
         assertEquals(expected, result)
     }
 
     @Test
-    fun `applyCompression ultra mode with selective compression filters out lines containing TODO`() {
+    fun `compress ultra mode with selective compression filters out lines containing TODO`() {
         val input = "Line    with  spaces\nTODO:   something\n\n\nAnother    line"
-        val result = CodeFormatter.applyCompression(input, createOpts(CompressionMode.ULTRA, true))
+        val result = CodeFormatter.compress(input, createOpts(CompressionMode.ULTRA, true))
         val expected = "Line with spaces Another line"
         assertEquals(expected, result)
     }

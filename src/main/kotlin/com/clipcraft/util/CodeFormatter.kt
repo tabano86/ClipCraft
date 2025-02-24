@@ -68,16 +68,19 @@ object CodeFormatter {
                     val t = it.trim().lowercase()
                     t.startsWith("import ") || t.startsWith("from ")
                 }
+
             lang?.contains("ruby", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("require ") || t.startsWith("load ")
                 }
+
             lang?.contains("php", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("use ") || t.startsWith("require ")
                 }
+
             else ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
@@ -90,12 +93,14 @@ object CodeFormatter {
         return when {
             lang?.contains("python", true) == true || lang.equals("ruby", true) ->
                 text.lines().filterNot { it.trim().startsWith("#") }.joinToString("\n")
+
             lang.equals("php", true) ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
                     .lines()
                     .map { it.replace(Regex("//.*$"), "").replace(Regex("#.*$"), "").trimEnd() }
                     .filter { it.isNotBlank() }
                     .joinToString("\n")
+
             else ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
                     .lines()
@@ -123,6 +128,7 @@ object CodeFormatter {
             CompressionMode.MINIMAL -> input.lines().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
+
             CompressionMode.ULTRA -> input.lines().map {
                 it.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
             }.filter {

@@ -5,25 +5,26 @@
     <vendor email="support@clipcraft.io" url="https://github.com/clipcraft">ClipCraft Inc.</vendor>
 
     <description><![CDATA[
-    ClipCraft extracts, formats, merges code from multiple files or directories...
+    ClipCraft extracts, formats, merges code from multiple files or directories.
+    Respects .gitignore (if enabled), chunking, concurrency, compression, custom snippet metadata, etc.
   ]]></description>
 
     <change-notes><![CDATA[
-    - Removed release-version in plugin.xml
-    - Adjusted since-build to 241
+    - Restored .gitignore respect in settings
+    - Improved concurrency and ignoring images
+    - Added scrolling to settings UI
+    - Fixed mismatch between 'files copied' vs. actual included
   ]]></change-notes>
 
-    <!-- For IntelliJ 2024.1, do: -->
+    <!-- For IntelliJ 2024.1 -->
     <idea-version since-build="241" until-build="241.*"/>
 
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="ClipCraft Notifications" displayType="BALLOON"/>
+        <!-- Possibly your toolWindow or searchContributor elements here -->
 
-        <!-- optional toolWindow or searching can remain here -->
-
-        <!-- Settings UI -->
         <applicationConfigurable
                 displayName="ClipCraft"
                 instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
@@ -31,16 +32,17 @@
     </extensions>
 
     <actions>
+        <!-- 'ClipCraft Copy' direct action -->
         <action
                 id="ClipCraftCopyAction"
                 class="com.clipcraft.actions.ClipCraftAction"
                 text="ClipCraft Copy"
-                description="Copies, formats, merges code from selected files">
-            icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
+                description="Copies, formats, merges code from selected files"
+                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
             <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
         </action>
 
-        <!-- A submenu with additional ClipCraft actions -->
+        <!-- Submenu with additional ClipCraft actions -->
         <group
                 id="ClipCraft.Submenu"
                 text="ClipCraft Toolbox"

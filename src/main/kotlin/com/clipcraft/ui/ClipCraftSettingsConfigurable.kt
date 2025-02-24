@@ -9,27 +9,35 @@ import com.clipcraft.services.ClipCraftSettingsState
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.SearchableConfigurable
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
+import java.awt.Dimension
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
 import javax.swing.JComponent
+import javax.swing.JPanel
 
+/**
+ * Our advanced settings UI, but we also add a scrollbar or multi-column approach.
+ */
 class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScroll {
 
     private val globalState = ClipCraftSettingsState.getInstance()
     private val advancedOptions = globalState.advancedOptions
 
     private var modified = false
+    private lateinit var mainPanel: JPanel
 
     override fun getId(): String = "clipcraft.settings"
     override fun getDisplayName(): String = "ClipCraft"
 
     override fun createComponent(): JComponent {
-        return panel {
+        // Build the form using UI DSL
+        val formPanel = panel {
             group("Global Copy Settings") {
                 row("Max Copy Characters:") {
-                    val textField = textField()
+                    textField()
                         .columns(10)
                         .applyToComponent {
                             text = globalState.maxCopyCharacters.toString()
@@ -43,13 +51,12 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                                 }
                             })
                         }
-                    textField.comment("If output exceeds this limit, user will be asked to confirm.")
                 }
             }
 
             group("Concurrency") {
                 row("Concurrency Mode:") {
-                    comboBox(ConcurrencyMode.values().toList())
+                    comboBox(ConcurrencyMode.entries)
                         .applyToComponent {
                             selectedItem = advancedOptions.concurrencyMode
                             addActionListener {
@@ -81,7 +88,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
 
             group("Chunking & Compression") {
                 row("Chunk Strategy:") {
-                    comboBox(ChunkStrategy.values().toList())
+                    comboBox(ChunkStrategy.entries)
                         .applyToComponent {
                             selectedItem = advancedOptions.chunkStrategy
                             addActionListener {
@@ -110,7 +117,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                         }
                 }
                 row("Overlap Strategy:") {
-                    comboBox(OverlapStrategy.values().toList())
+                    comboBox(OverlapStrategy.entries)
                         .applyToComponent {
                             selectedItem = advancedOptions.overlapStrategy
                             addActionListener {
@@ -123,7 +130,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                         }
                 }
                 row("Compression Mode:") {
-                    comboBox(CompressionMode.values().toList())
+                    comboBox(CompressionMode.entries)
                         .applyToComponent {
                             selectedItem = advancedOptions.compressionMode
                             addActionListener {
@@ -149,7 +156,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
 
             group("Output Formatting") {
                 row("Output Format:") {
-                    comboBox(OutputFormat.values().toList())
+                    comboBox(OutputFormat.entries)
                         .applyToComponent {
                             selectedItem = advancedOptions.outputFormat
                             addActionListener {
@@ -282,8 +289,26 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                             })
                         }
                 }
+
+                // NEW row for .gitignore
+                row {
+                    checkBox("Respect .gitignore")
+                        .applyToComponent {
+                            isSelected = advancedOptions.useGitIgnore
+                            addActionListener {
+                                advancedOptions.useGitIgnore = isSelected
+                                modified = true
+                            }
+                        }.comment("If enabled, code from ignored files/folders won't be included.")
+                }
             }
         }
+
+        // Put formPanel into a scroll pane so it doesn't get too large
+        val scrollPane = JBScrollPane(formPanel)
+        scrollPane.verticalScrollBar.unitIncrement = 16
+        scrollPane.preferredSize = Dimension(600, 600) // or whatever size you want
+        return scrollPane
     }
 
     override fun isModified(): Boolean = modified
@@ -295,8 +320,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
     }
 
     override fun reset() {
-        // If you want to re-load from persistent storage, do it here.
-        // The above direct approach sets 'text' from advancedOptions, so this is typically enough.
+        // No special logic; we reassign text fields from advancedOptions or globalState
         modified = false
     }
 }

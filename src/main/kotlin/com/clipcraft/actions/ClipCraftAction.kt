@@ -16,16 +16,16 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.util.concurrent.Executors
-import javax.swing.JOptionPane
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.util.concurrent.Executors
+import javax.swing.JOptionPane
 
 class ClipCraftAction : AnAction() {
 
@@ -68,7 +68,7 @@ class ClipCraftAction : AnAction() {
             ConcurrencyMode.DISABLED -> copyContentsSequential(allFiles, project, options)
             ConcurrencyMode.THREAD_POOL,
             ConcurrencyMode.COROUTINES,
-                -> copyContentsCoroutines(allFiles, project, options)
+            -> copyContentsCoroutines(allFiles, project, options)
         }
     }
 
@@ -88,10 +88,19 @@ class ClipCraftAction : AnAction() {
     private fun copyContentsSequential(files: List<VirtualFile>, project: Project, options: ClipCraftOptions) {
         val snippetList = mutableListOf<Snippet>()
         val failed = mutableListOf<String>()
+        var skippedImages = 0
+        var ignoredByGit = 0
+
         for (vf in files) {
-            // Check if it's an image
+            // Skip images if not including them
             if (!options.includeImageFiles && isImageFile(vf)) {
-                // Skip it. Possibly show a warning or do nothing.
+                skippedImages++
+                continue
+            }
+
+            // Skip if .gitignore says ignore
+            if (options.useGitIgnore && isGitIgnored(vf, project.baseDir.path, options)) {
+                ignoredByGit++
                 continue
             }
 
@@ -107,12 +116,24 @@ class ClipCraftAction : AnAction() {
                     relativePath = null,
                     fileSizeBytes = content.length.toLong(),
                     lastModified = System.currentTimeMillis(),
-                    content = content
-                )
+                    content = content,
+                ),
             )
         }
+
         val resultText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
-        postCopy(project, resultText, failed, files.size)
+        // Now log the actual snippet count, not the original file count
+        postCopy(project, resultText, failed, snippetList.size)
+
+        logger.info("Skipped images: $skippedImages, Git-ignored: $ignoredByGit")
+    }
+
+    /**
+     * Checks if the given VirtualFile is ignored based on .gitignore (and other ignore patterns).
+     */
+    private fun isGitIgnored(vFile: VirtualFile, basePath: String, options: ClipCraftOptions): Boolean {
+        val f = java.io.File(vFile.path)
+        return com.clipcraft.util.IgnoreUtil.shouldIgnore(f, options, basePath)
     }
 
     /** Helper function to detect image files by extension. */

@@ -1,261 +1,258 @@
-package com.clipcraft.actions
-
-import com.clipcraft.integration.ClipCraftGitIntegration
-import com.clipcraft.lint.LintIssue
-import com.clipcraft.lint.LintService
-import com.clipcraft.model.ClipCraftOptions
-import com.clipcraft.model.ConcurrencyMode
-import com.clipcraft.model.Snippet
-import com.clipcraft.model.SnippetGroup
-import com.clipcraft.services.ClipCraftMacroManager
-import com.clipcraft.services.ClipCraftNotificationCenter
-import com.clipcraft.services.ClipCraftPerformanceMetrics
-import com.clipcraft.services.ClipCraftProjectProfileManager
-import com.clipcraft.services.ClipCraftSettings
-import com.clipcraft.services.LintResultsService
-import com.clipcraft.util.CodeFormatter
-import com.clipcraft.util.IgnoreUtil
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.ide.CopyPasteManager
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.psi.PsiManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import com.clipcraft.services.ClipCraftSettings.Companion.getInstance
+import java.awt.HeadlessException
+import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.io.File
+import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.Path
+import java.util.*
+import java.util.concurrent.Callable
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.Future
+import javax.swing.JOptionPane
+import kotlin.math.min
 
-class ClipCraftAction : AnAction() {
+/**
+ * Main class for ClipCraft functionality.
+ * Handles collecting file contents and copying them to the clipboard.
+ */
+class ClipCraftAction {
+    // Reference to settings (singleton for configuration values)
+    private val settings = getInstance()
 
-    private data class ProcessingStats(var processedFiles: Int = 0, var errorFiles: Int = 0)
-
-    override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
-        val vfsFiles = e.getData(LangDataKeys.VIRTUAL_FILE_ARRAY) ?: return
-        val paths = vfsFiles.map { it.path }
-        val profileManager = project.getService(ClipCraftProjectProfileManager::class.java)
-        val activeProfile = profileManager?.getActiveProfile() ?: ClipCraftSettings.getInstance().getCurrentProfile()
-        val options = activeProfile.options.apply { resolveConflicts() }
-        IgnoreUtil.parseCustomIgnoreFiles(options, project.basePath ?: "", emptyList())
-        when (options.concurrencyMode) {
-            ConcurrencyMode.DISABLED -> runSequential(project, paths, options)
-            ConcurrencyMode.THREAD_POOL -> runThreadPool(project, paths, options)
-            ConcurrencyMode.COROUTINES -> runCoroutines(project, paths, options)
-        }
-    }
-
-    private fun runSequential(project: Project, paths: List<String>, opts: ClipCraftOptions) {
-        project.getService(ClipCraftPerformanceMetrics::class.java)?.startProcessing()
-        val group = SnippetGroup("Snippets")
-        val stats = ProcessingStats()
-        paths.forEach { processPath(File(it), project, opts, group, null, stats) }
-        finalizeAndCopyOutput(project, group, opts, "ClipCraftAction(sequential)", stats)
-    }
-
-    private fun runThreadPool(project: Project, paths: List<String>, opts: ClipCraftOptions) {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft ThreadPool", true) {
-            override fun run(indicator: ProgressIndicator) {
-                project.getService(ClipCraftPerformanceMetrics::class.java)?.startProcessing()
-                val group = SnippetGroup("Snippets")
-                val stats = ProcessingStats()
-                val pool = Executors.newFixedThreadPool(opts.maxConcurrentTasks)
-                paths.forEach { pool.submit { processPath(File(it), project, opts, group, indicator, stats) } }
-                pool.shutdown()
-                pool.awaitTermination(15, TimeUnit.MINUTES)
-                finalizeAndCopyOutput(project, group, opts, "ClipCraftAction(thread pool)", stats)
-            }
-        })
-    }
-
-    private fun runCoroutines(project: Project, paths: List<String>, opts: ClipCraftOptions) {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Coroutines", true) {
-            override fun run(indicator: ProgressIndicator) {
-                project.getService(ClipCraftPerformanceMetrics::class.java)?.startProcessing()
-                val group = SnippetGroup("Snippets")
-                val stats = ProcessingStats()
-                runBlocking(Dispatchers.Default) {
-                    paths.map { async { processPath(File(it), project, opts, group, indicator, stats) } }.awaitAll()
-                }
-                finalizeAndCopyOutput(project, group, opts, "ClipCraftAction(coroutines)", stats)
-            }
-        })
-    }
-
-    private fun finalizeAndCopyOutput(
-        project: Project,
-        group: SnippetGroup,
-        opts: ClipCraftOptions,
-        opLabel: String,
-        stats: ProcessingStats,
-    ) {
-        val lintResults = if (opts.showLint) LintService.lintGroup(group, opts) else emptyList()
-        project.getService(LintResultsService::class.java)?.storeResults(lintResults)
-        var output = buildFinalOutput(project, group, opts, lintResults, stats)
-        CopyPasteManager.getInstance().setContents(StringSelection(output))
-        project.getService(ClipCraftPerformanceMetrics::class.java)?.stopProcessingAndLog(opLabel)
-        ClipCraftNotificationCenter.info("ClipCraft finished. Total length: ${output.length}")
-    }
-
-    private fun processPath(
-        file: File,
-        project: Project,
-        opts: ClipCraftOptions,
-        group: SnippetGroup,
-        indicator: ProgressIndicator?,
-        stats: ProcessingStats,
-    ) {
-        if (indicator?.isCanceled == true) return
-        if (!file.exists() || IgnoreUtil.shouldIgnore(file, opts, project.basePath ?: "")) return
-        if (file.isDirectory) {
-            Files.walk(file.toPath()).use { stream ->
-                stream.filter { Files.isRegularFile(it) }
-                    .forEach {
-                        if (indicator?.isCanceled == true) return@forEach
-                        processSingleFile(it.toFile(), project, opts, group, indicator, stats)
-                    }
-            }
-        } else {
-            processSingleFile(file, project, opts, group, indicator, stats)
-        }
-    }
-
-    private fun processSingleFile(
-        file: File,
-        project: Project,
-        opts: ClipCraftOptions,
-        group: SnippetGroup,
-        indicator: ProgressIndicator?,
-        stats: ProcessingStats,
-    ) {
-        if (indicator?.isCanceled == true) return
-        if (file.isHidden) return
-        val ext = file.extension.lowercase()
-        if (ext in listOf("svg", "png", "jpg", "jpeg", "gif") && !opts.includeImageFiles) {
-            addSnippet(project, group, file, "[Image file: ${file.name} not included]", opts.includeGitInfo)
-            synchronized(stats) { stats.processedFiles++ }
+    /**
+     * Executes the ClipCraft action: gather content and copy to clipboard.
+     */
+    fun performAction() {
+        // Get target files (could be set via user selection or a saved profile)
+        val files: MutableList<File>? = settings.getTargetFiles()
+        if (files == null || files.isEmpty()) {
+            showError("No files or directories selected for copying.")
             return
         }
-        val content = try {
-            file.readText()
-        } catch (ex: Exception) {
-            synchronized(stats) { stats.errorFiles++ }
-            ClipCraftNotificationCenter.warn("Failed to read file '${file.absolutePath}': ${ex.message}")
-            "<Error: ${ex.message}>"
-        }
-        val snippet = addSnippet(project, group, file, content, opts.includeGitInfo)
-        synchronized(stats) { stats.processedFiles++ }
-        detectPsiLanguage(project, snippet)
-    }
 
-    private fun addSnippet(
-        project: Project,
-        group: SnippetGroup,
-        file: File,
-        content: String,
-        enrichWithGit: Boolean,
-    ): Snippet {
-        var snippet = Snippet(
-            filePath = file.absolutePath,
-            relativePath = computeRelativePath(project.basePath, file),
-            fileName = file.name,
-            fileSizeBytes = file.length(),
-            lastModified = file.lastModified(),
-            content = content,
-        )
-        if (enrichWithGit) snippet = ClipCraftGitIntegration.enrichSnippetWithGitInfo(project, snippet)
-        synchronized(group) { group.snippets.add(snippet) }
-        return snippet
-    }
+        // Collect content from files (with concurrency and limits)
+        val content = collectContent(files)
+        if (content.isEmpty()) {
+            showError("No content to copy (files may be empty or unreadable).")
+            return
+        }
 
-    private fun computeRelativePath(basePath: String?, file: File): String? {
-        if (basePath == null) return null
-        return try {
-            java.nio.file.Paths.get(basePath).relativize(file.toPath()).toString()
-        } catch (ex: Exception) {
-            file.absolutePath
-        }
-    }
-
-    private fun detectPsiLanguage(project: Project, snippet: Snippet) {
-        val vfile = LocalFileSystem.getInstance().findFileByIoFile(File(snippet.filePath)) ?: return
-        val psiFile = PsiManager.getInstance(project).findFile(vfile) ?: return
-        snippet.language = psiFile.language.id.ifBlank { guessLang(snippet.fileName) }
-    }
-
-    fun guessLang(filename: String?): String {
-        val ext = filename?.substringAfterLast('.', "")?.lowercase() ?: return "none"
-        return when (ext) {
-            "java" -> "java"
-            "kt", "kts" -> "kotlin"
-            "js" -> "javascript"
-            "ts" -> "typescript"
-            "py" -> "python"
-            "cpp", "cxx", "cc" -> "cpp"
-            "cs" -> "csharp"
-            "html" -> "html"
-            "css" -> "css"
-            else -> "none"
-        }
-    }
-
-    private fun buildFinalOutput(
-        project: Project,
-        group: SnippetGroup,
-        opts: ClipCraftOptions,
-        lintResults: List<LintIssue>,
-        stats: ProcessingStats,
-    ): String {
-        val header = opts.snippetHeaderText.orEmpty()
-        val footer = opts.snippetFooterText.orEmpty()
-        val sortedSnippets = group.snippets.sortedBy { it.fileName }
-        val code = CodeFormatter.formatSnippets(sortedSnippets, opts).joinToString("\n---\n")
-        val dirStruct = if (opts.includeDirectorySummary) {
-            "Directory Structure:\n" + sortedSnippets.mapNotNull { it.relativePath }
-                .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
-        } else {
-            ""
-        }
-        val lintSummary = if (opts.showLint && lintResults.isNotEmpty() && opts.includeLintInOutput) {
-            "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" }
-        } else {
-            ""
-        }
-        val languageSummary = if (sortedSnippets.isNotEmpty()) {
-            "\n\nLanguage Summary:\n" + sortedSnippets.groupBy { it.language ?: "none" }
-                .map { (lang, snippets) -> "$lang: ${snippets.size}" }
-                .sorted().joinToString("\n")
-        } else {
-            ""
-        }
-        val processingStats =
-            "\n\nProcessing Statistics:\nFiles Processed: ${stats.processedFiles}\nErrors: ${stats.errorFiles}"
-        var output = buildString {
-            if (header.isNotEmpty()) {
-                appendLine(header); appendLine()
+        // If a max token limit is set, enforce it
+        val maxTokens: Int = settings.getMaxTokens()
+        if (maxTokens > 0) {
+            val tokenCount = countTokens(content)
+            if (tokenCount > maxTokens) {
+                // Ask user to confirm copying a very large content block
+                val choice = JOptionPane.showConfirmDialog(
+                    null,
+                    "The content has " + tokenCount + " tokens, exceeding the limit of " + maxTokens + ". Continue with copy?",
+                    "Large Copy Confirmation",
+                    JOptionPane.YES_NO_OPTION
+                )
+                if (choice != JOptionPane.YES_OPTION) {
+                    // User chose not to proceed with the large copy
+                    return
+                }
             }
-            if (dirStruct.isNotEmpty()) appendLine(dirStruct)
-            append(code)
-            if (footer.isNotEmpty()) {
-                appendLine(); appendLine(footer)
+        }
+
+        // Copy the (possibly truncated) content to the system clipboard
+        try {
+            copyToClipboard(content)
+        } catch (e: IOException) {
+            showError("Failed to copy to clipboard: " + e.message)
+        }
+    }
+
+    /**
+     * Reads and aggregates content from the given list of files (and directories).
+     * Uses concurrent processing for efficiency and respects the max token limit.
+     * @param files List of files and directories to process.
+     * @return Combined text content from all files.
+     */
+    private fun collectContent(files: MutableList<File>): String {
+        // Expand any directories in the list into individual files
+        val allFiles = expandFiles(files)
+
+        // Prepare a thread pool for concurrent reading
+        val threadCount = min(allFiles.size.toDouble(), Runtime.getRuntime().availableProcessors().toDouble()).toInt()
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val futures: MutableList<Future<String?>> = ArrayList<Future<String?>>()
+
+        // Submit reading tasks for each file
+        for (file in allFiles) {
+            futures.add(executor.submit<String?>(Callable { readFileContent(file) }))
+        }
+
+        // Use StringBuilder for efficient concatenation
+        val combined = StringBuilder()
+        val maxTokens: Int = settings.getMaxTokens()
+        var truncated = false // flag to indicate if we truncated output
+
+        // Retrieve file contents in the original order
+        fileLoop@ for (i in futures.indices) {
+            val future = futures.get(i)
+            var text: String?
+            try {
+                text = future.get() // get content from thread
+            } catch (e: Exception) {
+                System.err.println("Error reading file: " + e.message)
+                continue  // Skip this file on error
             }
-            append(languageSummary)
-            append(processingStats)
-            append(lintSummary)
+            if (text == null) text = ""
+            // If limit is set and adding this text would exceed it, truncate and break
+            if (maxTokens > 0) {
+                val currentTokens = countTokens(combined.toString())
+                val newTokens = countTokens(text)
+                if (currentTokens + newTokens > maxTokens) {
+                    // Calculate how many tokens we can still add
+                    val allowedTokens = maxTokens - currentTokens
+                    if (allowedTokens > 0) {
+                        // Append only the allowed portion of text (token-wise)
+                        val words: Array<String?> =
+                            text.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                        val partial = StringBuilder()
+                        var w = 0
+                        while (w < allowedTokens && w < words.size) {
+                            partial.append(words[w])
+                            if (w < allowedTokens - 1) {
+                                partial.append(" ")
+                            }
+                            w++
+                        }
+                        combined.append(partial)
+                    }
+                    truncated = true
+                    break@fileLoop
+                }
+            }
+            // Append the full text from this file
+            combined.append(text)
+            // Optionally, add a separator newline between file contents
+            if (i < futures.size - 1) {
+                combined.append(System.lineSeparator())
+            }
         }
-        if (!opts.outputMacroTemplate.isNullOrBlank()) {
-            val context = mapOf("output" to output, "timestamp" to System.currentTimeMillis().toString())
-            output = ClipCraftMacroManager.getInstance(project).expandMacro(opts.outputMacroTemplate!!, context)
+
+        // Shutdown the executor service
+        executor.shutdown()
+
+        // If content was truncated due to limit, add a notation at the end
+        if (truncated) {
+            combined.append(System.lineSeparator()).append("[...] (truncated due to size limit)")
         }
-        return output
+
+        return combined.toString()
+    }
+
+    /**
+     * Recursively expands directories into a list of files.
+     * @param files List of files and directories.
+     * @return List containing all files (no directories).
+     */
+    private fun expandFiles(files: MutableList<File>): MutableList<File> {
+        val resultList: MutableList<File> = ArrayList<File>()
+        for (file in files) {
+            if (file.isDirectory()) {
+                // Walk through directory to gather regular files
+                try {
+                    Files.walk(file.toPath()).use { stream ->
+                        stream.filter { path: Path? -> Files.isRegularFile(path) }
+                            .forEach { path: Path? -> resultList.add(path!!.toFile()) }
+                    }
+                } catch (e: IOException) {
+                    System.err.println("Unable to read directory " + file.getName() + ": " + e.message)
+                }
+            } else {
+                resultList.add(file)
+            }
+        }
+        return resultList
+    }
+
+    /**
+     * Reads the entire content of a single file as a UTF-8 string.
+     * @param file File to read.
+     * @return File content as a string (or empty string if an error occurs).
+     */
+    private fun readFileContent(file: File): String {
+        try {
+            // Use NIO Files to read all bytes and convert to string (UTF-8)
+            val bytes = Files.readAllBytes(file.toPath())
+            return String(bytes, StandardCharsets.UTF_8)
+        } catch (e: IOException) {
+            // Log error and return empty on failure
+            System.err.println("Could not read file " + file.getName() + ": " + e.message)
+            return ""
+        }
+    }
+
+    /**
+     * Copies the given text to the system clipboard, with special handling for WSL.
+     * @param text The text to copy.
+     * @throws IOException if the clipboard operation fails.
+     */
+    @Throws(IOException::class)
+    private fun copyToClipboard(text: String) {
+        // Attempt using the standard clipboard API (works on Windows and Linux with GUI)
+        var text = text
+        try {
+            val clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
+            clipboard.setContents(StringSelection(text), null)
+            return  // success
+        } catch (e: IllegalStateException) {
+            // If in a headless environment (e.g., WSL without GUI), proceed to fallback
+        } catch (e: HeadlessException) {
+        }
+
+        // Fallback method: use OS-specific command-line utilities
+        val os = System.getProperty("os.name").lowercase(Locale.getDefault())
+        val isWsl = os.contains("linux") && System.getenv("WSL_DISTRO_NAME") != null
+        if (os.contains("windows") || isWsl) {
+            // On Windows (or WSL), use clip.exe. Ensure newline at end to avoid WSL bug.
+            if (!text.endsWith("\n")) {
+                text = text + "\n"
+            }
+            val p = Runtime.getRuntime().exec("cmd /c clip")
+            p.getOutputStream().use { outStream ->
+                outStream.write(text.toByteArray(StandardCharsets.UTF_8))
+            }
+        } else if (os.contains("mac")) {
+            // On macOS, use pbcopy
+            val p = Runtime.getRuntime().exec("pbcopy")
+            p.getOutputStream().use { outStream ->
+                outStream.write(text.toByteArray(StandardCharsets.UTF_8))
+            }
+        } else {
+            // On Linux (desktop), use xclip to copy to clipboard
+            val p = Runtime.getRuntime().exec("xclip -selection clipboard")
+            p.getOutputStream().use { outStream ->
+                outStream.write(text.toByteArray(StandardCharsets.UTF_8))
+            }
+        }
+        // (We assume success if no exception; in a real application, we'd check the process exit value or catch errors.)
+    }
+
+    /**
+     * Counts tokens (words) in the given text.
+     * @param text The text to evaluate.
+     * @return Number of tokens (split by whitespace).
+     */
+    private fun countTokens(text: String?): Int {
+        if (text == null || text.isEmpty()) return 0
+        val tokens: Array<String?> = text.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        return tokens.size
+    }
+
+    /**
+     * Displays an error message to the user or console.
+     * @param message The message to display.
+     */
+    private fun showError(message: String?) {
+        // This could be a GUI dialog in a full application; here we just log to console.
+        System.err.println("ERROR: " + message)
     }
 }

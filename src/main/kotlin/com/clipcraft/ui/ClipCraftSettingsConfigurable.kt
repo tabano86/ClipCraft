@@ -11,6 +11,7 @@ import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -26,7 +27,6 @@ import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Dimension
-import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.io.File
 import javax.swing.BorderFactory
@@ -359,7 +359,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         val copyPreviewBtn = JButton("Copy Preview").apply {
             toolTipText = "Copy preview text to clipboard"
             addActionListener {
-                Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(previewEditor.text), null)
+                CopyPasteManager.getInstance().setContents(StringSelection(previewEditor.text))
             }
         }
         val copyRecursivelyBtn = JButton("Copy Recursively").apply {
@@ -585,7 +585,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             } catch (ex: Exception) {
                 "Error formatting snippets: ${ex.message}"
             }
-            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(formatted), null)
+            CopyPasteManager.getInstance().setContents(StringSelection(formatted))
         }
     }
 

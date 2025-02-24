@@ -18,6 +18,7 @@ import com.clipcraft.util.IgnoreUtil
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -28,7 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.Executors
@@ -100,10 +101,7 @@ class ClipCraftAction : AnAction() {
         val lintResults = if (opts.showLint) LintService.lintGroup(group, opts) else emptyList()
         project.getService(LintResultsService::class.java)?.storeResults(lintResults)
         var output = buildFinalOutput(project, group, opts, lintResults, stats)
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(
-            java.awt.datatransfer.StringSelection(output),
-            null,
-        )
+        CopyPasteManager.getInstance().setContents(StringSelection(output))
         project.getService(ClipCraftPerformanceMetrics::class.java)?.stopProcessingAndLog(opLabel)
         ClipCraftNotificationCenter.info("ClipCraft finished. Total length: ${output.length}")
     }

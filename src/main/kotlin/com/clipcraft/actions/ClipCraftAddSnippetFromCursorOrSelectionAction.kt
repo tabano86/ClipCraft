@@ -14,11 +14,12 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
-import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
@@ -54,10 +55,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         group.snippets.addAll(snippets)
         val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
         val finalOutput = aggregateFinalOutput(project, group, options, lintResults)
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(
-            java.awt.datatransfer.StringSelection(finalOutput),
-            null,
-        )
+        CopyPasteManager.getInstance().setContents(StringSelection(finalOutput))
         notify("Snippet added and aggregated output copied to clipboard.", NotificationType.INFORMATION)
     }
 

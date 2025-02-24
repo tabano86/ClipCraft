@@ -42,12 +42,11 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 class ClipCraftSettingsConfigurable : Configurable {
-
     private val manager = ClipCraftProfileManager()
     private val savedProfile = manager.currentProfile().copy()
     private val options = savedProfile.options
 
-    // A more complex default sample for preview.
+    // A more complex default sample to demonstrate formatting.
     private val defaultSampleCode = """
         package com.example
         
@@ -131,23 +130,13 @@ class ClipCraftSettingsConfigurable : Configurable {
     private val previewTimer = Timer(300) { updatePreview() }.apply { isRepeats = false }
 
     // --- Helper creation functions ---
-    private fun createCheckBox(
-        text: String,
-        init: Boolean,
-        tooltip: String = "",
-        action: (() -> Unit)? = null,
-    ): JCheckBox =
+    private fun createCheckBox(text: String, init: Boolean, tooltip: String = "", action: (() -> Unit)? = null): JCheckBox =
         JCheckBox(text, init).apply {
             toolTipText = tooltip
             action?.let { addActionListener { it() } }
         }
 
-    private fun createTextField(
-        text: String,
-        columns: Int,
-        tooltip: String = "",
-        docAction: (() -> Unit)? = null,
-    ): JBTextField =
+    private fun createTextField(text: String, columns: Int, tooltip: String = "", docAction: (() -> Unit)? = null): JBTextField =
         JBTextField(text, columns).apply {
             toolTipText = tooltip
             docAction?.let {
@@ -159,12 +148,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             }
         }
 
-    private fun <T> createComboBox(
-        items: Array<T>,
-        selected: T,
-        tooltip: String = "",
-        action: (() -> Unit)? = null,
-    ): JComboBox<T> =
+    private fun <T> createComboBox(items: Array<T>, selected: T, tooltip: String = "", action: (() -> Unit)? = null): JComboBox<T> =
         JComboBox(items).apply {
             selectedItem = selected
             toolTipText = tooltip
@@ -174,7 +158,7 @@ class ClipCraftSettingsConfigurable : Configurable {
     override fun getDisplayName() = "ClipCraft"
 
     override fun createComponent(): JComponent {
-        // Use a left/right splitter (vertical = false means left/right)
+        // Create a horizontal splitter: settings form on left, preview on right.
         mainPanel = JPanel(BorderLayout()).apply { border = JBUI.Borders.empty(16) }
         val formPanel = buildFormPanel()
         val formScroll = JBScrollPane(formPanel).apply {
@@ -194,7 +178,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             preferredSize = Dimension(480, 700)
             border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
         }
-        val splitter = JBSplitter(false, 0.5f).apply { // false = horizontal split (left/right)
+        val splitter = JBSplitter(false, 0.5f).apply { // false = left/right split
             firstComponent = formScroll
             secondComponent = previewEditor
             dividerWidth = JBUI.scale(5)
@@ -216,26 +200,15 @@ class ClipCraftSettingsConfigurable : Configurable {
             toolTipText = "Text to append to output"
             document.addDocumentListener(SimpleDocListener { schedulePreview() })
         }
-        dirStructCheck = createCheckBox(
-            "Directory Structure",
-            options.includeDirectorySummary,
-            "Include directory summary",
-            ::schedulePreview,
-        )
-        lineNumbersCheck =
-            createCheckBox("Line Numbers", options.includeLineNumbers, "Show line numbers", ::schedulePreview)
-        removeImportsCheck =
-            createCheckBox("Remove Imports", options.removeImports, "Strip import statements", ::schedulePreview)
-        removeCommentsCheck =
-            createCheckBox("Remove Comments", options.removeComments, "Strip comments", ::schedulePreview)
-        trimWSCheck =
-            createCheckBox("Trim Whitespace", options.trimWhitespace, "Trim extra whitespace", ::schedulePreview)
-        removeEmptyCheck =
-            createCheckBox("Remove Empty Lines", options.removeEmptyLines, "Eliminate blank lines", ::schedulePreview)
-        singleLineCheck =
-            createCheckBox("Single-line Output", options.singleLineOutput, "Produce single-line snippet", {
-                schedulePreview(); updateChunkUI()
-            })
+        dirStructCheck = createCheckBox("Directory Structure", options.includeDirectorySummary, "Include directory summary", ::schedulePreview)
+        lineNumbersCheck = createCheckBox("Line Numbers", options.includeLineNumbers, "Show line numbers", ::schedulePreview)
+        removeImportsCheck = createCheckBox("Remove Imports", options.removeImports, "Strip import statements", ::schedulePreview)
+        removeCommentsCheck = createCheckBox("Remove Comments", options.removeComments, "Strip comments", ::schedulePreview)
+        trimWSCheck = createCheckBox("Trim Whitespace", options.trimWhitespace, "Trim extra whitespace", ::schedulePreview)
+        removeEmptyCheck = createCheckBox("Remove Empty Lines", options.removeEmptyLines, "Eliminate blank lines", ::schedulePreview)
+        singleLineCheck = createCheckBox("Single-line Output", options.singleLineOutput, "Produce single-line snippet", {
+            schedulePreview(); updateChunkUI()
+        })
         livePreviewCheck = createCheckBox("Live Preview", true, "Toggle live preview updates")
 
         val basicPanel = FormBuilder.createFormBuilder()
@@ -252,24 +225,12 @@ class ClipCraftSettingsConfigurable : Configurable {
             .panel.also { it.border = BorderFactory.createTitledBorder("Basic Options") }
 
         // --- Chunking Panel ---
-        chunkCombo =
-            createComboBox(ChunkStrategy.entries.toTypedArray(), options.chunkStrategy, "Select chunk strategy", {
-                schedulePreview(); updateChunkUI()
-            })
-        chunkSizeField =
-            createTextField(options.chunkSize.toString(), 6, "Chunk size (if applicable)", ::schedulePreview)
-        overlapCombo = createComboBox(
-            OverlapStrategy.entries.toTypedArray(),
-            options.overlapStrategy,
-            "Overlap strategy",
-            ::schedulePreview,
-        )
-        compressionCombo = createComboBox(
-            CompressionMode.entries.toTypedArray(),
-            options.compressionMode,
-            "Compression mode",
-            ::schedulePreview,
-        )
+        chunkCombo = createComboBox(ChunkStrategy.entries.toTypedArray(), options.chunkStrategy, "Select chunk strategy", {
+            schedulePreview(); updateChunkUI()
+        })
+        chunkSizeField = createTextField(options.chunkSize.toString(), 6, "Chunk size (if applicable)", ::schedulePreview)
+        overlapCombo = createComboBox(OverlapStrategy.entries.toTypedArray(), options.overlapStrategy, "Overlap strategy", ::schedulePreview)
+        compressionCombo = createComboBox(CompressionMode.entries.toTypedArray(), options.compressionMode, "Compression mode", ::schedulePreview)
         chunkMsg = JLabel("").apply { foreground = UIManager.getColor("Label.errorForeground") }
         val chunkPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent("Chunk Strategy:", chunkCombo, 1, false)
@@ -280,56 +241,25 @@ class ClipCraftSettingsConfigurable : Configurable {
             .panel.also { it.border = BorderFactory.createTitledBorder("Chunking") }
 
         // --- Advanced Options Panel ---
-        metaCheck =
-            createCheckBox("Include Metadata", options.includeMetadata, "Include file metadata", ::schedulePreview)
+        metaCheck = createCheckBox("Include Metadata", options.includeMetadata, "Include file metadata", ::schedulePreview)
         gitInfoCheck = createCheckBox("Git Info", options.includeGitInfo, "Include Git info", ::schedulePreview)
-        autoLangCheck = createCheckBox(
-            "Auto-Detect Language",
-            options.autoDetectLanguage,
-            "Detect language automatically",
-            ::schedulePreview,
-        )
-        themeCombo =
-            createComboBox(ThemeMode.entries.toTypedArray(), options.themeMode, "Theme mode", ::schedulePreview)
-        concurrencyCombo =
-            createComboBox(ConcurrencyMode.entries.toTypedArray(), options.concurrencyMode, "Concurrency mode", {
-                schedulePreview(); updateConcurrency()
-            })
-        maxTasksField =
-            createTextField(options.maxConcurrentTasks.toString(), 4, "Max concurrent tasks", ::schedulePreview)
-        gitIgnoreCheck =
-            createCheckBox("Use .gitignore", options.useGitIgnore, "Apply .gitignore rules", ::schedulePreview)
-        extraIgnoresField = createTextField(
-            options.additionalIgnorePatterns.orEmpty(),
-            15,
-            "Additional ignore patterns",
-            ::schedulePreview,
-        )
-        invertIgnoresCheck =
-            createCheckBox("Invert Patterns", options.invertIgnorePatterns, "Invert ignore patterns", ::schedulePreview)
-        dirPatternCheck = createCheckBox(
-            "Directory Matching",
-            options.enableDirectoryPatternMatching,
-            "Enable directory pattern matching",
-            ::schedulePreview,
-        )
-        detectBinaryCheck =
-            createCheckBox("Detect Binary Files", options.detectBinary, "Detect binary files", ::schedulePreview)
-        binaryThresholdField =
-            createTextField(options.binaryCheckThreshold.toString(), 5, "Binary threshold", ::schedulePreview)
+        autoLangCheck = createCheckBox("Auto-Detect Language", options.autoDetectLanguage, "Detect language automatically", ::schedulePreview)
+        themeCombo = createComboBox(ThemeMode.entries.toTypedArray(), options.themeMode, "Theme mode", ::schedulePreview)
+        concurrencyCombo = createComboBox(ConcurrencyMode.entries.toTypedArray(), options.concurrencyMode, "Concurrency mode", {
+            schedulePreview(); updateConcurrency()
+        })
+        maxTasksField = createTextField(options.maxConcurrentTasks.toString(), 4, "Max concurrent tasks", ::schedulePreview)
+        gitIgnoreCheck = createCheckBox("Use .gitignore", options.useGitIgnore, "Apply .gitignore rules", ::schedulePreview)
+        extraIgnoresField = createTextField(options.additionalIgnorePatterns.orEmpty(), 15, "Additional ignore patterns", ::schedulePreview)
+        invertIgnoresCheck = createCheckBox("Invert Patterns", options.invertIgnorePatterns, "Invert ignore patterns", ::schedulePreview)
+        dirPatternCheck = createCheckBox("Directory Matching", options.enableDirectoryPatternMatching, "Enable directory pattern matching", ::schedulePreview)
+        detectBinaryCheck = createCheckBox("Detect Binary Files", options.detectBinary, "Detect binary files", ::schedulePreview)
+        binaryThresholdField = createTextField(options.binaryCheckThreshold.toString(), 5, "Binary threshold", ::schedulePreview)
         lintCheck = createCheckBox("Show Lint Results", options.showLint, "Display lint info", ::schedulePreview)
-        includeImageCheck =
-            createCheckBox("Include Image Files", options.includeImageFiles, "Process image files", ::schedulePreview)
-        lintErrOnlyCheck =
-            createCheckBox("Lint Errors Only", options.lintErrorsOnly, "Only show lint errors", ::schedulePreview)
-        lintWarnOnlyCheck =
-            createCheckBox("Lint Warnings Only", options.lintWarningsOnly, "Only show lint warnings", ::schedulePreview)
-        addToQueueCheck = createCheckBox(
-            "Add Snippet to Queue",
-            options.addSnippetToQueue,
-            "Queue snippet for later",
-            ::schedulePreview,
-        )
+        includeImageCheck = createCheckBox("Include Image Files", options.includeImageFiles, "Process image files", ::schedulePreview)
+        lintErrOnlyCheck = createCheckBox("Lint Errors Only", options.lintErrorsOnly, "Only show lint errors", ::schedulePreview)
+        lintWarnOnlyCheck = createCheckBox("Lint Warnings Only", options.lintWarningsOnly, "Only show lint warnings", ::schedulePreview)
+        addToQueueCheck = createCheckBox("Add Snippet to Queue", options.addSnippetToQueue, "Queue snippet for later", ::schedulePreview)
         val advancedPanel = FormBuilder.createFormBuilder()
             .addComponent(metaCheck)
             .addComponent(gitInfoCheck)
@@ -354,10 +284,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         val copyPreviewBtn = JButton("Copy Preview").apply {
             toolTipText = "Copy preview text to clipboard"
             addActionListener {
-                Toolkit.getDefaultToolkit().systemClipboard.setContents(
-                    StringSelection(previewEditor.text),
-                    null,
-                )
+                Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(previewEditor.text), null)
             }
         }
         val copyRecursivelyBtn = JButton("Copy Recursively").apply {
@@ -377,9 +304,7 @@ class ClipCraftSettingsConfigurable : Configurable {
                 )
                 val output = try {
                     CodeFormatter.formatSnippets(listOf(snippet), options.copy()).joinToString("\n---\n")
-                } catch (ex: Exception) {
-                    "Error: ${ex.message}"
-                }
+                } catch (ex: Exception) { "Error: ${ex.message}" }
                 Messages.showInfoMessage(output, "Formatted Output")
             }
         }
@@ -415,7 +340,6 @@ class ClipCraftSettingsConfigurable : Configurable {
             add(restoreBtn)
         }
 
-        // Combine panels vertically.
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             add(basicPanel)
@@ -481,12 +405,14 @@ class ClipCraftSettingsConfigurable : Configurable {
         }
         val previewText = buildString {
             if (headerArea.text.isNotBlank()) {
-                appendLine(headerArea.text); appendLine()
+                appendLine(headerArea.text)
+                appendLine()
             }
             if (dirStructCheck.isSelected) append("Directory Structure:\n  src/Sample.kt\n\n")
             append(formatted)
             if (footerArea.text.isNotBlank()) {
-                appendLine(); appendLine(footerArea.text)
+                appendLine()
+                appendLine(footerArea.text)
             }
             appendLine("\n---\n[Preview Info] Concurrency: ${tmp.concurrencyMode}, Chunk: ${tmp.chunkStrategy}")
         }
@@ -559,8 +485,7 @@ class ClipCraftSettingsConfigurable : Configurable {
                         lastModified = file.lastModified(),
                     ),
                 )
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) { }
         }
         return snippets
     }
@@ -636,8 +561,7 @@ class ClipCraftSettingsConfigurable : Configurable {
     override fun apply() {
         val chunkSize = chunkSizeField.text.toIntOrNull() ?: throw ConfigurationException("Invalid Chunk Size")
         val maxTasks = maxTasksField.text.toIntOrNull() ?: throw ConfigurationException("Invalid Max Tasks")
-        val binaryThreshold =
-            binaryThresholdField.text.toIntOrNull() ?: throw ConfigurationException("Invalid Binary Threshold")
+        val binaryThreshold = binaryThresholdField.text.toIntOrNull() ?: throw ConfigurationException("Invalid Binary Threshold")
         with(options) {
             snippetHeaderText = headerArea.text.trim()
             snippetFooterText = footerArea.text.trim()

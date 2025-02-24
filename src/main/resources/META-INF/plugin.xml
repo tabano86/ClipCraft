@@ -1,68 +1,61 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>0.3.2-SNAPSHOT</version>
-    <vendor url="https://github.com/clipcraft" email="support@clipcraft.com">ClipCraft Inc.</vendor>
-    <description><![CDATA[
-ClipCraft extracts and formats code from multiple files or directories, supports concurrency modes,
-dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assisted copy process.
-    ]]></description>
-    <change-notes><![CDATA[
-6.1.0:
-- Now we have one direct “ClipCraft Copy” action in CutCopyPasteGroup,
-  plus a “ClipCraft Toolbox” submenu in the same group!
-    ]]></change-notes>
+    <version>1.0.0-REFACTOR</version>
+    <vendor email="support@clipcraft.io" url="https://github.com/clipcraft">ClipCraft Inc.</vendor>
 
-    <!-- If needed, specify precise build versions instead of wildcard. Example:
-    <idea-version since-build="241.14494" until-build="241.99999"/> -->
-    <depends>com.intellij.modules.java</depends>
+    <description><![CDATA[
+    ClipCraft extracts, formats, and merges code from multiple files or directories...
+  ]]></description>
+
+    <change-notes><![CDATA[
+    - Major refactoring...
+  ]]></change-notes>
+
+    <!-- Mark dependency on com.intellij.modules.platform or .java, etc., as needed -->
+    <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- Notification group so we can show balloon messages -->
+        <notificationGroup id="ClipCraft Notifications" displayType="BALLOON"/>
 
-        <!-- Notification group for balloon messages -->
-        <notificationGroup id="ClipCraft" displayType="BALLOON"/>
+        <!--        &lt;!&ndash; Example lint toolwindow (optional) &ndash;&gt;-->
+        <!--        <toolWindow-->
+        <!--                id="ClipCraft.Lint"-->
+        <!--                factoryClass="com.clipcraft.ui.ClipCraftLintToolWindowFactory"-->
+        <!--                anchor="bottom"-->
+        <!--                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16"-->
+        <!--                secondary="true"/>-->
 
-        <!-- Our settings page in Preferences | Settings -->
-        <applicationConfigurable
-                id="clipcraft.settings"
-                instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
-                displayName="ClipCraft"/>
-
-        <!-- Lint tool window if you desire -->
-        <toolWindow
-                id="ClipCraft.Lint"
-                factoryClass="com.clipcraft.ui.ClipCraftLintToolWindowFactory"
-                anchor="bottom"
-                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_24"
-                secondary="true"/>
-
-        <!-- Search Everywhere integration -->
+        <!-- Searching integration (optional) -->
         <searchEverywhereContributor
                 implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory"/>
+
+        <!-- Register our Configurable for the Settings UI -->
+        <applicationConfigurable
+                displayName="ClipCraft"
+                instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
+                id="clipcraft.settings"/>
     </extensions>
 
     <actions>
-        <!-- 1) A single direct action: 'ClipCraft Copy' in CutCopyPasteGroup. -->
+        <!-- Single direct action: ClipCraft Copy -->
         <action
                 id="ClipCraftCopyAction"
                 class="com.clipcraft.actions.ClipCraftAction"
                 text="ClipCraft Copy"
-                description="Copies, formats, and merges code snippets"
+                description="Copies, formats, merges code from selected files"
                 icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
-
-            <!-- Added directly to built-in Cut/Copy/Paste group -->
             <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
         </action>
 
-        <!-- 2) A creative submenu also in the same group, holding the rest of your actions. -->
+        <!-- A submenu with additional ClipCraft actions -->
         <group
                 id="ClipCraft.Submenu"
                 text="ClipCraft Toolbox"
-                description="All other ClipCraft features"
+                description="Other ClipCraft features"
                 popup="true"
                 class="com.intellij.openapi.actionSystem.DefaultActionGroup">
-
-            <!-- Attach this entire group to CutCopyPasteGroup as well -->
             <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
 
             <action
@@ -75,7 +68,7 @@ dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assis
                     id="ClipCraftResetDefaultsAction"
                     class="com.clipcraft.actions.ClipCraftResetDefaultsAction"
                     text="Reset Defaults"
-                    description="Reset all ClipCraft settings to factory state"/>
+                    description="Reset all ClipCraft settings to factory defaults"/>
 
             <action
                     id="ClipCraftSwitchProfileAction"

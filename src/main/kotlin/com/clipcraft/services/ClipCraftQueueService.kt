@@ -5,8 +5,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 
 @Service(Service.Level.PROJECT)
-class ClipCraftQueueService(val project: Project) {
+class ClipCraftQueueService(private val project: Project) {
     private val queue = mutableListOf<Snippet>()
+
     fun addSnippet(snippet: Snippet) {
         queue.add(snippet)
     }

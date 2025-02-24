@@ -5,6 +5,9 @@ import com.clipcraft.services.ClipCraftGitRepositoryManager
 import com.intellij.openapi.project.Project
 
 object ClipCraftGitIntegration {
+    /**
+     * Enriches snippet content with Git commit info if available.
+     */
     fun enrichSnippetWithGitInfo(project: Project, snippet: Snippet): Snippet {
         val repoManager = ClipCraftGitRepositoryManager.getInstance(project)
         val commitHash = repoManager.repositories.firstOrNull()?.currentRevision

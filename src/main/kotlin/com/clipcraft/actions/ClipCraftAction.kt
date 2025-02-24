@@ -1,258 +1,157 @@
-import com.clipcraft.services.ClipCraftSettings.Companion.getInstance
-import java.awt.HeadlessException
+package com.clipcraft.actions
+
+import com.clipcraft.services.ClipCraftNotificationCenter
+import com.clipcraft.services.ClipCraftSettingsState
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
-import java.io.File
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.*
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import javax.swing.JOptionPane
-import kotlin.math.min
 
 /**
- * Main class for ClipCraft functionality.
- * Handles collecting file contents and copying them to the clipboard.
+ * The main ClipCraft copy action: merges and copies content of selected files.
  */
-class ClipCraftAction {
-    // Reference to settings (singleton for configuration values)
-    private val settings = getInstance()
+class ClipCraftAction : AnAction() {
 
-    /**
-     * Executes the ClipCraft action: gather content and copy to clipboard.
-     */
-    fun performAction() {
-        // Get target files (could be set via user selection or a saved profile)
-        val files: MutableList<File>? = settings.getTargetFiles()
-        if (files == null || files.isEmpty()) {
-            showError("No files or directories selected for copying.")
+    private val logger = Logger.getInstance(ClipCraftAction::class.java)
+
+    override fun update(e: AnActionEvent) {
+        val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
+        e.presentation.isVisible = vFiles != null && vFiles.isNotEmpty()
+        e.presentation.isEnabled = vFiles != null && vFiles.isNotEmpty()
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return
+        if (vFiles.isEmpty()) {
+            ClipCraftNotificationCenter.warn("No files selected to copy.")
             return
         }
 
-        // Collect content from files (with concurrency and limits)
-        val content = collectContent(files)
-        if (content.isEmpty()) {
-            showError("No content to copy (files may be empty or unreadable).")
-            return
-        }
-
-        // If a max token limit is set, enforce it
-        val maxTokens: Int = settings.getMaxTokens()
-        if (maxTokens > 0) {
-            val tokenCount = countTokens(content)
-            if (tokenCount > maxTokens) {
-                // Ask user to confirm copying a very large content block
-                val choice = JOptionPane.showConfirmDialog(
-                    null,
-                    "The content has " + tokenCount + " tokens, exceeding the limit of " + maxTokens + ". Continue with copy?",
-                    "Large Copy Confirmation",
-                    JOptionPane.YES_NO_OPTION
-                )
-                if (choice != JOptionPane.YES_OPTION) {
-                    // User chose not to proceed with the large copy
-                    return
+        // We'll run everything in a background task so we don't block UI
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Copy", true) {
+            override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
+                runBlocking {
+                    copyContents(project, vFiles.toList())
                 }
             }
-        }
-
-        // Copy the (possibly truncated) content to the system clipboard
-        try {
-            copyToClipboard(content)
-        } catch (e: IOException) {
-            showError("Failed to copy to clipboard: " + e.message)
-        }
+        })
     }
 
     /**
-     * Reads and aggregates content from the given list of files (and directories).
-     * Uses concurrent processing for efficiency and respects the max token limit.
-     * @param files List of files and directories to process.
-     * @return Combined text content from all files.
+     * Uses coroutines to read content from files, merges, checks limits, and copies to clipboard.
      */
-    private fun collectContent(files: MutableList<File>): String {
-        // Expand any directories in the list into individual files
+    private suspend fun copyContents(project: Project, files: List<VirtualFile>) = coroutineScope {
+        val settings = ClipCraftSettingsState.getInstance()
+        val maxCopy = settings.maxCopyCharacters
+
+        // Expand directories and read contents concurrently
         val allFiles = expandFiles(files)
+        logger.info("Preparing to copy ${allFiles.size} file(s) total.")
 
-        // Prepare a thread pool for concurrent reading
-        val threadCount = min(allFiles.size.toDouble(), Runtime.getRuntime().availableProcessors().toDouble()).toInt()
-        val executor = Executors.newFixedThreadPool(threadCount)
-        val futures: MutableList<Future<String?>> = ArrayList<Future<String?>>()
+        val readResults = allFiles.map { file ->
+            async(Dispatchers.IO) {
+                readFileContent(file)
+            }
+        }.awaitAll()
 
-        // Submit reading tasks for each file
-        for (file in allFiles) {
-            futures.add(executor.submit<String?>(Callable { readFileContent(file) }))
+        // Combine results
+        val combinedText = StringBuilder()
+        val failedFiles = mutableListOf<String>()
+
+        for ((i, readResult) in readResults.withIndex()) {
+            if (readResult == null) {
+                failedFiles.add(allFiles[i].name)
+                continue
+            }
+            if (combinedText.isNotEmpty()) {
+                combinedText.append("\n\n")
+            }
+            combinedText.append(readResult.trimEnd())
         }
 
-        // Use StringBuilder for efficient concatenation
-        val combined = StringBuilder()
-        val maxTokens: Int = settings.getMaxTokens()
-        var truncated = false // flag to indicate if we truncated output
+        // If there were any unreadable files, notify
+        if (failedFiles.isNotEmpty()) {
+            ClipCraftNotificationCenter.warn("Some files couldn't be read: ${failedFiles.joinToString(", ")}")
+        }
 
-        // Retrieve file contents in the original order
-        fileLoop@ for (i in futures.indices) {
-            val future = futures.get(i)
-            var text: String?
-            try {
-                text = future.get() // get content from thread
-            } catch (e: Exception) {
-                System.err.println("Error reading file: " + e.message)
-                continue  // Skip this file on error
-            }
-            if (text == null) text = ""
-            // If limit is set and adding this text would exceed it, truncate and break
-            if (maxTokens > 0) {
-                val currentTokens = countTokens(combined.toString())
-                val newTokens = countTokens(text)
-                if (currentTokens + newTokens > maxTokens) {
-                    // Calculate how many tokens we can still add
-                    val allowedTokens = maxTokens - currentTokens
-                    if (allowedTokens > 0) {
-                        // Append only the allowed portion of text (token-wise)
-                        val words: Array<String?> =
-                            text.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                        val partial = StringBuilder()
-                        var w = 0
-                        while (w < allowedTokens && w < words.size) {
-                            partial.append(words[w])
-                            if (w < allowedTokens - 1) {
-                                partial.append(" ")
-                            }
-                            w++
-                        }
-                        combined.append(partial)
-                    }
-                    truncated = true
-                    break@fileLoop
-                }
-            }
-            // Append the full text from this file
-            combined.append(text)
-            // Optionally, add a separator newline between file contents
-            if (i < futures.size - 1) {
-                combined.append(System.lineSeparator())
+        val textToCopy = combinedText.toString()
+        // If text is bigger than limit, confirm
+        if (maxCopy > 0 && textToCopy.length > maxCopy) {
+            val response = JOptionPane.showConfirmDialog(
+                null,
+                "The combined text is ${textToCopy.length} chars, exceeding your limit ($maxCopy). Copy anyway?",
+                "Large Copy Confirmation",
+                JOptionPane.YES_NO_OPTION,
+            )
+            if (response != JOptionPane.YES_OPTION) {
+                logger.info("User cancelled large copy.")
+                return@coroutineScope
             }
         }
 
-        // Shutdown the executor service
-        executor.shutdown()
-
-        // If content was truncated due to limit, add a notation at the end
-        if (truncated) {
-            combined.append(System.lineSeparator()).append("[...] (truncated due to size limit)")
-        }
-
-        return combined.toString()
-    }
-
-    /**
-     * Recursively expands directories into a list of files.
-     * @param files List of files and directories.
-     * @return List containing all files (no directories).
-     */
-    private fun expandFiles(files: MutableList<File>): MutableList<File> {
-        val resultList: MutableList<File> = ArrayList<File>()
-        for (file in files) {
-            if (file.isDirectory()) {
-                // Walk through directory to gather regular files
-                try {
-                    Files.walk(file.toPath()).use { stream ->
-                        stream.filter { path: Path? -> Files.isRegularFile(path) }
-                            .forEach { path: Path? -> resultList.add(path!!.toFile()) }
-                    }
-                } catch (e: IOException) {
-                    System.err.println("Unable to read directory " + file.getName() + ": " + e.message)
-                }
-            } else {
-                resultList.add(file)
-            }
-        }
-        return resultList
-    }
-
-    /**
-     * Reads the entire content of a single file as a UTF-8 string.
-     * @param file File to read.
-     * @return File content as a string (or empty string if an error occurs).
-     */
-    private fun readFileContent(file: File): String {
-        try {
-            // Use NIO Files to read all bytes and convert to string (UTF-8)
-            val bytes = Files.readAllBytes(file.toPath())
-            return String(bytes, StandardCharsets.UTF_8)
-        } catch (e: IOException) {
-            // Log error and return empty on failure
-            System.err.println("Could not read file " + file.getName() + ": " + e.message)
-            return ""
-        }
-    }
-
-    /**
-     * Copies the given text to the system clipboard, with special handling for WSL.
-     * @param text The text to copy.
-     * @throws IOException if the clipboard operation fails.
-     */
-    @Throws(IOException::class)
-    private fun copyToClipboard(text: String) {
-        // Attempt using the standard clipboard API (works on Windows and Linux with GUI)
-        var text = text
-        try {
-            val clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
-            clipboard.setContents(StringSelection(text), null)
-            return  // success
-        } catch (e: IllegalStateException) {
-            // If in a headless environment (e.g., WSL without GUI), proceed to fallback
-        } catch (e: HeadlessException) {
-        }
-
-        // Fallback method: use OS-specific command-line utilities
-        val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-        val isWsl = os.contains("linux") && System.getenv("WSL_DISTRO_NAME") != null
-        if (os.contains("windows") || isWsl) {
-            // On Windows (or WSL), use clip.exe. Ensure newline at end to avoid WSL bug.
-            if (!text.endsWith("\n")) {
-                text = text + "\n"
-            }
-            val p = Runtime.getRuntime().exec("cmd /c clip")
-            p.getOutputStream().use { outStream ->
-                outStream.write(text.toByteArray(StandardCharsets.UTF_8))
-            }
-        } else if (os.contains("mac")) {
-            // On macOS, use pbcopy
-            val p = Runtime.getRuntime().exec("pbcopy")
-            p.getOutputStream().use { outStream ->
-                outStream.write(text.toByteArray(StandardCharsets.UTF_8))
-            }
+        // Finally copy to system clipboard
+        val success = copyToClipboard(textToCopy)
+        if (success) {
+            ClipCraftNotificationCenter.info("Copied ${allFiles.size} file(s). Length: ${textToCopy.length} chars.")
         } else {
-            // On Linux (desktop), use xclip to copy to clipboard
-            val p = Runtime.getRuntime().exec("xclip -selection clipboard")
-            p.getOutputStream().use { outStream ->
-                outStream.write(text.toByteArray(StandardCharsets.UTF_8))
+            ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
+        }
+    }
+
+    /**
+     * Collects all files from the given list, recursively expanding directories.
+     */
+    private fun expandFiles(files: List<VirtualFile>): List<VirtualFile> {
+        val result = mutableListOf<VirtualFile>()
+        fun recurse(file: VirtualFile) {
+            if (file.isDirectory) {
+                file.children?.forEach { recurse(it) }
+            } else {
+                result.add(file)
             }
         }
-        // (We assume success if no exception; in a real application, we'd check the process exit value or catch errors.)
+        files.forEach { recurse(it) }
+        return result
     }
 
     /**
-     * Counts tokens (words) in the given text.
-     * @param text The text to evaluate.
-     * @return Number of tokens (split by whitespace).
+     * Reads the content of a virtual file. Returns null if read fails.
      */
-    private fun countTokens(text: String?): Int {
-        if (text == null || text.isEmpty()) return 0
-        val tokens: Array<String?> = text.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        return tokens.size
+    private fun readFileContent(file: VirtualFile): String? {
+        return try {
+            val bytes = file.contentsToByteArray()
+            val text = String(bytes, file.charset)
+            text
+        } catch (ex: Exception) {
+            logger.warn("Error reading file ${file.path}: ${ex.message}", ex)
+            null
+        }
     }
 
     /**
-     * Displays an error message to the user or console.
-     * @param message The message to display.
+     * Attempts to place text on the system clipboard, including WSL handling if necessary.
      */
-    private fun showError(message: String?) {
-        // This could be a GUI dialog in a full application; here we just log to console.
-        System.err.println("ERROR: " + message)
+    private fun copyToClipboard(text: String): Boolean {
+        return try {
+            val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+            clipboard.setContents(StringSelection(text), null)
+            true
+        } catch (ex: Exception) {
+            logger.error("Clipboard copy failed", ex)
+            false
+        }
     }
 }

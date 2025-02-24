@@ -44,9 +44,18 @@ data class ClipCraftOptions(
     var includeLintInOutput: Boolean = false,
     var outputMacroTemplate: String? = null,
 ) {
+    /**
+     * Ensures no conflicting or invalid settings remain.
+     */
     fun resolveConflicts() {
-        if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE
-        if (chunkSize < 1) chunkSize = 4000
-        if (binaryCheckThreshold < 1) binaryCheckThreshold = 1000
+        if (singleLineOutput) {
+            chunkStrategy = ChunkStrategy.NONE
+        }
+        if (chunkSize < 1) {
+            chunkSize = 4000
+        }
+        if (binaryCheckThreshold < 1) {
+            binaryCheckThreshold = 1000
+        }
     }
 }

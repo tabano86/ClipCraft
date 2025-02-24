@@ -9,14 +9,18 @@ import java.io.File
 data class GitRepository(val root: VirtualFile, val currentRevision: String?)
 
 class ClipCraftGitRepositoryManager private constructor(private val project: Project) {
+
+    private val logger = Logger.getInstance(ClipCraftGitRepositoryManager::class.java)
     val repositories: List<GitRepository> by lazy { discoverRepositories() }
+
     private fun discoverRepositories(): List<GitRepository> {
         val repos = mutableListOf<GitRepository>()
         val projectBaseDir = project.baseDir
         if (projectBaseDir == null) {
-            LOG.warn("Project base directory is null.")
+            logger.warn("Project base directory is null.")
             return repos
         }
+        // Find .git directories
         VfsUtilCore.iterateChildrenRecursively(
             projectBaseDir,
             { true },
@@ -32,7 +36,7 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
             },
         )
         if (repos.isEmpty()) {
-            LOG.warn("No Git repositories found in project.")
+            logger.warn("No Git repositories found in project.")
         }
         return repos
     }
@@ -45,19 +49,18 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
             val output = process.inputStream.bufferedReader().readLine()?.trim()
             val exitCode = process.waitFor()
             if (exitCode != 0) {
-                LOG.warn("Git command exited with code $exitCode for repository at ${root.path}")
+                logger.warn("Git command exited with code $exitCode for repository at ${root.path}")
                 null
             } else {
                 output
             }
         } catch (e: Exception) {
-            LOG.warn("Failed to retrieve current revision for repository at ${root.path}", e)
+            logger.warn("Failed to retrieve current revision for repository at ${root.path}", e)
             null
         }
     }
 
     companion object {
-        private val LOG = Logger.getInstance(ClipCraftGitRepositoryManager::class.java)
         fun getInstance(project: Project): ClipCraftGitRepositoryManager {
             return ClipCraftGitRepositoryManager(project)
         }

@@ -3,6 +3,9 @@ package com.clipcraft.icons
 import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon
 
+/**
+ * Holds references to icons used in the ClipCraft plugin.
+ */
 object ClipCraftIcons {
     @JvmField
     val CLIPCRAFT_16: Icon = IconLoader.getIcon("/icons/clipcraft_16.svg", ClipCraftIcons::class.java)

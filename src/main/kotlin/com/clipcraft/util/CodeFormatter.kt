@@ -8,6 +8,9 @@ import com.clipcraft.model.Snippet
 import org.apache.commons.text.StringEscapeUtils
 import kotlin.math.min
 
+/**
+ * Utility for formatting code snippets with compression, line numbers, etc.
+ */
 object CodeFormatter {
 
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
@@ -20,7 +23,7 @@ object CodeFormatter {
         }
     }
 
-    fun process(snippet: Snippet, o: ClipCraftOptions): String {
+    private fun process(snippet: Snippet, o: ClipCraftOptions): String {
         val lang = snippet.language?.ifBlank { null } ?: detectLanguage(snippet.fileName)
         var text = snippet.content
         if (o.removeImports) text = removeImports(text, lang)
@@ -33,7 +36,7 @@ object CodeFormatter {
         val wrappedCode = wrap(text, o.outputFormat, lang)
         return if (o.includeMetadata) {
             val meta = metadata(snippet)
-            meta + "\n\n" + wrappedCode
+            "$meta\n\n$wrappedCode"
         } else {
             wrappedCode
         }
@@ -96,15 +99,13 @@ object CodeFormatter {
 
             lang.equals("php", true) ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
-                    .lines()
-                    .map { it.replace(Regex("//.*$"), "").replace(Regex("#.*$"), "").trimEnd() }
+                    .lines().map { it.replace(Regex("//.*$"), "").replace(Regex("#.*$"), "").trimEnd() }
                     .filter { it.isNotBlank() }
                     .joinToString("\n")
 
             else ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
-                    .lines()
-                    .map { it.replace(Regex("//.*$"), "").trimEnd() }
+                    .lines().map { it.replace(Regex("//.*$"), "").trimEnd() }
                     .filter { it.isNotBlank() }
                     .joinToString("\n")
         }
@@ -125,26 +126,27 @@ object CodeFormatter {
     fun compress(input: String, o: ClipCraftOptions): String {
         return when (o.compressionMode) {
             CompressionMode.NONE -> input
-            CompressionMode.MINIMAL -> input.lines().joinToString("\n") {
-                it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
-            }
-
-            CompressionMode.ULTRA -> input.lines().map {
-                it.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
-            }.filter {
-                if (!o.selectiveCompression) {
-                    it.isNotBlank()
-                } else {
-                    it.isNotBlank() && !it.uppercase().contains("TODO") && !it.uppercase().contains("DEBUG")
+            CompressionMode.MINIMAL ->
+                input.lines().joinToString("\n") {
+                    it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
                 }
-            }.joinToString(" ") { it.replace(Regex("\\s+"), " ") }
+
+            CompressionMode.ULTRA ->
+                input.lines().map {
+                    it.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
+                }.filter {
+                    if (!o.selectiveCompression) {
+                        it.isNotBlank()
+                    } else {
+                        it.isNotBlank() && !it.uppercase().contains("TODO") && !it.uppercase().contains("DEBUG")
+                    }
+                }.joinToString(" ") { it.replace(Regex("\\s+"), " ") }
         }
     }
 
     fun lineNumbers(text: String): String =
         text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
 
-    // New: Returns metadata as a header string (without code)
     fun metadata(snippet: Snippet): String =
         "**File:** ${snippet.relativePath ?: snippet.fileName} | **Size:** ${snippet.fileSizeBytes} bytes | **Modified:** ${snippet.lastModified}"
 

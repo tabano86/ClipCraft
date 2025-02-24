@@ -4,12 +4,11 @@ import com.clipcraft.lint.LintService
 import com.clipcraft.model.Snippet
 import com.clipcraft.model.SnippetGroup
 import com.clipcraft.services.ClipCraftMacroManager
+import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftQueueService
 import com.clipcraft.services.ClipCraftSettings
 import com.clipcraft.services.ClipCraftSnippetsManager
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
+import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -21,21 +20,25 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
 import java.awt.datatransfer.StringSelection
 
+/**
+ * Adds a snippet from user selection or method at caret. Then aggregates output and copies to clipboard.
+ */
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
         val editor = event.getData(CommonDataKeys.EDITOR)
         val psiFile = event.getData(CommonDataKeys.PSI_FILE)
         if (editor == null || psiFile == null) {
-            notify("No editor or file found.", NotificationType.WARNING)
+            ClipCraftNotificationCenter.warn("No editor or file found.")
             return
         }
         val snippetText = editor.extractSnippetOrMethod(psiFile)
         if (snippetText.isBlank()) {
-            notify("No valid snippet could be extracted.", NotificationType.WARNING)
+            ClipCraftNotificationCenter.warn("No valid snippet could be extracted.")
             return
         }
         val finalSnippetContent = snippetText.withClipCraftHeaders()
         val project = event.project ?: return
+
         val snippet = Snippet(
             filePath = "InMemory",
             relativePath = null,
@@ -44,19 +47,23 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             lastModified = System.currentTimeMillis(),
             content = finalSnippetContent,
         )
+
+        // Retrieve the current profile's options
         val options = ClipCraftSettings.getInstance().getCurrentProfile().options
         if (options.addSnippetToQueue) {
             ClipCraftQueueService.getInstance(project).addSnippet(snippet)
         } else {
             ClipCraftSnippetsManager.getInstance(project).addSnippet(snippet)
         }
+
         val snippets = ClipCraftSnippetsManager.getInstance(project).getAllSnippets()
         val group = SnippetGroup("Aggregated Snippets")
         group.snippets.addAll(snippets)
         val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
         val finalOutput = aggregateFinalOutput(project, group, options, lintResults)
+
         CopyPasteManager.getInstance().setContents(StringSelection(finalOutput))
-        notify("Snippet added and aggregated output copied to clipboard.", NotificationType.INFORMATION)
+        ClipCraftNotificationCenter.info("Snippet added and aggregated output copied to clipboard.")
     }
 
     private fun aggregateFinalOutput(
@@ -67,10 +74,11 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     ): String {
         val header = options.snippetHeaderText.orEmpty()
         val footer = options.snippetFooterText.orEmpty()
-        val code = com.clipcraft.util.CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
+        val code = CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
         val dirStruct = if (options.includeDirectorySummary) {
-            "Directory Structure:\n" + group.snippets.mapNotNull { it.relativePath }
-                .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
+            "Directory Structure:\n" +
+                group.snippets.mapNotNull { it.relativePath }
+                    .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
         } else {
             ""
         }
@@ -97,6 +105,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     }
 
     private fun Editor.extractSnippetOrMethod(psiFile: PsiFile): String {
+        // If user selected text, return that; else find enclosing method
         return selectionModel.selectedText ?: caretModel.offset.let { offset ->
             psiFile.findElementAt(offset)?.let { element ->
                 (UastFacade.convertElementWithParent(element, UMethod::class.java) as? UMethod)?.sourcePsi?.text
@@ -113,11 +122,5 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             append(this@withClipCraftHeaders)
             if (suffix.isNotEmpty()) appendLine().appendLine(suffix)
         }
-    }
-
-    private fun notify(message: String, type: NotificationType) {
-        Notifications.Bus.notify(
-            Notification("ClipCraft", "ClipCraft Snippet Extraction", message, type),
-        )
     }
 }

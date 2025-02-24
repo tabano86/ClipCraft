@@ -1,19 +1,28 @@
 package com.clipcraft.services
 
-import com.intellij.notification.Notification
+import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 
+/**
+ * Central location for sending notifications to the user.
+ */
 object ClipCraftNotificationCenter {
+
     fun info(message: String) {
-        Notifications.Bus.notify(Notification("ClipCraft", "ClipCraft Info", message, NotificationType.INFORMATION))
+        NotificationGroupManager.getInstance().getNotificationGroup("ClipCraft Notifications")
+            .createNotification(message, NotificationType.INFORMATION)
+            .notify(null)
     }
 
     fun warn(message: String) {
-        Notifications.Bus.notify(Notification("ClipCraft", "ClipCraft Warning", message, NotificationType.WARNING))
+        NotificationGroupManager.getInstance().getNotificationGroup("ClipCraft Notifications")
+            .createNotification(message, NotificationType.WARNING)
+            .notify(null)
     }
 
     fun error(message: String) {
-        Notifications.Bus.notify(Notification("ClipCraft", "ClipCraft Error", message, NotificationType.ERROR))
+        NotificationGroupManager.getInstance().getNotificationGroup("ClipCraft Notifications")
+            .createNotification(message, NotificationType.ERROR)
+            .notify(null)
     }
 }

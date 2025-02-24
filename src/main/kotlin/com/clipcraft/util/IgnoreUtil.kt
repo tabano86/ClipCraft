@@ -2,9 +2,7 @@ package com.clipcraft.util
 
 import com.clipcraft.model.ClipCraftOptions
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.project.Project
 import java.io.File
-import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -17,20 +15,12 @@ object IgnoreUtil {
         }
     }
 
-    fun mergeGitIgnoreRules(opts: ClipCraftOptions, project: Project) {
-        project.basePath?.let { loadIgnoreFile(Paths.get(it, ".gitignore"), opts) }
-    }
-
     fun parseCustomIgnoreFiles(opts: ClipCraftOptions, projectBase: String, files: List<String>) {
         files.forEach { loadIgnoreFile(Paths.get(projectBase, it), opts) }
     }
 
     fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
-        // No longer skipping automatically if file.name starts with a dot:
         parseGitIgnoreIfNeeded(opts, projectBase)
-
-        // If a user wants to skip hidden files/folders, consider a separate option. Removed for now.
-
         if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
 
@@ -95,8 +85,60 @@ object IgnoreUtil {
                         opts.ignorePatterns.add(it)
                     }
                 }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             logger.warn("Error reading ${file.absolutePath}", e)
         }
     }
+
+    // Convert a standard glob into a Regex for matching paths
+    fun standardGlobToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
+        val (extended, globstar, flags) = options
+        val sb = StringBuilder()
+        var inGroup = false
+        var i = 0
+        while (i < glob.length) {
+            when (val c = glob[i]) {
+                in listOf('/', '$', '^', '+', '.', '(', ')', '=', '!', '|') -> sb.append('\\').append(c)
+                '?' -> sb.append("[^/]")
+                '[', ']' ->
+                    if (extended) sb.append(c) else sb.append('\\').append(c)
+
+                '{' ->
+                    if (extended) {
+                        inGroup = true; sb.append('(')
+                    } else {
+                        sb.append("\\{")
+                    }
+
+                '}' ->
+                    if (extended) {
+                        inGroup = false; sb.append(')')
+                    } else {
+                        sb.append("\\}")
+                    }
+
+                ',' ->
+                    if (inGroup) sb.append('|') else sb.append("\\,")
+
+                '*' -> {
+                    var starCount = 1
+                    while (i + 1 < glob.length && glob[i + 1] == '*') {
+                        starCount++
+                        i++
+                    }
+                    if (!globstar) sb.append(".*") else sb.append("([^/]*)")
+                }
+
+                else -> sb.append(c)
+            }
+            i++
+        }
+        val pattern = if (!flags.contains('g')) "^$sb\$" else sb.toString()
+        val opts = mutableSetOf<RegexOption>().apply {
+            if (flags.contains('i', ignoreCase = true)) add(RegexOption.IGNORE_CASE)
+        }
+        return Regex(pattern, opts)
+    }
 }
+
+data class GlobOptions(val extended: Boolean = false, val globstar: Boolean = false, val flags: String = "")

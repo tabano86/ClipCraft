@@ -3,9 +3,9 @@ package com.clipcraft.services
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ClipCraftProfile
 import com.clipcraft.model.ConcurrencyMode
+import java.util.logging.Logger
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.logging.Logger
 
 interface SettingsChangeListener {
     fun onSettingsChanged(settings: ClipCraftSettings)

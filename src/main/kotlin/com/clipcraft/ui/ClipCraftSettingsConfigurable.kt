@@ -8,11 +8,13 @@ import com.clipcraft.model.OverlapStrategy
 import com.clipcraft.model.Snippet
 import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
+import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
@@ -21,7 +23,9 @@ import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Dimension
+import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
+import java.io.File
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -29,6 +33,7 @@ import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JComponent
+import javax.swing.JFileChooser
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.Timer
@@ -40,6 +45,8 @@ class ClipCraftSettingsConfigurable : Configurable {
     private val manager = ClipCraftProfileManager()
     private val savedProfile = manager.currentProfile().copy()
     private val options = savedProfile.options
+
+    // Sample code for live preview demo
     private val sampleCode = """
         package test
         fun main() {
@@ -50,7 +57,7 @@ class ClipCraftSettingsConfigurable : Configurable {
     private lateinit var mainPanel: JPanel
     private lateinit var previewEditor: com.intellij.ui.EditorTextField
 
-    // UI controls
+    // UI Controls
     private lateinit var headerArea: JBTextArea
     private lateinit var footerArea: JBTextArea
     private lateinit var livePreviewCheck: JCheckBox
@@ -90,15 +97,15 @@ class ClipCraftSettingsConfigurable : Configurable {
     private lateinit var lintWarnOnlyCheck: JCheckBox
     private lateinit var addToQueueCheck: JCheckBox
 
-    // Debounced preview update timer
+    // Debounced preview update timer (300ms)
     private val previewTimer = Timer(300) { updatePreview() }.apply { isRepeats = false }
 
-    // Helper functions to create UI controls
+    // Helper methods for concise control creation
     private fun createCheckBox(
         text: String,
         init: Boolean,
         tooltip: String = "",
-        action: (() -> Unit)? = null,
+        action: (() -> Unit)? = null
     ): JCheckBox =
         JCheckBox(text, init).apply {
             toolTipText = tooltip
@@ -109,7 +116,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         text: String,
         columns: Int,
         tooltip: String = "",
-        docAction: (() -> Unit)? = null,
+        docAction: (() -> Unit)? = null
     ): JBTextField =
         JBTextField(text, columns).apply {
             toolTipText = tooltip
@@ -126,10 +133,10 @@ class ClipCraftSettingsConfigurable : Configurable {
         items: Array<T>,
         selected: T,
         tooltip: String = "",
-        action: (() -> Unit)? = null,
+        action: (() -> Unit)? = null
     ): JComboBox<T> =
         JComboBox(items).apply {
-            this.selectedItem = selected
+            selectedItem = selected
             toolTipText = tooltip
             action?.let { addActionListener { it() } }
         }
@@ -146,8 +153,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         val previewDoc = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument("")
         previewEditor =
             com.intellij.ui.EditorTextField(previewDoc, ProjectManager.getInstance().defaultProject, null, true, false)
-                .apply { isViewer = true; setOneLineMode(false); preferredSize = Dimension(480, 620) }
-
+                .apply { isViewer = true; isOneLineMode = false; preferredSize = Dimension(480, 620) }
         val splitter = JBSplitter(true, 0.5f).apply {
             firstComponent = formScroll
             secondComponent = previewEditor
@@ -159,20 +165,20 @@ class ClipCraftSettingsConfigurable : Configurable {
     }
 
     private fun buildFormPanel(): JPanel {
-        // Basic Options Panel
+        // Basic Options
         headerArea = JBTextArea(options.snippetHeaderText.orEmpty(), 3, 20).apply {
-            lineWrap = true; wrapStyleWord = true; toolTipText = "Text prepended to snippet"
+            lineWrap = true; wrapStyleWord = true; toolTipText = "Text prepended to snippet output"
             document.addDocumentListener(SimpleDocListener { schedulePreview() })
         }
         footerArea = JBTextArea(options.snippetFooterText.orEmpty(), 3, 20).apply {
-            lineWrap = true; wrapStyleWord = true; toolTipText = "Text appended to snippet"
+            lineWrap = true; wrapStyleWord = true; toolTipText = "Text appended to snippet output"
             document.addDocumentListener(SimpleDocListener { schedulePreview() })
         }
         dirStructCheck = createCheckBox(
             "Directory Structure",
             options.includeDirectorySummary,
             "Include directory summary",
-            ::schedulePreview,
+            ::schedulePreview
         )
         lineNumbersCheck =
             createCheckBox("Line Numbers", options.includeLineNumbers, "Show line numbers", ::schedulePreview)
@@ -186,16 +192,14 @@ class ClipCraftSettingsConfigurable : Configurable {
             createCheckBox("Remove Empty Lines", options.removeEmptyLines, "Eliminate blank lines", ::schedulePreview)
         singleLineCheck =
             createCheckBox("Single-line Output", options.singleLineOutput, "Produce single-line snippet", {
-                schedulePreview()
-                updateChunkUI()
+                schedulePreview(); updateChunkUI()
             })
         livePreviewCheck = createCheckBox("Live Preview", true, "Toggle live preview updates")
 
-        // Chunking
+        // Chunking Controls
         chunkCombo =
             createComboBox(ChunkStrategy.entries.toTypedArray(), options.chunkStrategy, "Select chunk strategy", {
-                schedulePreview()
-                updateChunkUI()
+                schedulePreview(); updateChunkUI()
             })
         chunkSizeField =
             createTextField(options.chunkSize.toString(), 6, "Chunk size (if applicable)", ::schedulePreview)
@@ -203,17 +207,17 @@ class ClipCraftSettingsConfigurable : Configurable {
             OverlapStrategy.entries.toTypedArray(),
             options.overlapStrategy,
             "Overlap strategy",
-            ::schedulePreview,
+            ::schedulePreview
         )
         compressionCombo = createComboBox(
             CompressionMode.entries.toTypedArray(),
             options.compressionMode,
             "Compression mode",
-            ::schedulePreview,
+            ::schedulePreview
         )
         chunkMsg = JLabel("").apply { foreground = UIManager.getColor("Label.errorForeground") }
 
-        // Advanced Options (collapsible)
+        // Advanced Options
         metaCheck =
             createCheckBox("Include Metadata", options.includeMetadata, "Include file metadata", ::schedulePreview)
         gitInfoCheck = createCheckBox("Git Info", options.includeGitInfo, "Include Git info", ::schedulePreview)
@@ -221,14 +225,13 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Auto-Detect Language",
             options.autoDetectLanguage,
             "Detect language automatically",
-            ::schedulePreview,
+            ::schedulePreview
         )
         themeCombo =
             createComboBox(ThemeMode.entries.toTypedArray(), options.themeMode, "Theme mode", ::schedulePreview)
         concurrencyCombo =
             createComboBox(ConcurrencyMode.entries.toTypedArray(), options.concurrencyMode, "Concurrency mode", {
-                schedulePreview()
-                updateConcurrency()
+                schedulePreview(); updateConcurrency()
             })
         maxTasksField =
             createTextField(options.maxConcurrentTasks.toString(), 4, "Max concurrent tasks", ::schedulePreview)
@@ -238,7 +241,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             options.additionalIgnorePatterns.orEmpty(),
             15,
             "Additional ignore patterns",
-            ::schedulePreview,
+            ::schedulePreview
         )
         invertIgnoresCheck =
             createCheckBox("Invert Patterns", options.invertIgnorePatterns, "Invert ignore patterns", ::schedulePreview)
@@ -246,7 +249,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Directory Matching",
             options.enableDirectoryPatternMatching,
             "Enable directory pattern matching",
-            ::schedulePreview,
+            ::schedulePreview
         )
         detectBinaryCheck =
             createCheckBox("Detect Binary Files", options.detectBinary, "Detect binary files", ::schedulePreview)
@@ -263,35 +266,51 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Add Snippet to Queue",
             options.addSnippetToQueue,
             "Queue snippet for later",
-            ::schedulePreview,
+            ::schedulePreview
         )
 
         // Buttons
-        val copyBtn = JButton("Copy Preview").apply {
+        val copyPreviewBtn = JButton("Copy Preview").apply {
             toolTipText = "Copy preview text to clipboard"
-            addActionListener { CopyPasteManager.getInstance().setContents(StringSelection(previewEditor.text)) }
+            addActionListener {
+                Toolkit.getDefaultToolkit().systemClipboard.setContents(
+                    StringSelection(previewEditor.text),
+                    null
+                )
+            }
+        }
+        val copyRecursivelyBtn = JButton("Copy Recursively").apply {
+            toolTipText = "Select files/directories (multi-select enabled) and copy formatted output without duplicates"
+            addActionListener { copyRecursively() }
         }
         val testBtn = JButton("Test Formatting").apply {
-            toolTipText = "Test code formatting on sample code"
+            toolTipText = "Use real API to test code formatting on sample code"
             addActionListener {
+                val snippet = Snippet(
+                    content = sampleCode,
+                    fileName = "Sample.kt",
+                    relativePath = "src/Sample.kt",
+                    filePath = "/fake/path/Sample.kt",
+                    fileSizeBytes = sampleCode.length.toLong(),
+                    lastModified = System.currentTimeMillis()
+                )
                 val output = try {
-                    com.clipcraft.util.CodeFormatter.formatSnippets(
-                        listOf(
-                            Snippet(
-                                content = sampleCode,
-                                fileName = "Sample.kt",
-                                relativePath = "src/Sample.kt",
-                                filePath = "/fake/path/Sample.kt",
-                                fileSizeBytes = sampleCode.length.toLong(),
-                                lastModified = System.currentTimeMillis(),
-                            ),
-                        ),
-                        options.copy(),
-                    ).joinToString("\n---\n")
+                    CodeFormatter.formatSnippets(listOf(snippet), options.copy()).joinToString("\n---\n")
                 } catch (ex: Exception) {
                     "Error: ${ex.message}"
                 }
-                com.intellij.openapi.ui.Messages.showInfoMessage(output, "Formatted Output")
+                Messages.showInfoMessage(output, "Formatted Output")
+            }
+        }
+        val exportBtn = JButton("Export Output").apply {
+            toolTipText = "Save formatted output to a file"
+            addActionListener { exportFormattedOutput() }
+        }
+        val openSettingsBtn = JButton("Open Settings").apply {
+            toolTipText = "Open ClipCraft settings page"
+            addActionListener {
+                ShowSettingsUtil.getInstance()
+                    .showSettingsDialog(ProjectManager.getInstance().defaultProject, "ClipCraft")
             }
         }
         val restoreBtn = JButton("Restore Defaults").apply {
@@ -341,15 +360,16 @@ class ClipCraftSettingsConfigurable : Configurable {
             .addComponent(addToQueueCheck)
             .panel.also { it.border = BorderFactory.createTitledBorder("Advanced Options") }
 
-        // Buttons Panel
         val btnPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
-            add(copyBtn); add(Box.createHorizontalStrut(8))
+            add(copyPreviewBtn); add(Box.createHorizontalStrut(8))
+            add(copyRecursivelyBtn); add(Box.createHorizontalStrut(8))
             add(testBtn); add(Box.createHorizontalStrut(8))
+            add(exportBtn); add(Box.createHorizontalStrut(8))
+            add(openSettingsBtn); add(Box.createHorizontalStrut(8))
             add(restoreBtn)
         }
 
-        // Combine all panels vertically
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             add(basicPanel)
@@ -406,11 +426,10 @@ class ClipCraftSettingsConfigurable : Configurable {
             relativePath = "src/Sample.kt",
             filePath = "/fake/path/Sample.kt",
             fileSizeBytes = sampleCode.length.toLong(),
-            lastModified = System.currentTimeMillis(),
+            lastModified = System.currentTimeMillis()
         )
         val formatted = try {
-            com.clipcraft.util.CodeFormatter.formatSnippets(listOf(snippet), tmp)
-                .joinToString("\n---\n")
+            CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
         } catch (ex: Exception) {
             "Formatting Error: ${ex.message}"
         }
@@ -475,6 +494,67 @@ class ClipCraftSettingsConfigurable : Configurable {
         addToQueueCheck.isSelected = d.addSnippetToQueue
     }
 
+    // Recursively collect snippets from a file/directory while avoiding duplicates.
+    private fun collectSnippets(file: File, root: File, processed: MutableSet<String>): List<Snippet> {
+        val snippets = mutableListOf<Snippet>()
+        if (!processed.add(file.absolutePath)) return snippets // Skip duplicates
+        if (file.isDirectory) {
+            file.listFiles()?.forEach { snippets.addAll(collectSnippets(it, root, processed)) }
+        } else {
+            try {
+                val content = file.readText()
+                snippets.add(
+                    Snippet(
+                        content = content,
+                        fileName = file.name,
+                        relativePath = file.relativeTo(root).path,
+                        filePath = file.absolutePath,
+                        fileSizeBytes = file.length(),
+                        lastModified = file.lastModified()
+                    )
+                )
+            } catch (_: Exception) { /* Skip unreadable files */
+            }
+        }
+        return snippets
+    }
+
+    // Allow multi-selection; process selected files/directories without duplicates.
+    private fun copyRecursively() {
+        val chooser = JFileChooser().apply {
+            fileSelectionMode = JFileChooser.FILES_AND_DIRECTORIES
+            isMultiSelectionEnabled = true
+        }
+        if (chooser.showOpenDialog(mainPanel) == JFileChooser.APPROVE_OPTION) {
+            val selectedFiles = chooser.selectedFiles
+            val allSnippets = mutableListOf<Snippet>()
+            val processed = mutableSetOf<String>()
+            for (file in selectedFiles) {
+                allSnippets.addAll(collectSnippets(file, file, processed))
+            }
+            val formatted = try {
+                CodeFormatter.formatSnippets(allSnippets, options.copy()).joinToString("\n---\n")
+            } catch (ex: Exception) {
+                "Error formatting snippets: ${ex.message}"
+            }
+            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(formatted), null)
+        }
+    }
+
+    // Export formatted output to a file.
+    private fun exportFormattedOutput() {
+        val chooser = JFileChooser().apply { fileSelectionMode = JFileChooser.FILES_ONLY }
+        if (chooser.showSaveDialog(mainPanel) == JFileChooser.APPROVE_OPTION) {
+            val file = chooser.selectedFile
+            try {
+                file.writeText(previewEditor.text)
+                Messages.showInfoMessage("Export successful to ${file.absolutePath}", "Export")
+            } catch (ex: Exception) {
+                Messages.showErrorDialog("Failed to export: ${ex.message}", "Export Error")
+            }
+        }
+    }
+
     override fun isModified(): Boolean = listOf(
         headerArea.text != options.snippetHeaderText.orEmpty(),
         footerArea.text != options.snippetFooterText.orEmpty(),
@@ -505,7 +585,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         includeImageCheck.isSelected != options.includeImageFiles,
         lintErrOnlyCheck.isSelected != options.lintErrorsOnly,
         lintWarnOnlyCheck.isSelected != options.lintWarningsOnly,
-        addToQueueCheck.isSelected != options.addSnippetToQueue,
+        addToQueueCheck.isSelected != options.addSnippetToQueue
     ).any { it }
 
     @Throws(ConfigurationException::class)

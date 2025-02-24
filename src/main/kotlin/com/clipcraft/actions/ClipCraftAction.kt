@@ -27,7 +27,6 @@ import com.intellij.psi.PsiManager
 import java.awt.Toolkit
 import java.io.File
 import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -91,19 +90,32 @@ class ClipCraftAction : AnAction() {
         })
     }
 
-    private fun finalizeAndCopyOutput(project: Project, group: SnippetGroup, opts: ClipCraftOptions, opLabel: String, stats: ProcessingStats) {
+    private fun finalizeAndCopyOutput(
+        project: Project,
+        group: SnippetGroup,
+        opts: ClipCraftOptions,
+        opLabel: String,
+        stats: ProcessingStats
+    ) {
         val lintResults = if (opts.showLint) LintService.lintGroup(group, opts) else emptyList()
         project.getService(LintResultsService::class.java)?.storeResults(lintResults)
         var output = buildFinalOutput(project, group, opts, lintResults, stats)
         Toolkit.getDefaultToolkit().systemClipboard.setContents(
             java.awt.datatransfer.StringSelection(output),
-            null,
+            null
         )
         project.getService(ClipCraftPerformanceMetrics::class.java)?.stopProcessingAndLog(opLabel)
         ClipCraftNotificationCenter.info("ClipCraft finished. Total length: ${output.length}")
     }
 
-    private fun processPath(file: File, project: Project, opts: ClipCraftOptions, group: SnippetGroup, indicator: ProgressIndicator?, stats: ProcessingStats) {
+    private fun processPath(
+        file: File,
+        project: Project,
+        opts: ClipCraftOptions,
+        group: SnippetGroup,
+        indicator: ProgressIndicator?,
+        stats: ProcessingStats
+    ) {
         if (indicator?.isCanceled == true) return
         if (!file.exists() || IgnoreUtil.shouldIgnore(file, opts, project.basePath ?: "")) return
         if (file.isDirectory) {
@@ -119,7 +131,14 @@ class ClipCraftAction : AnAction() {
         }
     }
 
-    private fun processSingleFile(file: File, project: Project, opts: ClipCraftOptions, group: SnippetGroup, indicator: ProgressIndicator?, stats: ProcessingStats) {
+    private fun processSingleFile(
+        file: File,
+        project: Project,
+        opts: ClipCraftOptions,
+        group: SnippetGroup,
+        indicator: ProgressIndicator?,
+        stats: ProcessingStats
+    ) {
         if (indicator?.isCanceled == true) return
         if (file.isHidden) return
         val ext = file.extension.lowercase()
@@ -140,14 +159,20 @@ class ClipCraftAction : AnAction() {
         detectPsiLanguage(project, snippet)
     }
 
-    private fun addSnippet(project: Project, group: SnippetGroup, file: File, content: String, enrichWithGit: Boolean): Snippet {
+    private fun addSnippet(
+        project: Project,
+        group: SnippetGroup,
+        file: File,
+        content: String,
+        enrichWithGit: Boolean
+    ): Snippet {
         var snippet = Snippet(
             filePath = file.absolutePath,
             relativePath = computeRelativePath(project.basePath, file),
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
-            content = content,
+            content = content
         )
         if (enrichWithGit) snippet = ClipCraftGitIntegration.enrichSnippetWithGitInfo(project, snippet)
         synchronized(group) { group.snippets.add(snippet) }
@@ -157,7 +182,7 @@ class ClipCraftAction : AnAction() {
     private fun computeRelativePath(basePath: String?, file: File): String? {
         if (basePath == null) return null
         return try {
-            Paths.get(basePath).relativize(file.toPath()).toString()
+            java.nio.file.Paths.get(basePath).relativize(file.toPath()).toString()
         } catch (ex: Exception) {
             file.absolutePath
         }
@@ -185,7 +210,13 @@ class ClipCraftAction : AnAction() {
         }
     }
 
-    private fun buildFinalOutput(project: Project, group: SnippetGroup, opts: ClipCraftOptions, lintResults: List<LintIssue>, stats: ProcessingStats): String {
+    private fun buildFinalOutput(
+        project: Project,
+        group: SnippetGroup,
+        opts: ClipCraftOptions,
+        lintResults: List<LintIssue>,
+        stats: ProcessingStats
+    ): String {
         val header = opts.snippetHeaderText.orEmpty()
         val footer = opts.snippetFooterText.orEmpty()
         val sortedSnippets = group.snippets.sortedBy { it.fileName }
@@ -193,33 +224,25 @@ class ClipCraftAction : AnAction() {
         val dirStruct = if (opts.includeDirectorySummary) {
             "Directory Structure:\n" + sortedSnippets.mapNotNull { it.relativePath }
                 .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
-        } else {
-            ""
-        }
+        } else ""
         val lintSummary = if (opts.showLint && lintResults.isNotEmpty() && opts.includeLintInOutput) {
             "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" }
-        } else {
-            ""
-        }
+        } else ""
         val languageSummary = if (sortedSnippets.isNotEmpty()) {
             "\n\nLanguage Summary:\n" + sortedSnippets.groupBy { it.language ?: "none" }
                 .map { (lang, snippets) -> "$lang: ${snippets.size}" }
-                .sorted()
-                .joinToString("\n")
-        } else {
-            ""
-        }
-        val processingStats = "\n\nProcessing Statistics:\nFiles Processed: ${stats.processedFiles}\nErrors: ${stats.errorFiles}"
+                .sorted().joinToString("\n")
+        } else ""
+        val processingStats =
+            "\n\nProcessing Statistics:\nFiles Processed: ${stats.processedFiles}\nErrors: ${stats.errorFiles}"
         var output = buildString {
             if (header.isNotEmpty()) {
-                appendLine(header)
-                appendLine()
+                appendLine(header); appendLine()
             }
             if (dirStruct.isNotEmpty()) appendLine(dirStruct)
             append(code)
             if (footer.isNotEmpty()) {
-                appendLine()
-                appendLine(footer)
+                appendLine(); appendLine(footer)
             }
             append(languageSummary)
             append(processingStats)

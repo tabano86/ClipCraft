@@ -26,7 +26,7 @@ dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assis
         <applicationConfigurable
                 id="clipcraft.settings"
                 instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
-                displayName="ClipCraft" />
+                displayName="ClipCraft"/>
 
         <!-- Lint tool window if you desire -->
         <toolWindow
@@ -34,11 +34,11 @@ dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assis
                 factoryClass="com.clipcraft.ui.ClipCraftLintToolWindowFactory"
                 anchor="bottom"
                 icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_24"
-                secondary="true" />
+                secondary="true"/>
 
         <!-- Search Everywhere integration -->
         <searchEverywhereContributor
-                implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory" />
+                implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory"/>
     </extensions>
 
     <actions>
@@ -51,7 +51,7 @@ dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assis
                 icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
 
             <!-- Added directly to built-in Cut/Copy/Paste group -->
-            <add-to-group group-id="CutCopyPasteGroup" anchor="last" />
+            <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
         </action>
 
         <!-- 2) A creative submenu also in the same group, holding the rest of your actions. -->
@@ -63,39 +63,39 @@ dynamic ignoring, snippet previewing, a built-in lint scanner, and an AI‐assis
                 class="com.intellij.openapi.actionSystem.DefaultActionGroup">
 
             <!-- Attach this entire group to CutCopyPasteGroup as well -->
-            <add-to-group group-id="CutCopyPasteGroup" anchor="last" />
+            <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
 
             <action
                     id="ClipCraftWizardAction"
                     class="com.clipcraft.actions.ClipCraftWizardAction"
                     text="Setup Wizard"
-                    description="Guided configuration for ClipCraft" />
+                    description="Guided configuration for ClipCraft"/>
 
             <action
                     id="ClipCraftResetDefaultsAction"
                     class="com.clipcraft.actions.ClipCraftResetDefaultsAction"
                     text="Reset Defaults"
-                    description="Reset all ClipCraft settings to factory state" />
+                    description="Reset all ClipCraft settings to factory state"/>
 
             <action
                     id="ClipCraftSwitchProfileAction"
                     class="com.clipcraft.actions.ClipCraftSwitchProfileAction"
                     text="Switch Profile"
-                    description="Switch among multiple ClipCraft profiles" />
+                    description="Switch among multiple ClipCraft profiles"/>
 
             <action
                     id="OpenClipCraftSettings"
                     class="com.intellij.ide.actions.ShowSettingsAction"
                     text="Open ClipCraft Settings"
-                    description="Opens the ClipCraft settings page" />
+                    description="Opens the ClipCraft settings page"/>
 
-            <separator />
+            <separator/>
 
             <action
                     id="ClipCraftAddSnippetFromCursorAction"
                     class="com.clipcraft.actions.ClipCraftAddSnippetFromCursorOrSelectionAction"
                     text="Add Snippet from Caret"
-                    description="Extract snippet from code near caret or selection" />
+                    description="Extract snippet from code near caret or selection"/>
         </group>
     </actions>
 </idea-plugin>

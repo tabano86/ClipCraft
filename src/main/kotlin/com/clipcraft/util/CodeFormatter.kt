@@ -5,8 +5,8 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.Snippet
-import org.apache.commons.text.StringEscapeUtils
 import kotlin.math.min
+import org.apache.commons.text.StringEscapeUtils
 
 object CodeFormatter {
 
@@ -63,16 +63,19 @@ object CodeFormatter {
                     val t = it.trim().lowercase()
                     t.startsWith("import ") || t.startsWith("from ")
                 }
+
             lang?.contains("ruby", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("require ") || t.startsWith("load ")
                 }
+
             lang?.contains("php", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("use ") || t.startsWith("require ")
                 }
+
             else ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
@@ -120,6 +123,7 @@ object CodeFormatter {
             CompressionMode.MINIMAL -> input.lines().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
+
             CompressionMode.ULTRA -> input.lines().map {
                 it.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
             }.filter {

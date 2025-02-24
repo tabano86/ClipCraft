@@ -9,7 +9,6 @@ import com.clipcraft.model.Snippet
 import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
 import com.clipcraft.util.CodeFormatter
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -597,7 +596,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         options.resolveConflicts()
         manager.addProfile(savedProfile.copy(options = options))
         manager.switchProfile(savedProfile.profileName)
-        ApplicationManager.getApplication().saveAll()
+        // ApplicationManager.getApplication().saveAll() // IntelliJ Platform automatically persists settings defined via persistent state components (like those in your ClipCraftSettingsService). Forcing a save using an internal API isn’t necessary and isn’t supported for plugin code.
     }
 
     override fun reset() {

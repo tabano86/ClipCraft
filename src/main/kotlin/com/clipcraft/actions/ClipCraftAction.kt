@@ -16,16 +16,16 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.util.concurrent.Executors
+import javax.swing.JOptionPane
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.util.concurrent.Executors
-import javax.swing.JOptionPane
 
 class ClipCraftAction : AnAction() {
 
@@ -68,7 +68,7 @@ class ClipCraftAction : AnAction() {
             ConcurrencyMode.DISABLED -> copyContentsSequential(allFiles, project, options)
             ConcurrencyMode.THREAD_POOL,
             ConcurrencyMode.COROUTINES,
-            -> copyContentsCoroutines(allFiles, project, options)
+                -> copyContentsCoroutines(allFiles, project, options)
         }
     }
 
@@ -89,6 +89,12 @@ class ClipCraftAction : AnAction() {
         val snippetList = mutableListOf<Snippet>()
         val failed = mutableListOf<String>()
         for (vf in files) {
+            // Check if it's an image
+            if (!options.includeImageFiles && isImageFile(vf)) {
+                // Skip it. Possibly show a warning or do nothing.
+                continue
+            }
+
             val content = readFileOrNull(vf)
             if (content == null) {
                 failed.add(vf.name)
@@ -101,12 +107,18 @@ class ClipCraftAction : AnAction() {
                     relativePath = null,
                     fileSizeBytes = content.length.toLong(),
                     lastModified = System.currentTimeMillis(),
-                    content = content,
-                ),
+                    content = content
+                )
             )
         }
         val resultText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
         postCopy(project, resultText, failed, files.size)
+    }
+
+    /** Helper function to detect image files by extension. */
+    private fun isImageFile(vFile: VirtualFile): Boolean {
+        val ext = vFile.extension?.lowercase()
+        return ext in listOf("png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "ico", "svg")
     }
 
     private suspend fun copyContentsCoroutines(files: List<VirtualFile>, project: Project, options: ClipCraftOptions) {

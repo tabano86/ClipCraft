@@ -152,7 +152,7 @@ jobs:
       - name: "Update Repository Topics and Description"
         uses: actions/github-script@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
         with:
           script: |
             const topics = ['plugin','ci','automation','release'];
@@ -169,7 +169,7 @@ jobs:
       - name: "Create or Update Release Announcement"
         uses: peter-evans/create-or-update-comment@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
           issue-number: 1
           body: |
             :tada: A new release [${{ env.RELEASE_TAG }}](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}) is available.

@@ -24,15 +24,15 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.PsiManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import java.awt.Toolkit
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 
 class ClipCraftAction : AnAction() {
 
@@ -95,14 +95,14 @@ class ClipCraftAction : AnAction() {
         group: SnippetGroup,
         opts: ClipCraftOptions,
         opLabel: String,
-        stats: ProcessingStats
+        stats: ProcessingStats,
     ) {
         val lintResults = if (opts.showLint) LintService.lintGroup(group, opts) else emptyList()
         project.getService(LintResultsService::class.java)?.storeResults(lintResults)
         var output = buildFinalOutput(project, group, opts, lintResults, stats)
         Toolkit.getDefaultToolkit().systemClipboard.setContents(
             java.awt.datatransfer.StringSelection(output),
-            null
+            null,
         )
         project.getService(ClipCraftPerformanceMetrics::class.java)?.stopProcessingAndLog(opLabel)
         ClipCraftNotificationCenter.info("ClipCraft finished. Total length: ${output.length}")
@@ -114,7 +114,7 @@ class ClipCraftAction : AnAction() {
         opts: ClipCraftOptions,
         group: SnippetGroup,
         indicator: ProgressIndicator?,
-        stats: ProcessingStats
+        stats: ProcessingStats,
     ) {
         if (indicator?.isCanceled == true) return
         if (!file.exists() || IgnoreUtil.shouldIgnore(file, opts, project.basePath ?: "")) return
@@ -137,7 +137,7 @@ class ClipCraftAction : AnAction() {
         opts: ClipCraftOptions,
         group: SnippetGroup,
         indicator: ProgressIndicator?,
-        stats: ProcessingStats
+        stats: ProcessingStats,
     ) {
         if (indicator?.isCanceled == true) return
         if (file.isHidden) return
@@ -164,7 +164,7 @@ class ClipCraftAction : AnAction() {
         group: SnippetGroup,
         file: File,
         content: String,
-        enrichWithGit: Boolean
+        enrichWithGit: Boolean,
     ): Snippet {
         var snippet = Snippet(
             filePath = file.absolutePath,
@@ -172,7 +172,7 @@ class ClipCraftAction : AnAction() {
             fileName = file.name,
             fileSizeBytes = file.length(),
             lastModified = file.lastModified(),
-            content = content
+            content = content,
         )
         if (enrichWithGit) snippet = ClipCraftGitIntegration.enrichSnippetWithGitInfo(project, snippet)
         synchronized(group) { group.snippets.add(snippet) }
@@ -215,7 +215,7 @@ class ClipCraftAction : AnAction() {
         group: SnippetGroup,
         opts: ClipCraftOptions,
         lintResults: List<LintIssue>,
-        stats: ProcessingStats
+        stats: ProcessingStats,
     ): String {
         val header = opts.snippetHeaderText.orEmpty()
         val footer = opts.snippetFooterText.orEmpty()
@@ -224,15 +224,21 @@ class ClipCraftAction : AnAction() {
         val dirStruct = if (opts.includeDirectorySummary) {
             "Directory Structure:\n" + sortedSnippets.mapNotNull { it.relativePath }
                 .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
-        } else ""
+        } else {
+            ""
+        }
         val lintSummary = if (opts.showLint && lintResults.isNotEmpty() && opts.includeLintInOutput) {
             "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" }
-        } else ""
+        } else {
+            ""
+        }
         val languageSummary = if (sortedSnippets.isNotEmpty()) {
             "\n\nLanguage Summary:\n" + sortedSnippets.groupBy { it.language ?: "none" }
                 .map { (lang, snippets) -> "$lang: ${snippets.size}" }
                 .sorted().joinToString("\n")
-        } else ""
+        } else {
+            ""
+        }
         val processingStats =
             "\n\nProcessing Statistics:\nFiles Processed: ${stats.processedFiles}\nErrors: ${stats.errorFiles}"
         var output = buildString {

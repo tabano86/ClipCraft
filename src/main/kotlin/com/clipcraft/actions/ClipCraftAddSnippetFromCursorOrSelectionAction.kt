@@ -16,9 +16,9 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import java.awt.Toolkit
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
+import java.awt.Toolkit
 
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {

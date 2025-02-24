@@ -105,7 +105,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         text: String,
         init: Boolean,
         tooltip: String = "",
-        action: (() -> Unit)? = null
+        action: (() -> Unit)? = null,
     ): JCheckBox =
         JCheckBox(text, init).apply {
             toolTipText = tooltip
@@ -116,7 +116,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         text: String,
         columns: Int,
         tooltip: String = "",
-        docAction: (() -> Unit)? = null
+        docAction: (() -> Unit)? = null,
     ): JBTextField =
         JBTextField(text, columns).apply {
             toolTipText = tooltip
@@ -133,7 +133,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         items: Array<T>,
         selected: T,
         tooltip: String = "",
-        action: (() -> Unit)? = null
+        action: (() -> Unit)? = null,
     ): JComboBox<T> =
         JComboBox(items).apply {
             selectedItem = selected
@@ -153,7 +153,10 @@ class ClipCraftSettingsConfigurable : Configurable {
         val previewDoc = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument("")
         previewEditor =
             com.intellij.ui.EditorTextField(previewDoc, ProjectManager.getInstance().defaultProject, null, true, false)
-                .apply { isViewer = true; isOneLineMode = false; preferredSize = Dimension(480, 620) }
+                .apply {
+                    isViewer = true
+                    preferredSize = Dimension(480, 620)
+                }
         val splitter = JBSplitter(true, 0.5f).apply {
             firstComponent = formScroll
             secondComponent = previewEditor
@@ -178,7 +181,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Directory Structure",
             options.includeDirectorySummary,
             "Include directory summary",
-            ::schedulePreview
+            ::schedulePreview,
         )
         lineNumbersCheck =
             createCheckBox("Line Numbers", options.includeLineNumbers, "Show line numbers", ::schedulePreview)
@@ -207,13 +210,13 @@ class ClipCraftSettingsConfigurable : Configurable {
             OverlapStrategy.entries.toTypedArray(),
             options.overlapStrategy,
             "Overlap strategy",
-            ::schedulePreview
+            ::schedulePreview,
         )
         compressionCombo = createComboBox(
             CompressionMode.entries.toTypedArray(),
             options.compressionMode,
             "Compression mode",
-            ::schedulePreview
+            ::schedulePreview,
         )
         chunkMsg = JLabel("").apply { foreground = UIManager.getColor("Label.errorForeground") }
 
@@ -225,7 +228,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Auto-Detect Language",
             options.autoDetectLanguage,
             "Detect language automatically",
-            ::schedulePreview
+            ::schedulePreview,
         )
         themeCombo =
             createComboBox(ThemeMode.entries.toTypedArray(), options.themeMode, "Theme mode", ::schedulePreview)
@@ -241,7 +244,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             options.additionalIgnorePatterns.orEmpty(),
             15,
             "Additional ignore patterns",
-            ::schedulePreview
+            ::schedulePreview,
         )
         invertIgnoresCheck =
             createCheckBox("Invert Patterns", options.invertIgnorePatterns, "Invert ignore patterns", ::schedulePreview)
@@ -249,7 +252,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Directory Matching",
             options.enableDirectoryPatternMatching,
             "Enable directory pattern matching",
-            ::schedulePreview
+            ::schedulePreview,
         )
         detectBinaryCheck =
             createCheckBox("Detect Binary Files", options.detectBinary, "Detect binary files", ::schedulePreview)
@@ -266,7 +269,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Add Snippet to Queue",
             options.addSnippetToQueue,
             "Queue snippet for later",
-            ::schedulePreview
+            ::schedulePreview,
         )
 
         // Buttons
@@ -275,7 +278,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             addActionListener {
                 Toolkit.getDefaultToolkit().systemClipboard.setContents(
                     StringSelection(previewEditor.text),
-                    null
+                    null,
                 )
             }
         }
@@ -292,7 +295,7 @@ class ClipCraftSettingsConfigurable : Configurable {
                     relativePath = "src/Sample.kt",
                     filePath = "/fake/path/Sample.kt",
                     fileSizeBytes = sampleCode.length.toLong(),
-                    lastModified = System.currentTimeMillis()
+                    lastModified = System.currentTimeMillis(),
                 )
                 val output = try {
                     CodeFormatter.formatSnippets(listOf(snippet), options.copy()).joinToString("\n---\n")
@@ -426,7 +429,7 @@ class ClipCraftSettingsConfigurable : Configurable {
             relativePath = "src/Sample.kt",
             filePath = "/fake/path/Sample.kt",
             fileSizeBytes = sampleCode.length.toLong(),
-            lastModified = System.currentTimeMillis()
+            lastModified = System.currentTimeMillis(),
         )
         val formatted = try {
             CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
@@ -510,8 +513,8 @@ class ClipCraftSettingsConfigurable : Configurable {
                         relativePath = file.relativeTo(root).path,
                         filePath = file.absolutePath,
                         fileSizeBytes = file.length(),
-                        lastModified = file.lastModified()
-                    )
+                        lastModified = file.lastModified(),
+                    ),
                 )
             } catch (_: Exception) { /* Skip unreadable files */
             }
@@ -585,7 +588,7 @@ class ClipCraftSettingsConfigurable : Configurable {
         includeImageCheck.isSelected != options.includeImageFiles,
         lintErrOnlyCheck.isSelected != options.lintErrorsOnly,
         lintWarnOnlyCheck.isSelected != options.lintWarningsOnly,
-        addToQueueCheck.isSelected != options.addSnippetToQueue
+        addToQueueCheck.isSelected != options.addSnippetToQueue,
     ).any { it }
 
     @Throws(ConfigurationException::class)

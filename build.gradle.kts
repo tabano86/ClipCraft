@@ -136,5 +136,6 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
 
     // If you rely on org.apache.commons.text.StringEscapeUtils in code:
-    implementation("org.apache.commons:commons-text:1.10.0")
+    implementation("org.apache.commons:commons-text:1.13.0")
+    implementation("org.apache.commons:commons-lang3:3.17.0")
 }

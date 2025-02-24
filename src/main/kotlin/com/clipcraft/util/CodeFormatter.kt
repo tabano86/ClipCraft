@@ -5,41 +5,66 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.Snippet
-import org.apache.commons.text.StringEscapeUtils
 import kotlin.math.min
+import org.apache.commons.text.StringEscapeUtils
 
 /**
- * Utility for formatting code snippets with compression, line numbers, etc.
+ * Utility for formatting code snippets with chunking, compression, concurrency,
+ * user-defined metadata, etc.
  */
 object CodeFormatter {
-
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
         options.resolveConflicts()
-        val merged = snippets.joinToString("\n\n") { process(it, options) }.trim()
+        val mergedContent = snippets.joinToString("\n\n") {
+            processSnippet(it, options)
+        }.trim()
         return when (options.chunkStrategy) {
-            ChunkStrategy.NONE -> listOf(merged)
-            ChunkStrategy.BY_SIZE -> chunkBySize(merged, options.chunkSize, true)
-            ChunkStrategy.BY_METHODS -> chunkByMethods(merged)
+            ChunkStrategy.NONE -> listOf(mergedContent)
+            ChunkStrategy.BY_SIZE -> chunkBySize(mergedContent, options.chunkSize, preserveWords = true)
+            ChunkStrategy.BY_METHODS -> chunkByMethods(mergedContent)
         }
     }
 
-    private fun process(snippet: Snippet, o: ClipCraftOptions): String {
+    private fun processSnippet(snippet: Snippet, options: ClipCraftOptions): String {
         val lang = snippet.language?.ifBlank { null } ?: detectLanguage(snippet.fileName)
+
         var text = snippet.content
-        if (o.removeImports) text = removeImports(text, lang)
-        if (o.removeComments) text = removeComments(text, lang)
-        if (o.trimWhitespace) text = trimWhitespace(text, o.collapseBlankLines, o.removeLeadingBlankLines)
-        if (o.removeEmptyLines) text = collapseEmpty(text)
-        if (o.singleLineOutput) text = singleLine(text)
-        text = compress(text, o)
-        if (o.includeLineNumbers) text = lineNumbers(text)
-        val wrappedCode = wrap(text, o.outputFormat, lang)
-        return if (o.includeMetadata) {
-            val meta = metadata(snippet)
-            "$meta\n\n$wrappedCode"
-        } else {
-            wrappedCode
+        if (options.removeImports) text = removeImports(text, lang)
+        if (options.removeComments) text = removeComments(text, lang)
+        if (options.trimWhitespace) {
+            text = trimWhitespace(text, options.collapseBlankLines, options.removeLeadingBlankLines)
         }
+        if (options.removeEmptyLines) text = collapseEmpty(text)
+        if (options.singleLineOutput) text = singleLine(text)
+        text = compress(text, options)
+        if (options.includeLineNumbers) {
+            text = lineNumbers(text)
+        }
+        val wrapped = wrapCodeBlock(text, options.outputFormat, lang)
+        return if (options.includeMetadata) {
+            val meta = buildMetadataBlock(snippet, options)
+            "$meta\n\n$wrapped"
+        } else {
+            wrapped
+        }
+    }
+
+    private fun buildMetadataBlock(snippet: Snippet, opts: ClipCraftOptions): String {
+        val template = opts.metadataTemplate?.takeIf { it.isNotBlank() }
+            ?: "**File:** {fileName} | **Size:** {size} bytes | **Modified:** {modified}"
+        val placeholders = mapOf(
+            "filePath" to snippet.filePath,
+            "fileName" to snippet.fileName,
+            "relativePath" to (snippet.relativePath ?: snippet.fileName),
+            "size" to snippet.fileSizeBytes.toString(),
+            "modified" to snippet.lastModified.toString(),
+            "id" to snippet.id,
+        )
+        var meta = template
+        placeholders.forEach { (k, v) ->
+            meta = meta.replace("{$k}", v)
+        }
+        return meta
     }
 
     fun detectLanguage(fileName: String?): String {
@@ -99,13 +124,15 @@ object CodeFormatter {
 
             lang.equals("php", true) ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
-                    .lines().map { it.replace(Regex("//.*$"), "").replace(Regex("#.*$"), "").trimEnd() }
+                    .lines()
+                    .map { it.replace(Regex("//.*$"), "").replace(Regex("#.*$"), "").trimEnd() }
                     .filter { it.isNotBlank() }
                     .joinToString("\n")
 
             else ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
-                    .lines().map { it.replace(Regex("//.*$"), "").trimEnd() }
+                    .lines()
+                    .map { it.replace(Regex("//.*$"), "").trimEnd() }
                     .filter { it.isNotBlank() }
                     .joinToString("\n")
         }
@@ -117,11 +144,13 @@ object CodeFormatter {
         return if (collapse) collapseEmpty(trimmed.joinToString("\n")) else trimmed.joinToString("\n")
     }
 
-    fun collapseEmpty(text: String): String =
-        text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
+    fun collapseEmpty(text: String): String {
+        return text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
+    }
 
-    fun singleLine(text: String): String =
-        text.replace(Regex("\\s+"), " ").trim()
+    fun singleLine(text: String): String {
+        return text.replace(Regex("\\s+"), " ").trim()
+    }
 
     fun compress(input: String, o: ClipCraftOptions): String {
         return when (o.compressionMode) {
@@ -144,13 +173,11 @@ object CodeFormatter {
         }
     }
 
-    fun lineNumbers(text: String): String =
-        text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
+    fun lineNumbers(text: String): String {
+        return text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
+    }
 
-    fun metadata(snippet: Snippet): String =
-        "**File:** ${snippet.relativePath ?: snippet.fileName} | **Size:** ${snippet.fileSizeBytes} bytes | **Modified:** ${snippet.lastModified}"
-
-    fun wrap(content: String, format: OutputFormat, lang: String?): String {
+    private fun wrapCodeBlock(content: String, format: OutputFormat, lang: String?): String {
         val l = lang ?: "none"
         return when (format) {
             OutputFormat.MARKDOWN -> "```$l\n$content\n```"
@@ -162,6 +189,7 @@ object CodeFormatter {
     fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
         require(maxChunkSize > 0) { "maxChunkSize must be positive" }
         if (text.length <= maxChunkSize) return listOf(text)
+
         if (!preserveWords) {
             val chunks = mutableListOf<String>()
             var idx = 0
@@ -172,6 +200,7 @@ object CodeFormatter {
             }
             return chunks
         }
+
         val results = mutableListOf<String>()
         var i = 0
         while (i < text.length) {

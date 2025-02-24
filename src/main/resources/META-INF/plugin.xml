@@ -1,37 +1,29 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>1.0.0-REFACTOR</version>
+    <version>0.7.0-SNAPSHOT</version>
     <vendor email="support@clipcraft.io" url="https://github.com/clipcraft">ClipCraft Inc.</vendor>
 
     <description><![CDATA[
-    ClipCraft extracts, formats, and merges code from multiple files or directories...
+    ClipCraft extracts, formats, merges code from multiple files or directories...
   ]]></description>
 
     <change-notes><![CDATA[
-    - Major refactoring...
+    - Removed release-version in plugin.xml
+    - Adjusted since-build to 241
   ]]></change-notes>
 
-    <!-- Mark dependency on com.intellij.modules.platform or .java, etc., as needed -->
+    <!-- For IntelliJ 2024.1, do: -->
+    <idea-version since-build="241" until-build="241.*"/>
+
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Notification group so we can show balloon messages -->
         <notificationGroup id="ClipCraft Notifications" displayType="BALLOON"/>
 
-        <!--        &lt;!&ndash; Example lint toolwindow (optional) &ndash;&gt;-->
-        <!--        <toolWindow-->
-        <!--                id="ClipCraft.Lint"-->
-        <!--                factoryClass="com.clipcraft.ui.ClipCraftLintToolWindowFactory"-->
-        <!--                anchor="bottom"-->
-        <!--                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16"-->
-        <!--                secondary="true"/>-->
+        <!-- optional toolWindow or searching can remain here -->
 
-        <!-- Searching integration (optional) -->
-        <searchEverywhereContributor
-                implementation="com.clipcraft.integration.ClipCraftSearchEverywhereContributorFactory"/>
-
-        <!-- Register our Configurable for the Settings UI -->
+        <!-- Settings UI -->
         <applicationConfigurable
                 displayName="ClipCraft"
                 instance="com.clipcraft.ui.ClipCraftSettingsConfigurable"
@@ -39,13 +31,12 @@
     </extensions>
 
     <actions>
-        <!-- Single direct action: ClipCraft Copy -->
         <action
                 id="ClipCraftCopyAction"
                 class="com.clipcraft.actions.ClipCraftAction"
                 text="ClipCraft Copy"
-                description="Copies, formats, merges code from selected files"
-                icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
+                description="Copies, formats, merges code from selected files">
+            icon="com.clipcraft.icons.ClipCraftIcons.CLIPCRAFT_16">
             <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
         </action>
 

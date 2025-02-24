@@ -1,5 +1,8 @@
 package com.clipcraft.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ClipCraftOptions(
     var includeLineNumbers: Boolean = false,
     var outputFormat: OutputFormat = OutputFormat.MARKDOWN,

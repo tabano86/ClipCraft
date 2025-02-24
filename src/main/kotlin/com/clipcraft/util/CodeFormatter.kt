@@ -30,8 +30,13 @@ object CodeFormatter {
         if (o.singleLineOutput) text = singleLine(text)
         text = compress(text, o)
         if (o.includeLineNumbers) text = lineNumbers(text)
-        val meta = if (o.includeMetadata) metadata(snippet, text) else text
-        return wrap(meta, o.outputFormat, lang)
+        val wrappedCode = wrap(text, o.outputFormat, lang)
+        return if (o.includeMetadata) {
+            val meta = metadata(snippet)
+            meta + "\n\n" + wrappedCode
+        } else {
+            wrappedCode
+        }
     }
 
     fun detectLanguage(fileName: String?): String {
@@ -63,19 +68,16 @@ object CodeFormatter {
                     val t = it.trim().lowercase()
                     t.startsWith("import ") || t.startsWith("from ")
                 }
-
             lang?.contains("ruby", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("require ") || t.startsWith("load ")
                 }
-
             lang?.contains("php", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("use ") || t.startsWith("require ")
                 }
-
             else ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
@@ -88,19 +90,17 @@ object CodeFormatter {
         return when {
             lang?.contains("python", true) == true || lang.equals("ruby", true) ->
                 text.lines().filterNot { it.trim().startsWith("#") }.joinToString("\n")
-
             lang.equals("php", true) ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
                     .lines()
                     .map { it.replace(Regex("//.*$"), "").replace(Regex("#.*$"), "").trimEnd() }
                     .filter { it.isNotBlank() }
                     .joinToString("\n")
-
-            else -> // For Java and other C-like languages
+            else ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
                     .lines()
                     .map { it.replace(Regex("//.*$"), "").trimEnd() }
-                    .filter { it.isNotBlank() } // Remove lines fully empty after stripping comments
+                    .filter { it.isNotBlank() }
                     .joinToString("\n")
         }
     }
@@ -123,7 +123,6 @@ object CodeFormatter {
             CompressionMode.MINIMAL -> input.lines().joinToString("\n") {
                 it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
             }
-
             CompressionMode.ULTRA -> input.lines().map {
                 it.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
             }.filter {
@@ -139,8 +138,9 @@ object CodeFormatter {
     fun lineNumbers(text: String): String =
         text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
 
-    fun metadata(snippet: Snippet, content: String): String =
-        "**File:** ${snippet.relativePath ?: snippet.fileName} | **Size:** ${snippet.fileSizeBytes} bytes | **Modified:** ${snippet.lastModified}\n\n$content"
+    // New: Returns metadata as a header string (without code)
+    fun metadata(snippet: Snippet): String =
+        "**File:** ${snippet.relativePath ?: snippet.fileName} | **Size:** ${snippet.fileSizeBytes} bytes | **Modified:** ${snippet.lastModified}"
 
     fun wrap(content: String, format: OutputFormat, lang: String?): String {
         val l = lang ?: "none"

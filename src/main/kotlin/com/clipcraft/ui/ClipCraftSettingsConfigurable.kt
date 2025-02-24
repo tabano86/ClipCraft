@@ -42,22 +42,52 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 class ClipCraftSettingsConfigurable : Configurable {
+
     private val manager = ClipCraftProfileManager()
     private val savedProfile = manager.currentProfile().copy()
     private val options = savedProfile.options
 
-    // Sample code for live preview demo
-    private val sampleCode = """
-        package test
+    // A more complex default sample for preview.
+    private val defaultSampleCode = """
+        package com.example
+        
+        import java.util.*
+        
+        /**
+         * SampleFormatter demonstrates various coding constructs for testing
+         * ClipCraft's formatting settings.
+         */
+        class SampleFormatter {
+        
+            fun run() {
+                println("Hello, ClipCraft!")
+                val items: List<String> = listOf("One", "Two", "Three")
+                for (item in items) {
+                    println("Item: ${'$'}item")
+                }
+                if (items.isNotEmpty()) {
+                    println("Total items: ${'$'}{items.size}")
+                }
+            }
+        
+            // A helper method with comments and extra whitespace.
+            fun helper() {
+                // TODO: Add real helper logic
+                println("Helper function executed.")
+            }
+        }
+        
         fun main() {
-            println("Hello, ClipCraft!")
+            val formatter = SampleFormatter()
+            formatter.run()
+            formatter.helper()
         }
     """.trimIndent()
 
     private lateinit var mainPanel: JPanel
     private lateinit var previewEditor: com.intellij.ui.EditorTextField
 
-    // UI Controls
+    // UI controls for formatting options:
     private lateinit var headerArea: JBTextArea
     private lateinit var footerArea: JBTextArea
     private lateinit var livePreviewCheck: JCheckBox
@@ -100,7 +130,7 @@ class ClipCraftSettingsConfigurable : Configurable {
     // Debounced preview update timer (300ms)
     private val previewTimer = Timer(300) { updatePreview() }.apply { isRepeats = false }
 
-    // Helper methods for concise control creation
+    // --- Helper creation functions ---
     private fun createCheckBox(
         text: String,
         init: Boolean,
@@ -144,20 +174,27 @@ class ClipCraftSettingsConfigurable : Configurable {
     override fun getDisplayName() = "ClipCraft"
 
     override fun createComponent(): JComponent {
+        // Use a left/right splitter (vertical = false means left/right)
         mainPanel = JPanel(BorderLayout()).apply { border = JBUI.Borders.empty(16) }
         val formPanel = buildFormPanel()
         val formScroll = JBScrollPane(formPanel).apply {
             verticalScrollBar.unitIncrement = 16
-            preferredSize = Dimension(480, 620)
+            preferredSize = Dimension(480, 700)
         }
         val previewDoc = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument("")
-        previewEditor =
-            com.intellij.ui.EditorTextField(previewDoc, ProjectManager.getInstance().defaultProject, null, true, false)
-                .apply {
-                    isViewer = true
-                    preferredSize = Dimension(480, 620)
-                }
-        val splitter = JBSplitter(true, 0.5f).apply {
+        previewEditor = com.intellij.ui.EditorTextField(
+            previewDoc,
+            ProjectManager.getInstance().defaultProject,
+            null,
+            true,
+            false,
+        ).apply {
+            isViewer = true
+            setOneLineMode(false)
+            preferredSize = Dimension(480, 700)
+            border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        }
+        val splitter = JBSplitter(false, 0.5f).apply { // false = horizontal split (left/right)
             firstComponent = formScroll
             secondComponent = previewEditor
             dividerWidth = JBUI.scale(5)
@@ -168,13 +205,15 @@ class ClipCraftSettingsConfigurable : Configurable {
     }
 
     private fun buildFormPanel(): JPanel {
-        // Basic Options
+        // --- Basic Options Panel ---
         headerArea = JBTextArea(options.snippetHeaderText.orEmpty(), 3, 20).apply {
-            lineWrap = true; wrapStyleWord = true; toolTipText = "Text prepended to snippet output"
+            lineWrap = true; wrapStyleWord = true
+            toolTipText = "Text to prepend to output"
             document.addDocumentListener(SimpleDocListener { schedulePreview() })
         }
         footerArea = JBTextArea(options.snippetFooterText.orEmpty(), 3, 20).apply {
-            lineWrap = true; wrapStyleWord = true; toolTipText = "Text appended to snippet output"
+            lineWrap = true; wrapStyleWord = true
+            toolTipText = "Text to append to output"
             document.addDocumentListener(SimpleDocListener { schedulePreview() })
         }
         dirStructCheck = createCheckBox(
@@ -199,7 +238,20 @@ class ClipCraftSettingsConfigurable : Configurable {
             })
         livePreviewCheck = createCheckBox("Live Preview", true, "Toggle live preview updates")
 
-        // Chunking Controls
+        val basicPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent("Header:", JBScrollPane(headerArea), 1, false)
+            .addLabeledComponent("Footer:", JBScrollPane(footerArea), 1, false)
+            .addLabeledComponent("Directory Structure:", dirStructCheck, 1, false)
+            .addLabeledComponent("Line Numbers:", lineNumbersCheck, 1, false)
+            .addLabeledComponent("Remove Imports:", removeImportsCheck, 1, false)
+            .addLabeledComponent("Remove Comments:", removeCommentsCheck, 1, false)
+            .addLabeledComponent("Trim Whitespace:", trimWSCheck, 1, false)
+            .addLabeledComponent("Remove Empty Lines:", removeEmptyCheck, 1, false)
+            .addLabeledComponent("Single-line Output:", singleLineCheck, 1, false)
+            .addLabeledComponent("Live Preview:", livePreviewCheck, 1, false)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Basic Options") }
+
+        // --- Chunking Panel ---
         chunkCombo =
             createComboBox(ChunkStrategy.entries.toTypedArray(), options.chunkStrategy, "Select chunk strategy", {
                 schedulePreview(); updateChunkUI()
@@ -219,8 +271,15 @@ class ClipCraftSettingsConfigurable : Configurable {
             ::schedulePreview,
         )
         chunkMsg = JLabel("").apply { foreground = UIManager.getColor("Label.errorForeground") }
+        val chunkPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent("Chunk Strategy:", chunkCombo, 1, false)
+            .addLabeledComponent("Chunk Size:", chunkSizeField, 1, false)
+            .addLabeledComponent("Overlap:", overlapCombo, 1, false)
+            .addLabeledComponent("Compression:", compressionCombo, 1, false)
+            .addComponent(chunkMsg)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Chunking") }
 
-        // Advanced Options
+        // --- Advanced Options Panel ---
         metaCheck =
             createCheckBox("Include Metadata", options.includeMetadata, "Include file metadata", ::schedulePreview)
         gitInfoCheck = createCheckBox("Git Info", options.includeGitInfo, "Include Git info", ::schedulePreview)
@@ -271,78 +330,6 @@ class ClipCraftSettingsConfigurable : Configurable {
             "Queue snippet for later",
             ::schedulePreview,
         )
-
-        // Buttons
-        val copyPreviewBtn = JButton("Copy Preview").apply {
-            toolTipText = "Copy preview text to clipboard"
-            addActionListener {
-                Toolkit.getDefaultToolkit().systemClipboard.setContents(
-                    StringSelection(previewEditor.text),
-                    null,
-                )
-            }
-        }
-        val copyRecursivelyBtn = JButton("Copy Recursively").apply {
-            toolTipText = "Select files/directories (multi-select enabled) and copy formatted output without duplicates"
-            addActionListener { copyRecursively() }
-        }
-        val testBtn = JButton("Test Formatting").apply {
-            toolTipText = "Use real API to test code formatting on sample code"
-            addActionListener {
-                val snippet = Snippet(
-                    content = sampleCode,
-                    fileName = "Sample.kt",
-                    relativePath = "src/Sample.kt",
-                    filePath = "/fake/path/Sample.kt",
-                    fileSizeBytes = sampleCode.length.toLong(),
-                    lastModified = System.currentTimeMillis(),
-                )
-                val output = try {
-                    CodeFormatter.formatSnippets(listOf(snippet), options.copy()).joinToString("\n---\n")
-                } catch (ex: Exception) {
-                    "Error: ${ex.message}"
-                }
-                Messages.showInfoMessage(output, "Formatted Output")
-            }
-        }
-        val exportBtn = JButton("Export Output").apply {
-            toolTipText = "Save formatted output to a file"
-            addActionListener { exportFormattedOutput() }
-        }
-        val openSettingsBtn = JButton("Open Settings").apply {
-            toolTipText = "Open ClipCraft settings page"
-            addActionListener {
-                ShowSettingsUtil.getInstance()
-                    .showSettingsDialog(ProjectManager.getInstance().defaultProject, "ClipCraft")
-            }
-        }
-        val restoreBtn = JButton("Restore Defaults").apply {
-            toolTipText = "Reset to default settings"
-            addActionListener { restoreDefaults(); schedulePreview() }
-        }
-
-        // Build panels using FormBuilder
-        val basicPanel = FormBuilder.createFormBuilder()
-            .addComponent(livePreviewCheck)
-            .addLabeledComponent("Header:", JBScrollPane(headerArea), 1, false)
-            .addLabeledComponent("Footer:", JBScrollPane(footerArea), 1, false)
-            .addComponent(dirStructCheck)
-            .addComponent(lineNumbersCheck)
-            .addComponent(removeImportsCheck)
-            .addComponent(removeCommentsCheck)
-            .addComponent(trimWSCheck)
-            .addComponent(removeEmptyCheck)
-            .addComponent(singleLineCheck)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Basic Options") }
-
-        val chunkPanel = FormBuilder.createFormBuilder()
-            .addLabeledComponent("Chunk Strategy:", chunkCombo, 1, false)
-            .addLabeledComponent("Chunk Size:", chunkSizeField, 1, false)
-            .addLabeledComponent("Overlap:", overlapCombo, 1, false)
-            .addLabeledComponent("Compression:", compressionCombo, 1, false)
-            .addComponent(chunkMsg)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Chunking") }
-
         val advancedPanel = FormBuilder.createFormBuilder()
             .addComponent(metaCheck)
             .addComponent(gitInfoCheck)
@@ -363,16 +350,72 @@ class ClipCraftSettingsConfigurable : Configurable {
             .addComponent(addToQueueCheck)
             .panel.also { it.border = BorderFactory.createTitledBorder("Advanced Options") }
 
+        // --- Buttons Panel ---
+        val copyPreviewBtn = JButton("Copy Preview").apply {
+            toolTipText = "Copy preview text to clipboard"
+            addActionListener {
+                Toolkit.getDefaultToolkit().systemClipboard.setContents(
+                    StringSelection(previewEditor.text),
+                    null,
+                )
+            }
+        }
+        val copyRecursivelyBtn = JButton("Copy Recursively").apply {
+            toolTipText = "Select files/directories (multi-select enabled) and copy formatted output without duplicates"
+            addActionListener { copyRecursively() }
+        }
+        val testBtn = JButton("Test Formatting").apply {
+            toolTipText = "Test code formatting on the sample code"
+            addActionListener {
+                val snippet = Snippet(
+                    content = defaultSampleCode,
+                    fileName = "Sample.kt",
+                    relativePath = "src/Sample.kt",
+                    filePath = "/fake/path/Sample.kt",
+                    fileSizeBytes = defaultSampleCode.length.toLong(),
+                    lastModified = System.currentTimeMillis(),
+                )
+                val output = try {
+                    CodeFormatter.formatSnippets(listOf(snippet), options.copy()).joinToString("\n---\n")
+                } catch (ex: Exception) {
+                    "Error: ${ex.message}"
+                }
+                Messages.showInfoMessage(output, "Formatted Output")
+            }
+        }
+        val exportBtn = JButton("Export Output").apply {
+            toolTipText = "Save formatted output to a file"
+            addActionListener { exportFormattedOutput() }
+        }
+        val openSettingsBtn = JButton("Open Settings").apply {
+            toolTipText = "Open ClipCraft settings page"
+            addActionListener {
+                ShowSettingsUtil.getInstance().showSettingsDialog(
+                    ProjectManager.getInstance().defaultProject,
+                    "ClipCraft",
+                )
+            }
+        }
+        val restoreBtn = JButton("Restore Defaults").apply {
+            toolTipText = "Reset to default settings"
+            addActionListener { restoreDefaults(); schedulePreview() }
+        }
         val btnPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
-            add(copyPreviewBtn); add(Box.createHorizontalStrut(8))
-            add(copyRecursivelyBtn); add(Box.createHorizontalStrut(8))
-            add(testBtn); add(Box.createHorizontalStrut(8))
-            add(exportBtn); add(Box.createHorizontalStrut(8))
-            add(openSettingsBtn); add(Box.createHorizontalStrut(8))
+            add(copyPreviewBtn)
+            add(Box.createHorizontalStrut(8))
+            add(copyRecursivelyBtn)
+            add(Box.createHorizontalStrut(8))
+            add(testBtn)
+            add(Box.createHorizontalStrut(8))
+            add(exportBtn)
+            add(Box.createHorizontalStrut(8))
+            add(openSettingsBtn)
+            add(Box.createHorizontalStrut(8))
             add(restoreBtn)
         }
 
+        // Combine panels vertically.
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             add(basicPanel)
@@ -424,11 +467,11 @@ class ClipCraftSettingsConfigurable : Configurable {
         }
         tmp.resolveConflicts()
         val snippet = Snippet(
-            content = sampleCode,
+            content = defaultSampleCode,
             fileName = "Sample.kt",
             relativePath = "src/Sample.kt",
             filePath = "/fake/path/Sample.kt",
-            fileSizeBytes = sampleCode.length.toLong(),
+            fileSizeBytes = defaultSampleCode.length.toLong(),
             lastModified = System.currentTimeMillis(),
         )
         val formatted = try {
@@ -497,10 +540,10 @@ class ClipCraftSettingsConfigurable : Configurable {
         addToQueueCheck.isSelected = d.addSnippetToQueue
     }
 
-    // Recursively collect snippets from a file/directory while avoiding duplicates.
+    // Recursively collect snippets from a file/directory without duplicates.
     private fun collectSnippets(file: File, root: File, processed: MutableSet<String>): List<Snippet> {
         val snippets = mutableListOf<Snippet>()
-        if (!processed.add(file.absolutePath)) return snippets // Skip duplicates
+        if (!processed.add(file.absolutePath)) return snippets
         if (file.isDirectory) {
             file.listFiles()?.forEach { snippets.addAll(collectSnippets(it, root, processed)) }
         } else {
@@ -516,13 +559,12 @@ class ClipCraftSettingsConfigurable : Configurable {
                         lastModified = file.lastModified(),
                     ),
                 )
-            } catch (_: Exception) { /* Skip unreadable files */
+            } catch (_: Exception) {
             }
         }
         return snippets
     }
 
-    // Allow multi-selection; process selected files/directories without duplicates.
     private fun copyRecursively() {
         val chooser = JFileChooser().apply {
             fileSelectionMode = JFileChooser.FILES_AND_DIRECTORIES
@@ -544,7 +586,6 @@ class ClipCraftSettingsConfigurable : Configurable {
         }
     }
 
-    // Export formatted output to a file.
     private fun exportFormattedOutput() {
         val chooser = JFileChooser().apply { fileSelectionMode = JFileChooser.FILES_ONLY }
         if (chooser.showSaveDialog(mainPanel) == JFileChooser.APPROVE_OPTION) {
@@ -673,7 +714,6 @@ class ClipCraftSettingsConfigurable : Configurable {
 
     override fun disposeUIResources() {}
 
-    // Simple DocumentListener helper
     private class SimpleDocListener(val onChange: () -> Unit) : DocumentListener {
         override fun insertUpdate(e: DocumentEvent?) = onChange()
         override fun removeUpdate(e: DocumentEvent?) = onChange()

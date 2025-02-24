@@ -1,6 +1,7 @@
 package com.clipcraft.ui
 
 import com.clipcraft.model.ChunkStrategy
+import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.OverlapStrategy
@@ -8,411 +9,580 @@ import com.clipcraft.model.Snippet
 import com.clipcraft.model.ThemeMode
 import com.clipcraft.services.ClipCraftProfileManager
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.options.Configurable
-import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
-import com.intellij.ui.components.labels.LinkLabel
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Dimension
+import java.awt.datatransfer.StringSelection
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
+import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTextArea
-import javax.swing.JTextField
+import javax.swing.Timer
 import javax.swing.UIManager
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 class ClipCraftSettingsConfigurable : Configurable {
     private val manager = ClipCraftProfileManager()
-
-    // Make an in-memory copy so we can revert on cancel
     private val savedProfile = manager.currentProfile().copy()
     private val options = savedProfile.options
-
     private val sampleCode = """
         package test
         fun main() {
-            println("Hello")
+            println("Hello, ClipCraft!")
         }
     """.trimIndent()
 
     private lateinit var mainPanel: JPanel
     private lateinit var previewEditor: com.intellij.ui.EditorTextField
 
-    private lateinit var headerArea: JTextArea
-    private lateinit var footerArea: JTextArea
-    private lateinit var directoryStructureCheck: JCheckBox
+    // UI controls
+    private lateinit var headerArea: JBTextArea
+    private lateinit var footerArea: JBTextArea
+    private lateinit var livePreviewCheck: JCheckBox
+
+    // Basic options
+    private lateinit var dirStructCheck: JCheckBox
     private lateinit var lineNumbersCheck: JCheckBox
     private lateinit var removeImportsCheck: JCheckBox
     private lateinit var removeCommentsCheck: JCheckBox
-    private lateinit var trimWhitespaceCheck: JCheckBox
-    private lateinit var removeEmptyLinesCheck: JCheckBox
-    private lateinit var singleLineOutputCheck: JCheckBox
-    private lateinit var chunkStrategyCombo: JComboBox<ChunkStrategy>
-    private lateinit var chunkSizeField: JTextField
+    private lateinit var trimWSCheck: JCheckBox
+    private lateinit var removeEmptyCheck: JCheckBox
+    private lateinit var singleLineCheck: JCheckBox
+
+    // Chunking & formatting
+    private lateinit var chunkCombo: JComboBox<ChunkStrategy>
+    private lateinit var chunkSizeField: JBTextField
     private lateinit var overlapCombo: JComboBox<OverlapStrategy>
     private lateinit var compressionCombo: JComboBox<CompressionMode>
-    private lateinit var metadataCheck: JCheckBox
+    private lateinit var chunkMsg: JLabel
+
+    // Advanced options
+    private lateinit var metaCheck: JCheckBox
     private lateinit var gitInfoCheck: JCheckBox
     private lateinit var autoLangCheck: JCheckBox
     private lateinit var themeCombo: JComboBox<ThemeMode>
     private lateinit var concurrencyCombo: JComboBox<ConcurrencyMode>
-    private lateinit var maxTasksField: JTextField
+    private lateinit var maxTasksField: JBTextField
     private lateinit var gitIgnoreCheck: JCheckBox
-    private lateinit var additionalIgnoresField: JTextField
+    private lateinit var extraIgnoresField: JBTextField
     private lateinit var invertIgnoresCheck: JCheckBox
-    private lateinit var directoryPatternCheck: JCheckBox
+    private lateinit var dirPatternCheck: JCheckBox
     private lateinit var detectBinaryCheck: JCheckBox
-    private lateinit var binaryThresholdField: JTextField
-    private lateinit var showLintCheck: JCheckBox
-    private lateinit var chunkLabel: JLabel
-    private lateinit var includeImageFilesCheck: JCheckBox
-    private lateinit var lintErrorsOnlyCheck: JCheckBox
-    private lateinit var lintWarningsOnlyCheck: JCheckBox
-    private lateinit var addSnippetToQueueCheck: JCheckBox
+    private lateinit var binaryThresholdField: JBTextField
+    private lateinit var lintCheck: JCheckBox
+    private lateinit var includeImageCheck: JCheckBox
+    private lateinit var lintErrOnlyCheck: JCheckBox
+    private lateinit var lintWarnOnlyCheck: JCheckBox
+    private lateinit var addToQueueCheck: JCheckBox
 
-    private val docListener = object : DocumentListener {
-        override fun insertUpdate(e: DocumentEvent?) = updatePreview()
-        override fun removeUpdate(e: DocumentEvent?) = updatePreview()
-        override fun changedUpdate(e: DocumentEvent?) = updatePreview()
-    }
+    // Debounced preview update timer
+    private val previewTimer = Timer(300) { updatePreview() }.apply { isRepeats = false }
+
+    // Helper functions to create UI controls
+    private fun createCheckBox(
+        text: String,
+        init: Boolean,
+        tooltip: String = "",
+        action: (() -> Unit)? = null,
+    ): JCheckBox =
+        JCheckBox(text, init).apply {
+            toolTipText = tooltip
+            action?.let { addActionListener { it() } }
+        }
+
+    private fun createTextField(
+        text: String,
+        columns: Int,
+        tooltip: String = "",
+        docAction: (() -> Unit)? = null,
+    ): JBTextField =
+        JBTextField(text, columns).apply {
+            toolTipText = tooltip
+            docAction?.let {
+                document.addDocumentListener(object : DocumentListener {
+                    override fun insertUpdate(e: DocumentEvent?) = it()
+                    override fun removeUpdate(e: DocumentEvent?) = it()
+                    override fun changedUpdate(e: DocumentEvent?) = it()
+                })
+            }
+        }
+
+    private fun <T> createComboBox(
+        items: Array<T>,
+        selected: T,
+        tooltip: String = "",
+        action: (() -> Unit)? = null,
+    ): JComboBox<T> =
+        JComboBox(items).apply {
+            this.selectedItem = selected
+            toolTipText = tooltip
+            action?.let { addActionListener { it() } }
+        }
 
     override fun getDisplayName() = "ClipCraft"
 
     override fun createComponent(): JComponent {
-        mainPanel = JPanel(BorderLayout()).apply {
-            border = JBUI.Borders.empty(16)
-        }
-
-        val formPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = JBUI.Borders.empty(12)
-
-            add(panelOutput())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelFormatting())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelChunking())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelMetadata())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelConcurrency())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelIgnore())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelBinary())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelLint())
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(panelAdditionalOptions())
-
-            val codeStyleLink = LinkLabel.create("Open Code Style Settings") {
-                ShowSettingsUtil.getInstance()
-                    .showSettingsDialog(ProjectManager.getInstance().defaultProject, "Editor | Code Style")
-            }
-            add(Box.createVerticalStrut(JBUI.scale(12)))
-            add(codeStyleLink)
-        }
+        mainPanel = JPanel(BorderLayout()).apply { border = JBUI.Borders.empty(16) }
+        val formPanel = buildFormPanel()
         val formScroll = JBScrollPane(formPanel).apply {
             verticalScrollBar.unitIncrement = 16
             preferredSize = Dimension(480, 620)
         }
-
-        val document = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument("")
-        previewEditor = com.intellij.ui.EditorTextField(document, ProjectManager.getInstance().defaultProject, null, true, false).apply {
-            isViewer = true
-            setOneLineMode(false)
-        }
-        previewEditor.preferredSize = Dimension(480, 620)
+        val previewDoc = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument("")
+        previewEditor =
+            com.intellij.ui.EditorTextField(previewDoc, ProjectManager.getInstance().defaultProject, null, true, false)
+                .apply { isViewer = true; setOneLineMode(false); preferredSize = Dimension(480, 620) }
 
         val splitter = JBSplitter(true, 0.5f).apply {
             firstComponent = formScroll
             secondComponent = previewEditor
             dividerWidth = JBUI.scale(5)
         }
-
         mainPanel.add(splitter, BorderLayout.CENTER)
         updatePreview()
         return mainPanel
     }
 
-    private fun panelAdditionalOptions(): JPanel {
-        includeImageFilesCheck = JCheckBox("Include Image Files", options.includeImageFiles)
-        lintErrorsOnlyCheck = JCheckBox("Report Only Lint Errors", options.lintErrorsOnly)
-        lintWarningsOnlyCheck = JCheckBox("Report Only Lint Warnings", options.lintWarningsOnly)
-        addSnippetToQueueCheck = JCheckBox("Add Snippet to Queue", options.addSnippetToQueue)
-        return FormBuilder.createFormBuilder()
-            .addComponent(includeImageFilesCheck)
-            .addComponent(lintErrorsOnlyCheck)
-            .addComponent(lintWarningsOnlyCheck)
-            .addComponent(addSnippetToQueueCheck)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Additional Options") }
-    }
-
-    private fun panelOutput(): JPanel {
+    private fun buildFormPanel(): JPanel {
+        // Basic Options Panel
         headerArea = JBTextArea(options.snippetHeaderText.orEmpty(), 3, 20).apply {
-            lineWrap = true
-            wrapStyleWord = true
-            document.addDocumentListener(docListener)
+            lineWrap = true; wrapStyleWord = true; toolTipText = "Text prepended to snippet"
+            document.addDocumentListener(SimpleDocListener { schedulePreview() })
         }
         footerArea = JBTextArea(options.snippetFooterText.orEmpty(), 3, 20).apply {
-            lineWrap = true
-            wrapStyleWord = true
-            document.addDocumentListener(docListener)
+            lineWrap = true; wrapStyleWord = true; toolTipText = "Text appended to snippet"
+            document.addDocumentListener(SimpleDocListener { schedulePreview() })
         }
-        directoryStructureCheck = JCheckBox("Directory Structure", options.includeDirectorySummary).apply {
-            addActionListener { updatePreview() }
-        }
-        val headerScroll = JBScrollPane(headerArea).apply {
-            preferredSize = Dimension(200, JBUI.scale(60))
-        }
-        val footerScroll = JBScrollPane(footerArea).apply {
-            preferredSize = Dimension(200, JBUI.scale(60))
-        }
-        return FormBuilder.createFormBuilder()
-            .addComponent(directoryStructureCheck)
-            .addLabeledComponent("Header:", headerScroll, 1, false)
-            .addLabeledComponent("Footer:", footerScroll, 1, false)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Output") }
-    }
-
-    private fun panelFormatting(): JPanel {
-        lineNumbersCheck = JCheckBox("Line Numbers", options.includeLineNumbers).apply { addActionListener { updatePreview() } }
-        removeImportsCheck = JCheckBox("Remove Imports", options.removeImports).apply { addActionListener { updatePreview() } }
-        removeCommentsCheck = JCheckBox("Remove Comments", options.removeComments).apply { addActionListener { updatePreview() } }
-        trimWhitespaceCheck = JCheckBox("Trim Whitespace", options.trimWhitespace).apply { addActionListener { updatePreview() } }
-        removeEmptyLinesCheck = JCheckBox("Remove Empty Lines", options.removeEmptyLines).apply { addActionListener { updatePreview() } }
-        singleLineOutputCheck = JCheckBox("Single-line Output", options.singleLineOutput).apply {
-            addActionListener {
-                updatePreview()
+        dirStructCheck = createCheckBox(
+            "Directory Structure",
+            options.includeDirectorySummary,
+            "Include directory summary",
+            ::schedulePreview,
+        )
+        lineNumbersCheck =
+            createCheckBox("Line Numbers", options.includeLineNumbers, "Show line numbers", ::schedulePreview)
+        removeImportsCheck =
+            createCheckBox("Remove Imports", options.removeImports, "Strip import statements", ::schedulePreview)
+        removeCommentsCheck =
+            createCheckBox("Remove Comments", options.removeComments, "Strip comments", ::schedulePreview)
+        trimWSCheck =
+            createCheckBox("Trim Whitespace", options.trimWhitespace, "Trim extra whitespace", ::schedulePreview)
+        removeEmptyCheck =
+            createCheckBox("Remove Empty Lines", options.removeEmptyLines, "Eliminate blank lines", ::schedulePreview)
+        singleLineCheck =
+            createCheckBox("Single-line Output", options.singleLineOutput, "Produce single-line snippet", {
+                schedulePreview()
                 updateChunkUI()
+            })
+        livePreviewCheck = createCheckBox("Live Preview", true, "Toggle live preview updates")
+
+        // Chunking
+        chunkCombo =
+            createComboBox(ChunkStrategy.entries.toTypedArray(), options.chunkStrategy, "Select chunk strategy", {
+                schedulePreview()
+                updateChunkUI()
+            })
+        chunkSizeField =
+            createTextField(options.chunkSize.toString(), 6, "Chunk size (if applicable)", ::schedulePreview)
+        overlapCombo = createComboBox(
+            OverlapStrategy.entries.toTypedArray(),
+            options.overlapStrategy,
+            "Overlap strategy",
+            ::schedulePreview,
+        )
+        compressionCombo = createComboBox(
+            CompressionMode.entries.toTypedArray(),
+            options.compressionMode,
+            "Compression mode",
+            ::schedulePreview,
+        )
+        chunkMsg = JLabel("").apply { foreground = UIManager.getColor("Label.errorForeground") }
+
+        // Advanced Options (collapsible)
+        metaCheck =
+            createCheckBox("Include Metadata", options.includeMetadata, "Include file metadata", ::schedulePreview)
+        gitInfoCheck = createCheckBox("Git Info", options.includeGitInfo, "Include Git info", ::schedulePreview)
+        autoLangCheck = createCheckBox(
+            "Auto-Detect Language",
+            options.autoDetectLanguage,
+            "Detect language automatically",
+            ::schedulePreview,
+        )
+        themeCombo =
+            createComboBox(ThemeMode.entries.toTypedArray(), options.themeMode, "Theme mode", ::schedulePreview)
+        concurrencyCombo =
+            createComboBox(ConcurrencyMode.entries.toTypedArray(), options.concurrencyMode, "Concurrency mode", {
+                schedulePreview()
+                updateConcurrency()
+            })
+        maxTasksField =
+            createTextField(options.maxConcurrentTasks.toString(), 4, "Max concurrent tasks", ::schedulePreview)
+        gitIgnoreCheck =
+            createCheckBox("Use .gitignore", options.useGitIgnore, "Apply .gitignore rules", ::schedulePreview)
+        extraIgnoresField = createTextField(
+            options.additionalIgnorePatterns.orEmpty(),
+            15,
+            "Additional ignore patterns",
+            ::schedulePreview,
+        )
+        invertIgnoresCheck =
+            createCheckBox("Invert Patterns", options.invertIgnorePatterns, "Invert ignore patterns", ::schedulePreview)
+        dirPatternCheck = createCheckBox(
+            "Directory Matching",
+            options.enableDirectoryPatternMatching,
+            "Enable directory pattern matching",
+            ::schedulePreview,
+        )
+        detectBinaryCheck =
+            createCheckBox("Detect Binary Files", options.detectBinary, "Detect binary files", ::schedulePreview)
+        binaryThresholdField =
+            createTextField(options.binaryCheckThreshold.toString(), 5, "Binary threshold", ::schedulePreview)
+        lintCheck = createCheckBox("Show Lint Results", options.showLint, "Display lint info", ::schedulePreview)
+        includeImageCheck =
+            createCheckBox("Include Image Files", options.includeImageFiles, "Process image files", ::schedulePreview)
+        lintErrOnlyCheck =
+            createCheckBox("Lint Errors Only", options.lintErrorsOnly, "Only show lint errors", ::schedulePreview)
+        lintWarnOnlyCheck =
+            createCheckBox("Lint Warnings Only", options.lintWarningsOnly, "Only show lint warnings", ::schedulePreview)
+        addToQueueCheck = createCheckBox(
+            "Add Snippet to Queue",
+            options.addSnippetToQueue,
+            "Queue snippet for later",
+            ::schedulePreview,
+        )
+
+        // Buttons
+        val copyBtn = JButton("Copy Preview").apply {
+            toolTipText = "Copy preview text to clipboard"
+            addActionListener { CopyPasteManager.getInstance().setContents(StringSelection(previewEditor.text)) }
+        }
+        val testBtn = JButton("Test Formatting").apply {
+            toolTipText = "Test code formatting on sample code"
+            addActionListener {
+                val output = try {
+                    com.clipcraft.util.CodeFormatter.formatSnippets(
+                        listOf(
+                            Snippet(
+                                content = sampleCode,
+                                fileName = "Sample.kt",
+                                relativePath = "src/Sample.kt",
+                                filePath = "/fake/path/Sample.kt",
+                                fileSizeBytes = sampleCode.length.toLong(),
+                                lastModified = System.currentTimeMillis(),
+                            ),
+                        ),
+                        options.copy(),
+                    ).joinToString("\n---\n")
+                } catch (ex: Exception) {
+                    "Error: ${ex.message}"
+                }
+                com.intellij.openapi.ui.Messages.showInfoMessage(output, "Formatted Output")
             }
         }
-        return FormBuilder.createFormBuilder()
+        val restoreBtn = JButton("Restore Defaults").apply {
+            toolTipText = "Reset to default settings"
+            addActionListener { restoreDefaults(); schedulePreview() }
+        }
+
+        // Build panels using FormBuilder
+        val basicPanel = FormBuilder.createFormBuilder()
+            .addComponent(livePreviewCheck)
+            .addLabeledComponent("Header:", JBScrollPane(headerArea), 1, false)
+            .addLabeledComponent("Footer:", JBScrollPane(footerArea), 1, false)
+            .addComponent(dirStructCheck)
             .addComponent(lineNumbersCheck)
             .addComponent(removeImportsCheck)
             .addComponent(removeCommentsCheck)
-            .addComponent(trimWhitespaceCheck)
-            .addComponent(removeEmptyLinesCheck)
-            .addComponent(singleLineOutputCheck)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Formatting") }
-    }
+            .addComponent(trimWSCheck)
+            .addComponent(removeEmptyCheck)
+            .addComponent(singleLineCheck)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Basic Options") }
 
-    private fun panelChunking(): JPanel {
-        chunkStrategyCombo = JComboBox(ChunkStrategy.entries.toTypedArray()).apply {
-            selectedItem = options.chunkStrategy
-            addActionListener {
-                updatePreview()
-                updateChunkUI()
-            }
-        }
-        chunkSizeField = JBTextField(options.chunkSize.toString(), 6).apply {
-            document.addDocumentListener(docListener)
-        }
-        overlapCombo = JComboBox(OverlapStrategy.entries.toTypedArray()).apply {
-            selectedItem = options.overlapStrategy
-            addActionListener { updatePreview() }
-        }
-        compressionCombo = JComboBox(CompressionMode.entries.toTypedArray()).apply {
-            selectedItem = options.compressionMode
-            addActionListener { updatePreview() }
-        }
-        chunkLabel = JLabel("").apply {
-            foreground = UIManager.getColor("Label.errorForeground")
-        }
-        return FormBuilder.createFormBuilder()
-            .addLabeledComponent("Chunk Strategy:", chunkStrategyCombo, 1, false)
+        val chunkPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent("Chunk Strategy:", chunkCombo, 1, false)
             .addLabeledComponent("Chunk Size:", chunkSizeField, 1, false)
-            .addLabeledComponent("Overlap Strategy:", overlapCombo, 1, false)
-            .addLabeledComponent("Compression Mode:", compressionCombo, 1, false)
-            .addComponent(chunkLabel)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Chunking & Overlap") }
-    }
+            .addLabeledComponent("Overlap:", overlapCombo, 1, false)
+            .addLabeledComponent("Compression:", compressionCombo, 1, false)
+            .addComponent(chunkMsg)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Chunking") }
 
-    private fun panelMetadata(): JPanel {
-        metadataCheck = JCheckBox("Include Metadata", options.includeMetadata).apply { addActionListener { updatePreview() } }
-        gitInfoCheck = JCheckBox("Git Info", options.includeGitInfo).apply { addActionListener { updatePreview() } }
-        autoLangCheck = JCheckBox("Auto-Detect Language", options.autoDetectLanguage).apply { addActionListener { updatePreview() } }
-        themeCombo = JComboBox(ThemeMode.entries.toTypedArray()).apply {
-            selectedItem = options.themeMode
-            addActionListener { updatePreview() }
-        }
-        return FormBuilder.createFormBuilder()
-            .addComponent(metadataCheck)
+        val advancedPanel = FormBuilder.createFormBuilder()
+            .addComponent(metaCheck)
             .addComponent(gitInfoCheck)
             .addComponent(autoLangCheck)
             .addLabeledComponent("Theme:", themeCombo, 1, false)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Metadata & Language") }
-    }
-
-    private fun panelConcurrency(): JPanel {
-        concurrencyCombo = JComboBox(ConcurrencyMode.entries.toTypedArray()).apply {
-            selectedItem = options.concurrencyMode
-            addActionListener { updateConcurrency() }
-        }
-        maxTasksField = JBTextField(options.maxConcurrentTasks.toString(), 4).apply {
-            document.addDocumentListener(docListener)
-        }
-        return FormBuilder.createFormBuilder()
-            .addLabeledComponent("Concurrency Mode:", concurrencyCombo, 1, false)
+            .addLabeledComponent("Concurrency:", concurrencyCombo, 1, false)
             .addLabeledComponent("Max Tasks:", maxTasksField, 1, false)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Concurrency") }
-    }
-
-    private fun panelIgnore(): JPanel {
-        gitIgnoreCheck = JCheckBox("Use .gitignore", options.useGitIgnore).apply { addActionListener { updatePreview() } }
-        additionalIgnoresField = JBTextField(options.additionalIgnorePatterns.orEmpty(), 15).apply {
-            document.addDocumentListener(docListener)
-        }
-        invertIgnoresCheck = JCheckBox("Invert Patterns", options.invertIgnorePatterns).apply { addActionListener { updatePreview() } }
-        directoryPatternCheck = JCheckBox("Directory Matching", options.enableDirectoryPatternMatching).apply { addActionListener { updatePreview() } }
-        return FormBuilder.createFormBuilder()
             .addComponent(gitIgnoreCheck)
-            .addLabeledComponent("Additional Ignore Patterns:", additionalIgnoresField, 1, false)
+            .addLabeledComponent("Extra Ignores:", extraIgnoresField, 1, false)
             .addComponent(invertIgnoresCheck)
-            .addComponent(directoryPatternCheck)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Ignore Options") }
-    }
-
-    private fun panelBinary(): JPanel {
-        detectBinaryCheck = JCheckBox("Detect Binary Files", options.detectBinary).apply { addActionListener { updatePreview() } }
-        binaryThresholdField = JBTextField(options.binaryCheckThreshold.toString(), 5).apply {
-            document.addDocumentListener(docListener)
-        }
-        return FormBuilder.createFormBuilder()
+            .addComponent(dirPatternCheck)
             .addComponent(detectBinaryCheck)
-            .addLabeledComponent("Binary Check Threshold:", binaryThresholdField, 1, false)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Binary Detection") }
+            .addLabeledComponent("Binary Threshold:", binaryThresholdField, 1, false)
+            .addComponent(lintCheck)
+            .addComponent(includeImageCheck)
+            .addComponent(lintErrOnlyCheck)
+            .addComponent(lintWarnOnlyCheck)
+            .addComponent(addToQueueCheck)
+            .panel.also { it.border = BorderFactory.createTitledBorder("Advanced Options") }
+
+        // Buttons Panel
+        val btnPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            add(copyBtn); add(Box.createHorizontalStrut(8))
+            add(testBtn); add(Box.createHorizontalStrut(8))
+            add(restoreBtn)
+        }
+
+        // Combine all panels vertically
+        return JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(basicPanel)
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(chunkPanel)
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(advancedPanel)
+            add(Box.createVerticalStrut(JBUI.scale(8)))
+            add(btnPanel)
+        }
     }
 
-    private fun panelLint(): JPanel {
-        showLintCheck = JCheckBox("Show Lint Results", options.showLint).apply { addActionListener { updatePreview() } }
-        return FormBuilder.createFormBuilder()
-            .addComponent(showLintCheck)
-            .panel.also { it.border = BorderFactory.createTitledBorder("Lint") }
+    private fun schedulePreview() {
+        if (livePreviewCheck.isSelected) previewTimer.restart()
     }
 
-    override fun isModified(): Boolean {
-        return listOf(
-            headerArea.text != (options.snippetHeaderText ?: ""),
-            footerArea.text != (options.snippetFooterText ?: ""),
-            directoryStructureCheck.isSelected != options.includeDirectorySummary,
-            lineNumbersCheck.isSelected != options.includeLineNumbers,
-            removeImportsCheck.isSelected != options.removeImports,
-            removeCommentsCheck.isSelected != options.removeComments,
-            trimWhitespaceCheck.isSelected != options.trimWhitespace,
-            removeEmptyLinesCheck.isSelected != options.removeEmptyLines,
-            singleLineOutputCheck.isSelected != options.singleLineOutput,
-            chunkStrategyCombo.selectedItem != options.chunkStrategy,
-            chunkSizeField.text != options.chunkSize.toString(),
-            overlapCombo.selectedItem != options.overlapStrategy,
-            compressionCombo.selectedItem != options.compressionMode,
-            metadataCheck.isSelected != options.includeMetadata,
-            gitInfoCheck.isSelected != options.includeGitInfo,
-            autoLangCheck.isSelected != options.autoDetectLanguage,
-            themeCombo.selectedItem != options.themeMode,
-            concurrencyCombo.selectedItem != options.concurrencyMode,
-            maxTasksField.text != options.maxConcurrentTasks.toString(),
-            gitIgnoreCheck.isSelected != options.useGitIgnore,
-            additionalIgnoresField.text != (options.additionalIgnorePatterns ?: ""),
-            invertIgnoresCheck.isSelected != options.invertIgnorePatterns,
-            directoryPatternCheck.isSelected != options.enableDirectoryPatternMatching,
-            detectBinaryCheck.isSelected != options.detectBinary,
-            binaryThresholdField.text != options.binaryCheckThreshold.toString(),
-            showLintCheck.isSelected != options.showLint,
-            includeImageFilesCheck.isSelected != options.includeImageFiles,
-            lintErrorsOnlyCheck.isSelected != options.lintErrorsOnly,
-            lintWarningsOnlyCheck.isSelected != options.lintWarningsOnly,
-            addSnippetToQueueCheck.isSelected != options.addSnippetToQueue,
-        ).any { it }
+    private fun updatePreview() {
+        val tmp = options.copy().apply {
+            snippetHeaderText = headerArea.text
+            snippetFooterText = footerArea.text
+            includeDirectorySummary = dirStructCheck.isSelected
+            includeLineNumbers = lineNumbersCheck.isSelected
+            removeImports = removeImportsCheck.isSelected
+            removeComments = removeCommentsCheck.isSelected
+            trimWhitespace = trimWSCheck.isSelected
+            removeEmptyLines = removeEmptyCheck.isSelected
+            singleLineOutput = singleLineCheck.isSelected
+            chunkStrategy = chunkCombo.selectedItem as ChunkStrategy
+            chunkSize = chunkSizeField.text.toIntOrNull() ?: chunkSize
+            overlapStrategy = overlapCombo.selectedItem as OverlapStrategy
+            compressionMode = compressionCombo.selectedItem as CompressionMode
+            includeMetadata = metaCheck.isSelected
+            includeGitInfo = gitInfoCheck.isSelected
+            autoDetectLanguage = autoLangCheck.isSelected
+            themeMode = themeCombo.selectedItem as ThemeMode
+            concurrencyMode = concurrencyCombo.selectedItem as ConcurrencyMode
+            maxConcurrentTasks = maxTasksField.text.toIntOrNull() ?: maxConcurrentTasks
+            useGitIgnore = gitIgnoreCheck.isSelected
+            additionalIgnorePatterns = extraIgnoresField.text.takeIf { it.isNotBlank() }
+            invertIgnorePatterns = invertIgnoresCheck.isSelected
+            enableDirectoryPatternMatching = dirPatternCheck.isSelected
+            detectBinary = detectBinaryCheck.isSelected
+            binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: binaryCheckThreshold
+            showLint = lintCheck.isSelected
+            includeImageFiles = includeImageCheck.isSelected
+            lintErrorsOnly = lintErrOnlyCheck.isSelected
+            lintWarningsOnly = lintWarnOnlyCheck.isSelected
+            addSnippetToQueue = addToQueueCheck.isSelected
+        }
+        tmp.resolveConflicts()
+        val snippet = Snippet(
+            content = sampleCode,
+            fileName = "Sample.kt",
+            relativePath = "src/Sample.kt",
+            filePath = "/fake/path/Sample.kt",
+            fileSizeBytes = sampleCode.length.toLong(),
+            lastModified = System.currentTimeMillis(),
+        )
+        val formatted = try {
+            com.clipcraft.util.CodeFormatter.formatSnippets(listOf(snippet), tmp)
+                .joinToString("\n---\n")
+        } catch (ex: Exception) {
+            "Formatting Error: ${ex.message}"
+        }
+        val previewText = buildString {
+            if (headerArea.text.isNotBlank()) {
+                appendLine(headerArea.text); appendLine()
+            }
+            if (dirStructCheck.isSelected) append("Directory Structure:\n  src/Sample.kt\n\n")
+            append(formatted)
+            if (footerArea.text.isNotBlank()) {
+                appendLine(); appendLine(footerArea.text)
+            }
+            appendLine("\n---\n[Preview Info] Concurrency: ${tmp.concurrencyMode}, Chunk: ${tmp.chunkStrategy}")
+        }
+        previewEditor.text = previewText
+        updateChunkUI()
     }
 
+    private fun updateChunkUI() {
+        val active = !singleLineCheck.isSelected && (chunkCombo.selectedItem as ChunkStrategy) != ChunkStrategy.NONE
+        chunkSizeField.isEnabled = active && (chunkCombo.selectedItem == ChunkStrategy.BY_SIZE)
+        overlapCombo.isEnabled = active
+        compressionCombo.isEnabled = active
+        chunkMsg.text = if (!active) "Chunking disabled" else ""
+    }
+
+    private fun updateConcurrency() {
+        maxTasksField.isEnabled = (concurrencyCombo.selectedItem as ConcurrencyMode) != ConcurrencyMode.DISABLED
+    }
+
+    private fun restoreDefaults() {
+        val d = ClipCraftOptions()
+        headerArea.text = d.snippetHeaderText.orEmpty()
+        footerArea.text = d.snippetFooterText.orEmpty()
+        dirStructCheck.isSelected = d.includeDirectorySummary
+        lineNumbersCheck.isSelected = d.includeLineNumbers
+        removeImportsCheck.isSelected = d.removeImports
+        removeCommentsCheck.isSelected = d.removeComments
+        trimWSCheck.isSelected = d.trimWhitespace
+        removeEmptyCheck.isSelected = d.removeEmptyLines
+        singleLineCheck.isSelected = d.singleLineOutput
+        chunkCombo.selectedItem = d.chunkStrategy
+        chunkSizeField.text = d.chunkSize.toString()
+        overlapCombo.selectedItem = d.overlapStrategy
+        compressionCombo.selectedItem = d.compressionMode
+        metaCheck.isSelected = d.includeMetadata
+        gitInfoCheck.isSelected = d.includeGitInfo
+        autoLangCheck.isSelected = d.autoDetectLanguage
+        themeCombo.selectedItem = d.themeMode
+        concurrencyCombo.selectedItem = d.concurrencyMode
+        maxTasksField.text = d.maxConcurrentTasks.toString()
+        gitIgnoreCheck.isSelected = d.useGitIgnore
+        extraIgnoresField.text = d.additionalIgnorePatterns.orEmpty()
+        invertIgnoresCheck.isSelected = d.invertIgnorePatterns
+        dirPatternCheck.isSelected = d.enableDirectoryPatternMatching
+        detectBinaryCheck.isSelected = d.detectBinary
+        binaryThresholdField.text = d.binaryCheckThreshold.toString()
+        lintCheck.isSelected = d.showLint
+        includeImageCheck.isSelected = d.includeImageFiles
+        lintErrOnlyCheck.isSelected = d.lintErrorsOnly
+        lintWarnOnlyCheck.isSelected = d.lintWarningsOnly
+        addToQueueCheck.isSelected = d.addSnippetToQueue
+    }
+
+    override fun isModified(): Boolean = listOf(
+        headerArea.text != options.snippetHeaderText.orEmpty(),
+        footerArea.text != options.snippetFooterText.orEmpty(),
+        dirStructCheck.isSelected != options.includeDirectorySummary,
+        lineNumbersCheck.isSelected != options.includeLineNumbers,
+        removeImportsCheck.isSelected != options.removeImports,
+        removeCommentsCheck.isSelected != options.removeComments,
+        trimWSCheck.isSelected != options.trimWhitespace,
+        removeEmptyCheck.isSelected != options.removeEmptyLines,
+        singleLineCheck.isSelected != options.singleLineOutput,
+        chunkCombo.selectedItem != options.chunkStrategy,
+        chunkSizeField.text != options.chunkSize.toString(),
+        overlapCombo.selectedItem != options.overlapStrategy,
+        compressionCombo.selectedItem != options.compressionMode,
+        metaCheck.isSelected != options.includeMetadata,
+        gitInfoCheck.isSelected != options.includeGitInfo,
+        autoLangCheck.isSelected != options.autoDetectLanguage,
+        themeCombo.selectedItem != options.themeMode,
+        concurrencyCombo.selectedItem != options.concurrencyMode,
+        maxTasksField.text != options.maxConcurrentTasks.toString(),
+        gitIgnoreCheck.isSelected != options.useGitIgnore,
+        extraIgnoresField.text != options.additionalIgnorePatterns.orEmpty(),
+        invertIgnoresCheck.isSelected != options.invertIgnorePatterns,
+        dirPatternCheck.isSelected != options.enableDirectoryPatternMatching,
+        detectBinaryCheck.isSelected != options.detectBinary,
+        binaryThresholdField.text != options.binaryCheckThreshold.toString(),
+        lintCheck.isSelected != options.showLint,
+        includeImageCheck.isSelected != options.includeImageFiles,
+        lintErrOnlyCheck.isSelected != options.lintErrorsOnly,
+        lintWarnOnlyCheck.isSelected != options.lintWarningsOnly,
+        addToQueueCheck.isSelected != options.addSnippetToQueue,
+    ).any { it }
+
+    @Throws(ConfigurationException::class)
     override fun apply() {
-        // Update the in-memory copy
-        options.snippetHeaderText = headerArea.text
-        options.snippetFooterText = footerArea.text
-        options.includeDirectorySummary = directoryStructureCheck.isSelected
-        options.includeLineNumbers = lineNumbersCheck.isSelected
-        options.removeImports = removeImportsCheck.isSelected
-        options.removeComments = removeCommentsCheck.isSelected
-        options.trimWhitespace = trimWhitespaceCheck.isSelected
-        options.removeEmptyLines = removeEmptyLinesCheck.isSelected
-        options.singleLineOutput = singleLineOutputCheck.isSelected
-        options.chunkStrategy = chunkStrategyCombo.selectedItem as ChunkStrategy
-        options.chunkSize = chunkSizeField.text.toIntOrNull() ?: options.chunkSize
-        options.overlapStrategy = overlapCombo.selectedItem as OverlapStrategy
-        options.compressionMode = compressionCombo.selectedItem as CompressionMode
-        options.includeMetadata = metadataCheck.isSelected
-        options.includeGitInfo = gitInfoCheck.isSelected
-        options.autoDetectLanguage = autoLangCheck.isSelected
-        options.themeMode = themeCombo.selectedItem as ThemeMode
-        options.concurrencyMode = concurrencyCombo.selectedItem as ConcurrencyMode
-        options.maxConcurrentTasks = maxTasksField.text.toIntOrNull() ?: options.maxConcurrentTasks
-        options.useGitIgnore = gitIgnoreCheck.isSelected
-        options.additionalIgnorePatterns = additionalIgnoresField.text.ifBlank { null }
-        options.invertIgnorePatterns = invertIgnoresCheck.isSelected
-        options.enableDirectoryPatternMatching = directoryPatternCheck.isSelected
-        options.detectBinary = detectBinaryCheck.isSelected
-        options.binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: options.binaryCheckThreshold
-        options.showLint = showLintCheck.isSelected
-        options.includeImageFiles = includeImageFilesCheck.isSelected
-        options.lintErrorsOnly = lintErrorsOnlyCheck.isSelected
-        options.lintWarningsOnly = lintWarningsOnlyCheck.isSelected
-        options.addSnippetToQueue = addSnippetToQueueCheck.isSelected
-
+        val chunkSize = chunkSizeField.text.toIntOrNull() ?: throw ConfigurationException("Invalid Chunk Size")
+        val maxTasks = maxTasksField.text.toIntOrNull() ?: throw ConfigurationException("Invalid Max Tasks")
+        val binaryThreshold =
+            binaryThresholdField.text.toIntOrNull() ?: throw ConfigurationException("Invalid Binary Threshold")
+        with(options) {
+            snippetHeaderText = headerArea.text.trim()
+            snippetFooterText = footerArea.text.trim()
+            includeDirectorySummary = dirStructCheck.isSelected
+            includeLineNumbers = lineNumbersCheck.isSelected
+            removeImports = removeImportsCheck.isSelected
+            removeComments = removeCommentsCheck.isSelected
+            trimWhitespace = trimWSCheck.isSelected
+            removeEmptyLines = removeEmptyCheck.isSelected
+            singleLineOutput = singleLineCheck.isSelected
+            chunkStrategy = chunkCombo.selectedItem as ChunkStrategy
+            this.chunkSize = chunkSize
+            overlapStrategy = overlapCombo.selectedItem as OverlapStrategy
+            compressionMode = compressionCombo.selectedItem as CompressionMode
+            includeMetadata = metaCheck.isSelected
+            includeGitInfo = gitInfoCheck.isSelected
+            autoDetectLanguage = autoLangCheck.isSelected
+            themeMode = themeCombo.selectedItem as ThemeMode
+            concurrencyMode = concurrencyCombo.selectedItem as ConcurrencyMode
+            maxConcurrentTasks = maxTasks
+            useGitIgnore = gitIgnoreCheck.isSelected
+            additionalIgnorePatterns = extraIgnoresField.text.takeIf { it.isNotBlank() }
+            invertIgnorePatterns = invertIgnoresCheck.isSelected
+            enableDirectoryPatternMatching = dirPatternCheck.isSelected
+            detectBinary = detectBinaryCheck.isSelected
+            binaryCheckThreshold = binaryThreshold
+            showLint = lintCheck.isSelected
+            includeImageFiles = includeImageCheck.isSelected
+            lintErrorsOnly = lintErrOnlyCheck.isSelected
+            lintWarningsOnly = lintWarnOnlyCheck.isSelected
+            addSnippetToQueue = addToQueueCheck.isSelected
+        }
         options.resolveConflicts()
-
-        // Update the existing profile in place, do NOT delete the old profile anymore
         manager.addProfile(savedProfile.copy(options = options))
         manager.switchProfile(savedProfile.profileName)
-
         ApplicationManager.getApplication().saveAll()
     }
 
     override fun reset() {
         headerArea.text = options.snippetHeaderText.orEmpty()
         footerArea.text = options.snippetFooterText.orEmpty()
-        directoryStructureCheck.isSelected = options.includeDirectorySummary
+        dirStructCheck.isSelected = options.includeDirectorySummary
         lineNumbersCheck.isSelected = options.includeLineNumbers
         removeImportsCheck.isSelected = options.removeImports
         removeCommentsCheck.isSelected = options.removeComments
-        trimWhitespaceCheck.isSelected = options.trimWhitespace
-        removeEmptyLinesCheck.isSelected = options.removeEmptyLines
-        singleLineOutputCheck.isSelected = options.singleLineOutput
-        chunkStrategyCombo.selectedItem = options.chunkStrategy
+        trimWSCheck.isSelected = options.trimWhitespace
+        removeEmptyCheck.isSelected = options.removeEmptyLines
+        singleLineCheck.isSelected = options.singleLineOutput
+        chunkCombo.selectedItem = options.chunkStrategy
         chunkSizeField.text = options.chunkSize.toString()
         overlapCombo.selectedItem = options.overlapStrategy
         compressionCombo.selectedItem = options.compressionMode
-        metadataCheck.isSelected = options.includeMetadata
+        metaCheck.isSelected = options.includeMetadata
         gitInfoCheck.isSelected = options.includeGitInfo
         autoLangCheck.isSelected = options.autoDetectLanguage
         themeCombo.selectedItem = options.themeMode
         concurrencyCombo.selectedItem = options.concurrencyMode
         maxTasksField.text = options.maxConcurrentTasks.toString()
         gitIgnoreCheck.isSelected = options.useGitIgnore
-        additionalIgnoresField.text = options.additionalIgnorePatterns.orEmpty()
+        extraIgnoresField.text = options.additionalIgnorePatterns.orEmpty()
         invertIgnoresCheck.isSelected = options.invertIgnorePatterns
-        directoryPatternCheck.isSelected = options.enableDirectoryPatternMatching
+        dirPatternCheck.isSelected = options.enableDirectoryPatternMatching
         detectBinaryCheck.isSelected = options.detectBinary
         binaryThresholdField.text = options.binaryCheckThreshold.toString()
-        showLintCheck.isSelected = options.showLint
-        includeImageFilesCheck.isSelected = options.includeImageFiles
-        lintErrorsOnlyCheck.isSelected = options.lintErrorsOnly
-        lintWarningsOnlyCheck.isSelected = options.lintWarningsOnly
-        addSnippetToQueueCheck.isSelected = options.addSnippetToQueue
-
+        lintCheck.isSelected = options.showLint
+        includeImageCheck.isSelected = options.includeImageFiles
+        lintErrOnlyCheck.isSelected = options.lintErrorsOnly
+        lintWarnOnlyCheck.isSelected = options.lintWarningsOnly
+        addToQueueCheck.isSelected = options.addSnippetToQueue
         updatePreview()
         updateChunkUI()
         updateConcurrency()
@@ -420,86 +590,10 @@ class ClipCraftSettingsConfigurable : Configurable {
 
     override fun disposeUIResources() {}
 
-    private fun updatePreview() {
-        val tmp = options.copy().apply {
-            snippetHeaderText = headerArea.text
-            snippetFooterText = footerArea.text
-            includeDirectorySummary = directoryStructureCheck.isSelected
-            includeLineNumbers = lineNumbersCheck.isSelected
-            removeImports = removeImportsCheck.isSelected
-            removeComments = removeCommentsCheck.isSelected
-            trimWhitespace = trimWhitespaceCheck.isSelected
-            removeEmptyLines = removeEmptyLinesCheck.isSelected
-            singleLineOutput = singleLineOutputCheck.isSelected
-            chunkStrategy = chunkStrategyCombo.selectedItem as ChunkStrategy
-            chunkSize = chunkSizeField.text.toIntOrNull() ?: chunkSize
-            overlapStrategy = overlapCombo.selectedItem as OverlapStrategy
-            compressionMode = compressionCombo.selectedItem as CompressionMode
-            includeMetadata = metadataCheck.isSelected
-            includeGitInfo = gitInfoCheck.isSelected
-            autoDetectLanguage = autoLangCheck.isSelected
-            themeMode = themeCombo.selectedItem as ThemeMode
-            concurrencyMode = concurrencyCombo.selectedItem as ConcurrencyMode
-            maxConcurrentTasks = maxTasksField.text.toIntOrNull() ?: maxConcurrentTasks
-            useGitIgnore = gitIgnoreCheck.isSelected
-            additionalIgnorePatterns = additionalIgnoresField.text.ifBlank { null }
-            invertIgnorePatterns = invertIgnoresCheck.isSelected
-            enableDirectoryPatternMatching = directoryPatternCheck.isSelected
-            detectBinary = detectBinaryCheck.isSelected
-            binaryCheckThreshold = binaryThresholdField.text.toIntOrNull() ?: binaryCheckThreshold
-            showLint = showLintCheck.isSelected
-            includeImageFiles = includeImageFilesCheck.isSelected
-            lintErrorsOnly = lintErrorsOnlyCheck.isSelected
-            lintWarningsOnly = lintWarningsOnlyCheck.isSelected
-            addSnippetToQueue = addSnippetToQueueCheck.isSelected
-        }
-        tmp.resolveConflicts()
-
-        val snippet = Snippet(
-            content = sampleCode,
-            fileName = "Sample.kt",
-            relativePath = "src/Sample.kt",
-            filePath = "C:/fake/path/Sample.kt",
-            fileSizeBytes = sampleCode.length.toLong(),
-            lastModified = System.currentTimeMillis(),
-        )
-
-        val formattedCode = com.clipcraft.util.CodeFormatter.formatSnippets(listOf(snippet), tmp).joinToString("\n---\n")
-        val dirStruct = if (tmp.includeDirectorySummary) "Directory Structure:\n  src/Sample.kt\n\n" else ""
-
-        val fullPreview = buildString {
-            if (!tmp.snippetHeaderText.isNullOrEmpty()) {
-                appendLine(tmp.snippetHeaderText)
-                appendLine()
-            }
-            if (dirStruct.isNotEmpty()) {
-                append(dirStruct)
-            }
-            append(formattedCode)
-            if (!tmp.snippetFooterText.isNullOrEmpty()) {
-                appendLine()
-                appendLine(tmp.snippetFooterText)
-            }
-            appendLine("\n---\n[Preview Info] Concurrency: ${tmp.concurrencyMode}, Chunk Strategy: ${tmp.chunkStrategy}")
-        }
-
-        previewEditor.text = fullPreview
-        updateChunkUI()
-    }
-
-    private fun updateChunkUI() {
-        val active = !singleLineOutputCheck.isSelected && (chunkStrategyCombo.selectedItem as ChunkStrategy) != ChunkStrategy.NONE
-        chunkSizeField.isEnabled = active && (chunkStrategyCombo.selectedItem == ChunkStrategy.BY_SIZE)
-        overlapCombo.isEnabled = active
-        compressionCombo.isEnabled = true
-        chunkLabel.text = if (singleLineOutputCheck.isSelected) {
-            "Single-line output active; chunking disabled"
-        } else {
-            ""
-        }
-    }
-
-    private fun updateConcurrency() {
-        maxTasksField.isEnabled = (concurrencyCombo.selectedItem as ConcurrencyMode) != ConcurrencyMode.DISABLED
+    // Simple DocumentListener helper
+    private class SimpleDocListener(val onChange: () -> Unit) : DocumentListener {
+        override fun insertUpdate(e: DocumentEvent?) = onChange()
+        override fun removeUpdate(e: DocumentEvent?) = onChange()
+        override fun changedUpdate(e: DocumentEvent?) = onChange()
     }
 }

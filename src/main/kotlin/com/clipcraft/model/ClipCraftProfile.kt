@@ -1,3 +1,3 @@
 package com.clipcraft.model
 
-data class ClipCraftProfile(val profileName: String, val options: ClipCraftOptions)
+data class ClipCraftProfile(var profileName: String, val options: ClipCraftOptions)

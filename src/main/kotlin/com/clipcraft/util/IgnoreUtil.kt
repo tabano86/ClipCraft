@@ -140,5 +140,3 @@ object IgnoreUtil {
         return Regex(pattern, opts)
     }
 }
-
-data class GlobOptions(val extended: Boolean = false, val globstar: Boolean = false, val flags: String = "")

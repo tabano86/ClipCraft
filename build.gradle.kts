@@ -1,4 +1,4 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     java

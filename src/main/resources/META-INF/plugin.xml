@@ -1,19 +1,21 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
+    <!-- Version is set by the build; do not include release-version -->
+    <version>0.7.0-SNAPSHOT</version>
+
     <vendor email="tabano86@gmail.com" url="https://github.com/clipcraft">ClipCraft</vendor>
+
     <description><![CDATA[
     ClipCraft extracts, formats, and merges code from multiple sources.
-    Includes concurrency, .gitignore, metadata, macros, etc.
-    ]]></description>
+    It includes support for concurrency, .gitignore handling, metadata,
+    macros, and more.
+  ]]></description>
 
-    <!-- patchPluginXml.changeNotes will overwrite what's here -->
+    <!-- The change-notes content will be overwritten by patchPluginXml -->
     <change-notes><![CDATA[
-    Overwritten by Gradle's patchPluginXml with your last Git commit message.
-    ]]></change-notes>
-
-    <!-- Overridden by patchPluginXml if you set sinceBuild/untilBuild -->
-    <!-- <idea-version since-build="241.*" until-build="299.*"/> -->
+    Initial change-notes placeholder.
+  ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
 
@@ -45,17 +47,15 @@
             <action id="ClipCraftWizardAction"
                     class="com.clipcraft.actions.ClipCraftWizardAction"
                     text="Setup Wizard"
-                    description="ClipCraft guided configuration"/>
-
+                    description="Guided configuration for ClipCraft"/>
             <action id="ClipCraftResetDefaultsAction"
                     class="com.clipcraft.actions.ClipCraftResetDefaultsAction"
                     text="Reset Defaults"
                     description="Reset ClipCraft settings"/>
-
             <action id="ClipCraftSwitchProfileAction"
                     class="com.clipcraft.actions.ClipCraftSwitchProfileAction"
                     text="Switch Profile"
-                    description="Switch saved profiles"/>
+                    description="Switch among saved profiles"/>
 
             <action id="OpenClipCraftSettings"
                     class="com.intellij.ide.actions.ShowSettingsAction"

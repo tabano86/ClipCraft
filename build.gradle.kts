@@ -6,16 +6,16 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
     id("org.jetbrains.intellij.platform") version "2.2.1"
 
-    // Optional: Axion Release for automated semantic versioning
+    // Optional: Axion Release for semantic versioning
     id("pl.allegro.tech.build.axion-release") version "1.18.16"
 
-    // Optional: Spotless for code format
+    // Optional: Spotless for code formatting
     id("com.diffplug.spotless") version "6.20.0"
 
     // Optional: Detekt for static analysis
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 
-    // Optional: Gradle Versions plugin
+    // Optional: Gradle Versions plugin for dependency updates
     id("com.github.ben-manes.versions") version "0.48.0"
 
     // Optional: Code coverage
@@ -24,9 +24,7 @@ plugins {
 
 group = "com.clipcraft"
 
-// ----------------------------------------------------
-// 1) Axion Release (remove if unneeded)
-// ----------------------------------------------------
+// --- Axion Release Configuration (Optional) ---
 scmVersion {
     tag {
         prefix.set("v")
@@ -40,15 +38,11 @@ scmVersion {
             val msg = process.inputStream.bufferedReader().readText().trim()
             when {
                 "BREAKING CHANGE" in msg ||
-                        Regex("^.*!:").containsMatchIn(msg) ->
-                    ctx.currentVersion.incrementMajorVersion()
-
+                        Regex("^.*!:").containsMatchIn(msg) -> ctx.currentVersion.incrementMajorVersion()
                 msg.startsWith("feat", ignoreCase = true) ->
                     ctx.currentVersion.incrementMinorVersion()
-
                 msg.startsWith("fix", ignoreCase = true) ->
                     ctx.currentVersion.incrementPatchVersion()
-
                 else -> ctx.currentVersion
             }
         })
@@ -56,46 +50,29 @@ scmVersion {
     versionIncrementer("incrementPatch")
     createReleaseCommit.set(false)
 }
+version = scmVersion.version  // or set manually if not using Axion
 
-// If not using Axion, just hardcode or set version = "0.7.0-SNAPSHOT"
-version = scmVersion.version
-
-
-// ----------------------------------------------------
-// 2) Dynamic CHANGENOTES from last commit
-// ----------------------------------------------------
-val dynamicChangeNotes by lazy {
-    val p = Runtime.getRuntime().exec("git log -1 --pretty=%B")
-    val rawCommit = p.inputStream.bufferedReader().readText().trim()
-    val sanitized = rawCommit.replace("]]>", "]]]]><![CDATA[>")
-    """
-    <![CDATA[
-    $sanitized
-    ]]>
-    """.trimIndent()
+// --- Dynamic change-notes (plain text; patchPluginXml wraps it in CDATA) ---
+val dynamicChangeNotes = providers.provider {
+    val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
+    val rawMsg = process.inputStream.bufferedReader().readText().trim()
+    // Remove any problematic tokens (do not include literal <![CDATA[ or ]]>)
+    rawMsg
+        .replace("<![CDATA[", "<<_CDATA_START_")
+        .replace("]]>", "<<_CDATA_END_")
 }
-
-tasks.patchPluginXml {
-    changeNotes.set(dynamicChangeNotes)
-}
-
 
 repositories {
     mavenCentral()
-    intellijPlatform {
-        defaultRepositories()
-    }
+    intellijPlatform { defaultRepositories() }
 }
 
 kotlin {
     jvmToolchain(17)
 }
 
-// ----------------------------------------------------
-// Dependencies
-// ----------------------------------------------------
+// --- Dependencies ---
 dependencies {
-    // IntelliJ
     intellijPlatform {
         intellijIdeaCommunity("2024.1")
         bundledPlugin("com.intellij.java")
@@ -103,24 +80,15 @@ dependencies {
         pluginVerifier()
         zipSigner()
     }
-
-    // Optional: kotlinx.serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-
-    // Tests
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
-
-    // If using commons-text / commons-lang
     implementation("org.apache.commons:commons-text:1.13.0")
     implementation("org.apache.commons:commons-lang3:3.17.0")
 }
 
-
-// ----------------------------------------------------
-// Tasks
-// ----------------------------------------------------
+// --- Tasks ---
 tasks {
     compileKotlin {
         kotlinOptions.jvmTarget = "17"
@@ -130,19 +98,18 @@ tasks {
     }
 
     patchPluginXml {
-        // Overwrite <change-notes> with last commit
+        // Provide the plain sanitized text; patchPluginXml will wrap it in CDATA.
         changeNotes.set(dynamicChangeNotes)
-        // Example: override idea-version range
-        sinceBuild.set("241.*")
-        untilBuild.set("299.*")
+        // Adjust the compatibility range so the current build (e.g. 241.14494.240) is accepted.
+        sinceBuild.set("241.0")
+        untilBuild.set("999.*")
     }
 
     publishPlugin {
-        channels = listOf("beta")  // or "stable"
+        channels = listOf("beta")
         token = providers.gradleProperty("intellijPlatformPublishingToken")
     }
 
-    // Jacoco coverage
     jacocoTestReport {
         reports {
             xml.required.set(true)
@@ -151,33 +118,24 @@ tasks {
     }
 }
 
-// ----------------------------------------------------
-// Spotless (Optional)
-// ----------------------------------------------------
+// --- Spotless (Optional) ---
 spotless {
     kotlin {
         target("**/*.kt")
         ktlint("0.48.2").userData(
-            mapOf(
-                "indent_size" to "4",
-                "max_line_length" to "120"
-            )
+            mapOf("indent_size" to "4", "max_line_length" to "120")
         )
     }
 }
 
-// ----------------------------------------------------
-// Detekt (Optional)
-// ----------------------------------------------------
+// --- Detekt (Optional) ---
 detekt {
     config.setFrom(files("detekt-config.yml"))
     buildUponDefaultConfig = true
     autoCorrect = true
 }
 
-// ----------------------------------------------------
-// Jacoco (Optional)
-// ----------------------------------------------------
+// --- Jacoco (Optional) ---
 jacoco {
     toolVersion = "0.8.12"
 }

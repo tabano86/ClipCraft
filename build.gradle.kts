@@ -131,7 +131,7 @@ tasks {
 
     publishPlugin {
         channels = listOf("beta")
-        token = providers.gradleProperty("intellijPublishingToken")
+        token.set(providers.gradleProperty("intellijPublishingToken"))
         doFirst {
             if (
                 project.hasProperty("failOnDuplicateVersion")

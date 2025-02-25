@@ -13,9 +13,6 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextArea
 
-/**
- * A tool window to display lint results (if that part of the plugin is used).
- */
 class ClipCraftLintToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val panel = JPanel(BorderLayout()).apply {
@@ -25,6 +22,7 @@ class ClipCraftLintToolWindowFactory : ToolWindowFactory, DumbAware {
         val scroll = JBScrollPane(resultsArea)
         panel.add(JLabel("ClipCraft Lint Results:"), BorderLayout.NORTH)
         panel.add(scroll, BorderLayout.CENTER)
+
         val results = project.getService(LintResultsService::class.java)?.getAllResults().orEmpty()
         if (results.isNotEmpty()) {
             resultsArea.text = results.joinToString("\n") { it.formatMessage() }

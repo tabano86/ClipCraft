@@ -9,18 +9,18 @@ import java.io.File
 data class GitRepository(val root: VirtualFile, val currentRevision: String?)
 
 class ClipCraftGitRepositoryManager private constructor(private val project: Project) {
-
     private val logger = Logger.getInstance(ClipCraftGitRepositoryManager::class.java)
     val repositories: List<GitRepository> by lazy { discoverRepositories() }
 
     private fun discoverRepositories(): List<GitRepository> {
         val repos = mutableListOf<GitRepository>()
-        val projectBaseDir = project.baseDir
+        val projectBaseDir = project.basePath?.let { projectBase ->
+            com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByPath(projectBase)
+        }
         if (projectBaseDir == null) {
             logger.warn("Project base directory is null.")
             return repos
         }
-        // Find .git directories
         VfsUtilCore.iterateChildrenRecursively(
             projectBaseDir,
             { true },
@@ -61,8 +61,6 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
     }
 
     companion object {
-        fun getInstance(project: Project): ClipCraftGitRepositoryManager {
-            return ClipCraftGitRepositoryManager(project)
-        }
+        fun getInstance(project: Project): ClipCraftGitRepositoryManager = ClipCraftGitRepositoryManager(project)
     }
 }

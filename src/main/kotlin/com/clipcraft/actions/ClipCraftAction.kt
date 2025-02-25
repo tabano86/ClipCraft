@@ -6,6 +6,7 @@ import com.clipcraft.model.Snippet
 import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftSettingsState
 import com.clipcraft.util.CodeFormatter
+import com.clipcraft.util.IgnoreUtil
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -18,6 +19,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -42,7 +44,6 @@ class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return
-
         if (vFiles.isEmpty()) {
             ClipCraftNotificationCenter.warn("No files selected to copy.")
             return
@@ -64,6 +65,7 @@ class ClipCraftAction : AnAction() {
     private suspend fun copyContents(project: Project, files: List<VirtualFile>, options: ClipCraftOptions) {
         logger.info("Preparing to copy ${files.size} file(s) with concurrency=${options.concurrencyMode}")
         val allFiles = expandFiles(files)
+
         when (options.concurrencyMode) {
             ConcurrencyMode.DISABLED -> copyContentsSequential(allFiles, project, options)
             ConcurrencyMode.THREAD_POOL,
@@ -92,19 +94,15 @@ class ClipCraftAction : AnAction() {
         var ignoredByGit = 0
 
         for (vf in files) {
-            // Skip images if not including them
-            if (!options.includeImageFiles && isImageFile(vf)) {
+            if (!options.includeImageFiles && vf.isImageFile()) {
                 skippedImages++
                 continue
             }
-
-            // Skip if .gitignore says ignore
-            if (options.useGitIgnore && isGitIgnored(vf, project.baseDir.path, options)) {
+            if (options.useGitIgnore && vf.isGitIgnored(project.basePath ?: "", options)) {
                 ignoredByGit++
                 continue
             }
-
-            val content = readFileOrNull(vf)
+            val content = vf.readTextOrNull()
             if (content == null) {
                 failed.add(vf.name)
                 continue
@@ -122,40 +120,24 @@ class ClipCraftAction : AnAction() {
         }
 
         val resultText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
-        // Now log the actual snippet count, not the original file count
         postCopy(project, resultText, failed, snippetList.size)
-
         logger.info("Skipped images: $skippedImages, Git-ignored: $ignoredByGit")
-    }
-
-    /**
-     * Checks if the given VirtualFile is ignored based on .gitignore (and other ignore patterns).
-     */
-    private fun isGitIgnored(vFile: VirtualFile, basePath: String, options: ClipCraftOptions): Boolean {
-        val f = java.io.File(vFile.path)
-        return com.clipcraft.util.IgnoreUtil.shouldIgnore(f, options, basePath)
-    }
-
-    /** Helper function to detect image files by extension. */
-    private fun isImageFile(vFile: VirtualFile): Boolean {
-        val ext = vFile.extension?.lowercase()
-        return ext in listOf("png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "ico", "svg")
     }
 
     private suspend fun copyContentsCoroutines(files: List<VirtualFile>, project: Project, options: ClipCraftOptions) {
         val failed = mutableListOf<String>()
         val snippetJobs = mutableListOf<Deferred<Snippet?>>()
-
-        // Instead of 'newFixedThreadPoolContext', do:
         val executor = Executors.newFixedThreadPool(options.maxConcurrentTasks)
         val dispatcher = executor.asCoroutineDispatcher()
-        val scope = CoroutineScope(dispatcher)
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
         try {
             files.forEach { vf ->
                 snippetJobs.add(
                     scope.async {
-                        val content = readFileOrNull(vf) ?: run {
+                        if (!options.includeImageFiles && vf.isImageFile()) return@async null
+                        if (options.useGitIgnore && vf.isGitIgnored(project.basePath ?: "", options)) return@async null
+                        val content = vf.readTextOrNull() ?: run {
                             failed.add(vf.name)
                             return@async null
                         }
@@ -172,24 +154,13 @@ class ClipCraftAction : AnAction() {
             }
             val snippetList = snippetJobs.awaitAll().filterNotNull()
             val resultText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
-            postCopy(project, resultText, failed, files.size)
+            postCopy(project, resultText, failed, snippetList.size)
         } finally {
-            // Shut down the executor
             executor.shutdown()
         }
     }
 
-    private fun readFileOrNull(vf: VirtualFile): String? {
-        return try {
-            val bytes = vf.contentsToByteArray()
-            String(bytes, vf.charset)
-        } catch (ex: Exception) {
-            logger.warn("Error reading file ${vf.path}: ${ex.message}", ex)
-            null
-        }
-    }
-
-    private fun postCopy(project: Project, text: String, failedFiles: List<String>, totalCount: Int) {
+    private fun postCopy(project: Project, text: String, failedFiles: List<String>, snippetCount: Int) {
         val globalState = ClipCraftSettingsState.getInstance()
         if (globalState.maxCopyCharacters > 0 && text.length > globalState.maxCopyCharacters) {
             val res = JOptionPane.showConfirmDialog(
@@ -212,12 +183,31 @@ class ClipCraftAction : AnAction() {
             false
         }
         if (success) {
-            ClipCraftNotificationCenter.info("Copied $totalCount file(s), length: ${text.length} chars.")
+            ClipCraftNotificationCenter.info("Copied $snippetCount snippet(s), length: ${text.length} chars.")
         } else {
             ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
         }
         if (failedFiles.isNotEmpty()) {
             ClipCraftNotificationCenter.warn("Some files couldn't be read: ${failedFiles.joinToString()}")
         }
+    }
+
+    // Extension: read file text or null.
+    private fun VirtualFile.readTextOrNull(): String? = try {
+        String(contentsToByteArray(), charset)
+    } catch (ex: Exception) {
+        logger.warn("Error reading file $path: ${ex.message}", ex)
+        null
+    }
+
+    // Extension: quick check for images.
+    private fun VirtualFile.isImageFile(): Boolean {
+        val ext = extension?.lowercase()
+        return ext in listOf("png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "ico", "svg")
+    }
+
+    // Extension: check if .gitignore excludes this file.
+    private fun VirtualFile.isGitIgnored(projectBase: String, options: ClipCraftOptions): Boolean {
+        return IgnoreUtil.shouldIgnore(java.io.File(path), options, projectBase)
     }
 }

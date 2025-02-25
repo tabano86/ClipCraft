@@ -1,8 +1,10 @@
 package com.clipcraft.ui
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.util.ui.JBUI
 import java.awt.CardLayout
+import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -10,30 +12,7 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-class ClipCraftSetupWizardUI {
-    private val includeMetadataCheck = javax.swing.JCheckBox("Include metadata (file size, timestamp, etc.)", true)
-    private val useGitIgnoreCheck = javax.swing.JCheckBox("Use .gitignore", true)
-    private val concurrencyField = javax.swing.JTextField("4", 5)
-
-    private val mainPanel: JPanel = com.intellij.ui.dsl.builder.panel {
-        row("Include Metadata:") {
-            cell(includeMetadataCheck)
-        }
-        row("Use .gitignore:") {
-            cell(useGitIgnoreCheck)
-        }
-        row("Max Concurrent Tasks:") {
-            cell(concurrencyField)
-        }
-    }
-
-    fun getMainPanel(): JPanel = mainPanel
-    fun isIncludeMetadata() = includeMetadataCheck.isSelected
-    fun isUseGitIgnore() = useGitIgnoreCheck.isSelected
-    fun getMaxConcurrentTasks() = concurrencyField.text.toIntOrNull() ?: 4
-}
-
-class ClipCraftSetupWizard(private val project: com.intellij.openapi.project.Project) : DialogWrapper(true) {
+class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
     private val wizardCore = ClipCraftSetupWizardCore(project)
     private val wizardUI = ClipCraftSetupWizardUI()
     private val cardLayout = CardLayout()
@@ -59,25 +38,23 @@ class ClipCraftSetupWizard(private val project: com.intellij.openapi.project.Pro
     private var stepIndex = 0
 
     private val backAction = object : DialogWrapperAction("Back") {
-        override fun doAction(e: java.awt.event.ActionEvent?) {
+        override fun doAction(e: ActionEvent?) {
             if (stepIndex > 0) {
                 stepIndex--
                 updateStepUI()
             }
         }
     }
-
     private val nextAction = object : DialogWrapperAction("Next") {
-        override fun doAction(e: java.awt.event.ActionEvent?) {
+        override fun doAction(e: ActionEvent?) {
             if (stepIndex < 1) {
                 stepIndex++
                 updateStepUI()
             }
         }
     }
-
     private val finishAction = object : DialogWrapperAction("Finish") {
-        override fun doAction(e: java.awt.event.ActionEvent?) {
+        override fun doAction(e: ActionEvent?) {
             applyWizardResults()
             close(OK_EXIT_CODE)
         }
@@ -92,7 +69,6 @@ class ClipCraftSetupWizard(private val project: com.intellij.openapi.project.Pro
     }
 
     override fun createCenterPanel(): JComponent = wizardPanel
-
     override fun createActions(): Array<Action> = arrayOf(backAction, nextAction, finishAction, cancelAction)
 
     private fun updateStepUI() {

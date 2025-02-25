@@ -21,10 +21,7 @@ class ClipCraftSnippetsManager(private val project: Project) {
     }
 
     fun getAllSnippets(): List<Snippet> = snippets.toList()
-
-    fun clearAll() {
-        snippets.clear()
-    }
+    fun clearAll() = snippets.clear()
 
     companion object {
         fun getInstance(project: Project): ClipCraftSnippetsManager =

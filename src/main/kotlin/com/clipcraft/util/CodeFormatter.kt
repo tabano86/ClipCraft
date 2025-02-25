@@ -5,19 +5,13 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.Snippet
-import org.apache.commons.text.StringEscapeUtils
 import kotlin.math.min
+import org.apache.commons.text.StringEscapeUtils
 
-/**
- * Utility for formatting code snippets with chunking, compression, concurrency,
- * user-defined metadata, etc.
- */
 object CodeFormatter {
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
         options.resolveConflicts()
-        val mergedContent = snippets.joinToString("\n\n") {
-            processSnippet(it, options)
-        }.trim()
+        val mergedContent = snippets.joinToString("\n\n") { processSnippet(it, options) }.trim()
         return when (options.chunkStrategy) {
             ChunkStrategy.NONE -> listOf(mergedContent)
             ChunkStrategy.BY_SIZE -> chunkBySize(mergedContent, options.chunkSize, preserveWords = true)
@@ -26,8 +20,7 @@ object CodeFormatter {
     }
 
     private fun processSnippet(snippet: Snippet, options: ClipCraftOptions): String {
-        val lang = snippet.language?.ifBlank { null } ?: detectLanguage(snippet.fileName)
-
+        val lang = snippet.language?.takeIf { it.isNotBlank() } ?: detectLanguage(snippet.fileName)
         var text = snippet.content
         if (options.removeImports) text = removeImports(text, lang)
         if (options.removeComments) text = removeComments(text, lang)
@@ -37,9 +30,7 @@ object CodeFormatter {
         if (options.removeEmptyLines) text = collapseEmpty(text)
         if (options.singleLineOutput) text = singleLine(text)
         text = compress(text, options)
-        if (options.includeLineNumbers) {
-            text = lineNumbers(text)
-        }
+        if (options.includeLineNumbers) text = lineNumbers(text)
         val wrapped = wrapCodeBlock(text, options.outputFormat, lang)
         return if (options.includeMetadata) {
             val meta = buildMetadataBlock(snippet, options)
@@ -61,9 +52,7 @@ object CodeFormatter {
             "id" to snippet.id,
         )
         var meta = template
-        placeholders.forEach { (k, v) ->
-            meta = meta.replace("{$k}", v)
-        }
+        placeholders.forEach { (k, v) -> meta = meta.replace("{$k}", v) }
         return meta
     }
 
@@ -162,14 +151,17 @@ object CodeFormatter {
 
             CompressionMode.ULTRA ->
                 input.lines().map {
-                    it.replace("\uFEFF", "").replace("\u200B", "").replace(Regex("\\p{C}+"), "").trim()
+                    it.replace("\uFEFF", "")
+                        .replace("\u200B", "")
+                        .replace(Regex("\\p{C}+"), "")
+                        .trim()
                 }.filter {
                     if (!o.selectiveCompression) {
                         it.isNotBlank()
                     } else {
                         it.isNotBlank() && !it.uppercase().contains("TODO") && !it.uppercase().contains("DEBUG")
                     }
-                }.joinToString(" ") { it.replace(Regex("\\s+"), " ") }
+                }.joinToString(" ") { ln -> ln.replace(Regex("\\s+"), " ") }
         }
     }
 
@@ -187,9 +179,8 @@ object CodeFormatter {
     }
 
     fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
-        require(maxChunkSize > 0) { "maxChunkSize must be positive" }
+        require(maxChunkSize > 0)
         if (text.length <= maxChunkSize) return listOf(text)
-
         if (!preserveWords) {
             val chunks = mutableListOf<String>()
             var idx = 0
@@ -200,7 +191,6 @@ object CodeFormatter {
             }
             return chunks
         }
-
         val results = mutableListOf<String>()
         var i = 0
         while (i < text.length) {

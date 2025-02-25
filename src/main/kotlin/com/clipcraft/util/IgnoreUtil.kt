@@ -10,9 +10,7 @@ object IgnoreUtil {
     private val logger = Logger.getInstance(IgnoreUtil::class.java)
 
     private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
-        if (opts.useGitIgnore) {
-            loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
-        }
+        if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
     }
 
     fun parseCustomIgnoreFiles(opts: ClipCraftOptions, projectBase: String, files: List<String>) {
@@ -21,6 +19,7 @@ object IgnoreUtil {
 
     fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
         parseGitIgnoreIfNeeded(opts, projectBase)
+
         if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
 
@@ -81,16 +80,13 @@ object IgnoreUtil {
                 .map { it.trim() }
                 .filter { it.isNotEmpty() && !it.startsWith("#") }
                 .forEach {
-                    if (it !in opts.ignorePatterns) {
-                        opts.ignorePatterns.add(it)
-                    }
+                    if (it !in opts.ignorePatterns) opts.ignorePatterns.add(it)
                 }
         } catch (e: Exception) {
             logger.warn("Error reading ${file.absolutePath}", e)
         }
     }
 
-    // Convert a standard glob into a Regex for matching paths
     fun standardGlobToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
         val (extended, globstar, flags) = options
         val sb = StringBuilder()

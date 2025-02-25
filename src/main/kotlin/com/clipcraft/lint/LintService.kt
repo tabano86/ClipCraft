@@ -4,9 +4,6 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.Snippet
 import com.clipcraft.model.SnippetGroup
 
-/**
- * Provides lint scanning on snippet groups.
- */
 object LintService {
     fun lintGroup(group: SnippetGroup, options: ClipCraftOptions): List<LintIssue> {
         val allIssues = group.snippets.flatMap { lintSnippet(it) }
@@ -26,29 +23,22 @@ object LintService {
         return lines.mapIndexedNotNull { index, line ->
             val num = index + 1
             when {
-                line.length > 120 ->
-                    LintIssue(
-                        LintSeverity.WARNING,
-                        snippet.filePath,
-                        num,
-                        "Line exceeds 120 characters (${line.length} chars).",
-                    )
+                line.length > 120 -> LintIssue(
+                    LintSeverity.WARNING,
+                    snippet.filePath,
+                    num,
+                    "Line exceeds 120 characters (${line.length} chars).",
+                )
 
-                line.contains('\t') ->
-                    LintIssue(
-                        LintSeverity.ERROR,
-                        snippet.filePath,
-                        num,
-                        "Tabs are not allowed; use spaces instead.",
-                    )
+                line.contains('\t') -> LintIssue(
+                    LintSeverity.ERROR,
+                    snippet.filePath,
+                    num,
+                    "Tabs are not allowed; use spaces instead.",
+                )
 
                 line.endsWith(" ") || line.endsWith("\t") ->
-                    LintIssue(
-                        LintSeverity.WARNING,
-                        snippet.filePath,
-                        num,
-                        "Trailing whitespace found.",
-                    )
+                    LintIssue(LintSeverity.WARNING, snippet.filePath, num, "Trailing whitespace found.")
 
                 else -> null
             }

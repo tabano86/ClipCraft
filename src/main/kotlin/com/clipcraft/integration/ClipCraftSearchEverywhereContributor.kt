@@ -5,6 +5,7 @@ import com.intellij.ide.actions.SearchEverywherePsiRenderer
 import com.intellij.ide.actions.searcheverywhere.SearchEverywhereContributor
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.Processor
 import javax.swing.ListCellRenderer
@@ -21,7 +22,11 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
     override fun getSortWeight(): Int = 50
     override fun showInFindResults(): Boolean = false
 
-    override fun fetchElements(pattern: String, progressIndicator: ProgressIndicator, consumer: Processor<in Any>) {
+    override fun fetchElements(
+        pattern: String,
+        progressIndicator: ProgressIndicator,
+        consumer: Processor<in Any>,
+    ) {
         val mgr = project?.getService(ClipCraftProjectProfileManager::class.java) ?: return
         val matches = mgr.listProfiles().filter { StringUtil.containsIgnoreCase(it.profileName, pattern) }
         for (profile in matches) {
@@ -31,10 +36,8 @@ class ClipCraftSearchEverywhereContributor : SearchEverywhereContributor<Any> {
 
     override fun processSelectedItem(selected: Any, modifiers: Int, searchText: String): Boolean = true
     override fun getElementPriority(element: Any, pattern: String): Int = 0
-    override fun getElementsRenderer(): ListCellRenderer<Any> = SearchEverywherePsiRenderer(DisposableHolder.disposable)
-    override fun getDataForItem(element: Any, dataId: String): Any? = null
-}
+    override fun getElementsRenderer(): ListCellRenderer<Any> =
+        SearchEverywherePsiRenderer(Disposer.newDisposable("ClipCraftContributorDisposable"))
 
-object DisposableHolder {
-    val disposable = com.intellij.openapi.util.Disposer.newDisposable("ClipCraftContributorDisposable")
+    override fun getDataForItem(element: Any, dataId: String): Any? = null
 }

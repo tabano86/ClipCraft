@@ -16,14 +16,12 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import java.awt.datatransfer.StringSelection
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
-import java.awt.datatransfer.StringSelection
 
-/**
- * Adds a snippet from user selection or method at caret. Then aggregates output and copies to clipboard.
- */
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
+
     override fun actionPerformed(event: AnActionEvent) {
         val editor = event.getData(CommonDataKeys.EDITOR)
         val psiFile = event.getData(CommonDataKeys.PSI_FILE)
@@ -31,13 +29,15 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             ClipCraftNotificationCenter.warn("No editor or file found.")
             return
         }
+
         val snippetText = editor.extractSnippetOrMethod(psiFile)
         if (snippetText.isBlank()) {
             ClipCraftNotificationCenter.warn("No valid snippet could be extracted.")
             return
         }
-        val finalSnippetContent = snippetText.withClipCraftHeaders()
+
         val project = event.project ?: return
+        val finalSnippetContent = snippetText.withClipCraftHeaders()
 
         val snippet = Snippet(
             filePath = "InMemory",
@@ -48,17 +48,23 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             content = finalSnippetContent,
         )
 
-        // Retrieve the current profile's options
         val options = ClipCraftSettings.getInstance().getCurrentProfile().options
+        val snippetManager = ClipCraftSnippetsManager.getInstance(project)
+
+        // Decide where to store the newly created snippet
         if (options.addSnippetToQueue) {
             ClipCraftQueueService.getInstance(project).addSnippet(snippet)
         } else {
-            ClipCraftSnippetsManager.getInstance(project).addSnippet(snippet)
+            snippetManager.addSnippet(snippet)
         }
 
-        val snippets = ClipCraftSnippetsManager.getInstance(project).getAllSnippets()
-        val group = SnippetGroup("Aggregated Snippets")
-        group.snippets.addAll(snippets)
+        // Get all existing snippets and build a group
+        val allSnippets = snippetManager.getAllSnippets()
+        val group = SnippetGroup("Aggregated Snippets").apply {
+            snippets.addAll(allSnippets)
+        }
+
+        // Lint if requested
         val lintResults = if (options.showLint) LintService.lintGroup(group, options) else emptyList()
         val finalOutput = aggregateFinalOutput(project, group, options, lintResults)
 
@@ -66,6 +72,10 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         ClipCraftNotificationCenter.info("Snippet added and aggregated output copied to clipboard.")
     }
 
+    /**
+     * Build the final output text from all snippets plus optional directory structure,
+     * snippet headers, lint info, etc.
+     */
     private fun aggregateFinalOutput(
         project: Project,
         group: SnippetGroup,
@@ -74,19 +84,24 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     ): String {
         val header = options.snippetHeaderText.orEmpty()
         val footer = options.snippetFooterText.orEmpty()
+
         val code = CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
+
         val dirStruct = if (options.includeDirectorySummary) {
             "Directory Structure:\n" +
                 group.snippets.mapNotNull { it.relativePath }
-                    .distinct().sorted().joinToString("\n") { "  $it" } + "\n\n"
+                    .distinct().sorted()
+                    .joinToString("\n") { "  $it" } + "\n\n"
         } else {
             ""
         }
+
         val lintSummary = if (options.showLint && lintResults.isNotEmpty() && options.includeLintInOutput) {
             "\n\nLint Summary:\n" + lintResults.joinToString("\n") { "- ${it.formatMessage()}" }
         } else {
             ""
         }
+
         var output = buildString {
             if (header.isNotEmpty()) appendLine(header).appendLine()
             if (dirStruct.isNotEmpty()) appendLine(dirStruct)
@@ -94,25 +109,32 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             if (footer.isNotEmpty()) appendLine().appendLine(footer)
             if (lintSummary.isNotEmpty()) appendLine(lintSummary)
         }
+
         if (!options.outputMacroTemplate.isNullOrBlank()) {
-            val context = mapOf(
-                "output" to output,
-                "timestamp" to System.currentTimeMillis().toString(),
-            )
+            val context = mapOf("output" to output, "timestamp" to System.currentTimeMillis().toString())
             output = ClipCraftMacroManager.getInstance(project).expandMacro(options.outputMacroTemplate!!, context)
         }
         return output
     }
 
+    /**
+     * Extension function that tries to extract user-selected text; if none, falls back
+     * to finding a method around caret in the PSI.
+     */
     private fun Editor.extractSnippetOrMethod(psiFile: PsiFile): String {
-        // If user selected text, return that; else find enclosing method
-        return selectionModel.selectedText ?: caretModel.offset.let { offset ->
-            psiFile.findElementAt(offset)?.let { element ->
-                (UastFacade.convertElementWithParent(element, UMethod::class.java) as? UMethod)?.sourcePsi?.text
-            }
-        }.orEmpty()
+        selectionModel.selectedText?.let { return it }
+
+        // findElementAt(offset) returns PsiElement?, so we do a safe-call or fallback
+        val elem = psiFile.findElementAt(caretModel.offset) ?: return ""
+
+        // Convert to a UMethod if possible
+        val method = UastFacade.convertElementWithParent(elem, UMethod::class.java) as? UMethod
+        return method?.sourcePsi?.text.orEmpty()
     }
 
+    /**
+     * Prepend snippet prefix and append snippet suffix, if configured in ClipCraftSettings.
+     */
     private fun String.withClipCraftHeaders(): String {
         val settings = ClipCraftSettings.getInstance()
         val prefix = settings.getSnippetPrefix().trim()

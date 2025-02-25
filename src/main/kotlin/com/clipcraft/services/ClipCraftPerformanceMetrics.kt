@@ -4,9 +4,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 
-/**
- * Tracks processing performance (start/stop times) for debugging or analysis.
- */
 @Service(Service.Level.PROJECT)
 class ClipCraftPerformanceMetrics(project: Project) {
     private val logger = Logger.getInstance(ClipCraftPerformanceMetrics::class.java)

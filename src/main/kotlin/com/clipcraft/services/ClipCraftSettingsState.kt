@@ -15,14 +15,7 @@ class ClipCraftSettingsState : PersistentStateComponent<ClipCraftSettingsState> 
 
     private val logger = Logger.getInstance(ClipCraftSettingsState::class.java)
 
-    /**
-     * Max number of characters that can be copied without confirmation.
-     */
     var maxCopyCharacters: Int = 100_048_576
-
-    /**
-     * Holds advanced snippet options (concurrency, chunking, compression, etc.)
-     */
     var advancedOptions: ClipCraftOptions = ClipCraftOptions()
 
     override fun getState(): ClipCraftSettingsState = this

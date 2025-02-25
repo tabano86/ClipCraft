@@ -1,8 +1,5 @@
 package com.clipcraft.lint
 
-/**
- * Represents a linting message (error or warning).
- */
 data class LintIssue(
     val severity: LintSeverity,
     val filePath: String,
@@ -13,5 +10,6 @@ data class LintIssue(
 }
 
 enum class LintSeverity {
-    ERROR, WARNING
+    ERROR,
+    WARNING,
 }

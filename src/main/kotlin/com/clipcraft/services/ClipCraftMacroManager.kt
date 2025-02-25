@@ -12,8 +12,7 @@ class ClipCraftMacroManager(private val project: Project) {
     }
 
     companion object {
-        fun getInstance(project: Project): ClipCraftMacroManager {
-            return project.getService(ClipCraftMacroManager::class.java)
-        }
+        fun getInstance(project: Project): ClipCraftMacroManager =
+            project.getService(ClipCraftMacroManager::class.java)
     }
 }

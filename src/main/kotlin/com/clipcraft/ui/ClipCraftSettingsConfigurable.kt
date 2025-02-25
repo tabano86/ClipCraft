@@ -16,298 +16,255 @@ import java.awt.Dimension
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
 import javax.swing.JComponent
-import javax.swing.JPanel
 
-/**
- * Our advanced settings UI, but we also add a scrollbar or multi-column approach.
- */
 class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScroll {
-
     private val globalState = ClipCraftSettingsState.getInstance()
     private val advancedOptions = globalState.advancedOptions
-
     private var modified = false
-    private lateinit var mainPanel: JPanel
 
     override fun getId(): String = "clipcraft.settings"
     override fun getDisplayName(): String = "ClipCraft"
-
     override fun createComponent(): JComponent {
-        // Build the form using UI DSL
         val formPanel = panel {
             group("Global Copy Settings") {
                 row("Max Copy Characters:") {
-                    textField()
-                        .columns(10)
-                        .applyToComponent {
-                            text = globalState.maxCopyCharacters.toString()
-                            addFocusListener(object : FocusAdapter() {
-                                override fun focusLost(e: FocusEvent?) {
-                                    val newVal = text.toIntOrNull() ?: globalState.maxCopyCharacters
-                                    if (newVal != globalState.maxCopyCharacters) {
-                                        globalState.maxCopyCharacters = newVal
-                                        modified = true
-                                    }
+                    textField().columns(10).applyToComponent {
+                        text = globalState.maxCopyCharacters.toString()
+                        addFocusListener(object : FocusAdapter() {
+                            override fun focusLost(e: FocusEvent?) {
+                                val newVal = text.toIntOrNull() ?: globalState.maxCopyCharacters
+                                if (newVal != globalState.maxCopyCharacters) {
+                                    globalState.maxCopyCharacters = newVal
+                                    modified = true
                                 }
-                            })
-                        }
+                            }
+                        })
+                    }
                 }
             }
-
             group("Concurrency") {
                 row("Concurrency Mode:") {
-                    comboBox(ConcurrencyMode.entries)
-                        .applyToComponent {
-                            selectedItem = advancedOptions.concurrencyMode
-                            addActionListener {
-                                val newVal = selectedItem as ConcurrencyMode
-                                if (newVal != advancedOptions.concurrencyMode) {
-                                    advancedOptions.concurrencyMode = newVal
-                                    modified = true
-                                }
+                    comboBox(ConcurrencyMode.entries).applyToComponent {
+                        selectedItem = advancedOptions.concurrencyMode
+                        addActionListener {
+                            val newVal = selectedItem as ConcurrencyMode
+                            if (newVal != advancedOptions.concurrencyMode) {
+                                advancedOptions.concurrencyMode = newVal
+                                modified = true
                             }
                         }
+                    }
                 }
                 row("Max Concurrent Tasks:") {
-                    textField()
-                        .columns(4)
-                        .applyToComponent {
-                            text = advancedOptions.maxConcurrentTasks.toString()
-                            addFocusListener(object : FocusAdapter() {
-                                override fun focusLost(e: FocusEvent?) {
-                                    val newVal = text.toIntOrNull() ?: advancedOptions.maxConcurrentTasks
-                                    if (newVal != advancedOptions.maxConcurrentTasks) {
-                                        advancedOptions.maxConcurrentTasks = newVal
-                                        modified = true
-                                    }
+                    textField().columns(4).applyToComponent {
+                        text = advancedOptions.maxConcurrentTasks.toString()
+                        addFocusListener(object : FocusAdapter() {
+                            override fun focusLost(e: FocusEvent?) {
+                                val newVal = text.toIntOrNull() ?: advancedOptions.maxConcurrentTasks
+                                if (newVal != advancedOptions.maxConcurrentTasks) {
+                                    advancedOptions.maxConcurrentTasks = newVal
+                                    modified = true
                                 }
-                            })
-                        }
+                            }
+                        })
+                    }
                 }
             }
-
             group("Chunking & Compression") {
                 row("Chunk Strategy:") {
-                    comboBox(ChunkStrategy.entries)
-                        .applyToComponent {
-                            selectedItem = advancedOptions.chunkStrategy
-                            addActionListener {
-                                val newVal = selectedItem as ChunkStrategy
-                                if (newVal != advancedOptions.chunkStrategy) {
-                                    advancedOptions.chunkStrategy = newVal
-                                    modified = true
-                                }
+                    comboBox(ChunkStrategy.entries).applyToComponent {
+                        selectedItem = advancedOptions.chunkStrategy
+                        addActionListener {
+                            val newVal = selectedItem as ChunkStrategy
+                            if (newVal != advancedOptions.chunkStrategy) {
+                                advancedOptions.chunkStrategy = newVal
+                                modified = true
                             }
                         }
+                    }
                 }
                 row("Chunk Size:") {
-                    textField()
-                        .columns(6)
-                        .applyToComponent {
-                            text = advancedOptions.chunkSize.toString()
-                            addFocusListener(object : FocusAdapter() {
-                                override fun focusLost(e: FocusEvent?) {
-                                    val newVal = text.toIntOrNull() ?: advancedOptions.chunkSize
-                                    if (newVal != advancedOptions.chunkSize) {
-                                        advancedOptions.chunkSize = newVal
-                                        modified = true
-                                    }
+                    textField().columns(6).applyToComponent {
+                        text = advancedOptions.chunkSize.toString()
+                        addFocusListener(object : FocusAdapter() {
+                            override fun focusLost(e: FocusEvent?) {
+                                val newVal = text.toIntOrNull() ?: advancedOptions.chunkSize
+                                if (newVal != advancedOptions.chunkSize) {
+                                    advancedOptions.chunkSize = newVal
+                                    modified = true
                                 }
-                            })
-                        }
+                            }
+                        })
+                    }
                 }
                 row("Overlap Strategy:") {
-                    comboBox(OverlapStrategy.entries)
-                        .applyToComponent {
-                            selectedItem = advancedOptions.overlapStrategy
-                            addActionListener {
-                                val newVal = selectedItem as OverlapStrategy
-                                if (newVal != advancedOptions.overlapStrategy) {
-                                    advancedOptions.overlapStrategy = newVal
-                                    modified = true
-                                }
+                    comboBox(OverlapStrategy.entries).applyToComponent {
+                        selectedItem = advancedOptions.overlapStrategy
+                        addActionListener {
+                            val newVal = selectedItem as OverlapStrategy
+                            if (newVal != advancedOptions.overlapStrategy) {
+                                advancedOptions.overlapStrategy = newVal
+                                modified = true
                             }
                         }
+                    }
                 }
                 row("Compression Mode:") {
-                    comboBox(CompressionMode.entries)
-                        .applyToComponent {
-                            selectedItem = advancedOptions.compressionMode
-                            addActionListener {
-                                val newVal = selectedItem as CompressionMode
-                                if (newVal != advancedOptions.compressionMode) {
-                                    advancedOptions.compressionMode = newVal
-                                    modified = true
-                                }
-                            }
-                        }
-                }
-                row {
-                    checkBox("Selective Compression (ignore lines w/ TODO, DEBUG, etc.)")
-                        .applyToComponent {
-                            isSelected = advancedOptions.selectiveCompression
-                            addActionListener {
-                                advancedOptions.selectiveCompression = isSelected
+                    comboBox(CompressionMode.entries).applyToComponent {
+                        selectedItem = advancedOptions.compressionMode
+                        addActionListener {
+                            val newVal = selectedItem as CompressionMode
+                            if (newVal != advancedOptions.compressionMode) {
+                                advancedOptions.compressionMode = newVal
                                 modified = true
                             }
                         }
+                    }
+                }
+                row {
+                    checkBox("Selective Compression (ignore lines w/ TODO, DEBUG, etc.)").applyToComponent {
+                        isSelected = advancedOptions.selectiveCompression
+                        addActionListener {
+                            advancedOptions.selectiveCompression = isSelected
+                            modified = true
+                        }
+                    }
                 }
             }
-
             group("Output Formatting") {
                 row("Output Format:") {
-                    comboBox(OutputFormat.entries)
-                        .applyToComponent {
-                            selectedItem = advancedOptions.outputFormat
-                            addActionListener {
-                                val newVal = selectedItem as OutputFormat
-                                if (newVal != advancedOptions.outputFormat) {
-                                    advancedOptions.outputFormat = newVal
+                    comboBox(OutputFormat.entries).applyToComponent {
+                        selectedItem = advancedOptions.outputFormat
+                        addActionListener {
+                            val newVal = selectedItem as OutputFormat
+                            if (newVal != advancedOptions.outputFormat) {
+                                advancedOptions.outputFormat = newVal
+                                modified = true
+                            }
+                        }
+                    }
+                }
+                row {
+                    checkBox("Include Line Numbers").applyToComponent {
+                        isSelected = advancedOptions.includeLineNumbers
+                        addActionListener {
+                            advancedOptions.includeLineNumbers = isSelected
+                            modified = true
+                        }
+                    }
+                }
+                row {
+                    checkBox("Remove Imports").applyToComponent {
+                        isSelected = advancedOptions.removeImports
+                        addActionListener {
+                            advancedOptions.removeImports = isSelected
+                            modified = true
+                        }
+                    }
+                }
+                row {
+                    checkBox("Remove Comments").applyToComponent {
+                        isSelected = advancedOptions.removeComments
+                        addActionListener {
+                            advancedOptions.removeComments = isSelected
+                            modified = true
+                        }
+                    }
+                }
+                row {
+                    checkBox("Trim Whitespace").applyToComponent {
+                        isSelected = advancedOptions.trimWhitespace
+                        addActionListener {
+                            advancedOptions.trimWhitespace = isSelected
+                            modified = true
+                        }
+                    }
+                }
+                row {
+                    checkBox("Remove Empty Lines").applyToComponent {
+                        isSelected = advancedOptions.removeEmptyLines
+                        addActionListener {
+                            advancedOptions.removeEmptyLines = isSelected
+                            modified = true
+                        }
+                    }
+                }
+                row {
+                    checkBox("Single-line Output").applyToComponent {
+                        isSelected = advancedOptions.singleLineOutput
+                        addActionListener {
+                            advancedOptions.singleLineOutput = isSelected
+                            modified = true
+                        }
+                    }
+                }
+            }
+            group("Metadata & Additional") {
+                row {
+                    checkBox("Include Metadata").applyToComponent {
+                        isSelected = advancedOptions.includeMetadata
+                        addActionListener {
+                            advancedOptions.includeMetadata = isSelected
+                            modified = true
+                        }
+                    }
+                }
+                row("Metadata Template:") {
+                    textField().columns(40).applyToComponent {
+                        text = advancedOptions.metadataTemplate.orEmpty()
+                        addFocusListener(object : FocusAdapter() {
+                            override fun focusLost(e: FocusEvent?) {
+                                val newVal = if (text.isBlank()) null else text
+                                if (newVal != advancedOptions.metadataTemplate) {
+                                    advancedOptions.metadataTemplate = newVal
                                     modified = true
                                 }
                             }
-                        }
-                }
-                row {
-                    checkBox("Include Line Numbers")
-                        .applyToComponent {
-                            isSelected = advancedOptions.includeLineNumbers
-                            addActionListener {
-                                advancedOptions.includeLineNumbers = isSelected
-                                modified = true
-                            }
-                        }
-                }
-                row {
-                    checkBox("Remove Imports")
-                        .applyToComponent {
-                            isSelected = advancedOptions.removeImports
-                            addActionListener {
-                                advancedOptions.removeImports = isSelected
-                                modified = true
-                            }
-                        }
-                }
-                row {
-                    checkBox("Remove Comments")
-                        .applyToComponent {
-                            isSelected = advancedOptions.removeComments
-                            addActionListener {
-                                advancedOptions.removeComments = isSelected
-                                modified = true
-                            }
-                        }
-                }
-                row {
-                    checkBox("Trim Whitespace")
-                        .applyToComponent {
-                            isSelected = advancedOptions.trimWhitespace
-                            addActionListener {
-                                advancedOptions.trimWhitespace = isSelected
-                                modified = true
-                            }
-                        }
-                }
-                row {
-                    checkBox("Remove Empty Lines")
-                        .applyToComponent {
-                            isSelected = advancedOptions.removeEmptyLines
-                            addActionListener {
-                                advancedOptions.removeEmptyLines = isSelected
-                                modified = true
-                            }
-                        }
-                }
-                row {
-                    checkBox("Single-line Output")
-                        .applyToComponent {
-                            isSelected = advancedOptions.singleLineOutput
-                            addActionListener {
-                                advancedOptions.singleLineOutput = isSelected
-                                modified = true
-                            }
-                        }
-                }
-            }
-
-            group("Metadata & Additional") {
-                row {
-                    checkBox("Include Metadata")
-                        .applyToComponent {
-                            isSelected = advancedOptions.includeMetadata
-                            addActionListener {
-                                advancedOptions.includeMetadata = isSelected
-                                modified = true
-                            }
-                        }
-                }
-                row("Metadata Template:") {
-                    textField()
-                        .columns(40)
-                        .applyToComponent {
-                            text = advancedOptions.metadataTemplate ?: ""
-                            addFocusListener(object : FocusAdapter() {
-                                override fun focusLost(e: FocusEvent?) {
-                                    val newVal = if (text.isBlank()) null else text
-                                    if (newVal != advancedOptions.metadataTemplate) {
-                                        advancedOptions.metadataTemplate = newVal
-                                        modified = true
-                                    }
-                                }
-                            })
-                        }.comment("Placeholders: {fileName}, {size}, {modified}, etc.")
+                        })
+                    }.comment("Placeholders: {fileName}, {size}, {modified}, etc.")
                 }
                 row("Snippet Header:") {
-                    textField()
-                        .columns(40)
-                        .applyToComponent {
-                            text = advancedOptions.snippetHeaderText ?: ""
-                            addFocusListener(object : FocusAdapter() {
-                                override fun focusLost(e: FocusEvent?) {
-                                    val newVal = if (text.isBlank()) null else text
-                                    if (newVal != advancedOptions.snippetHeaderText) {
-                                        advancedOptions.snippetHeaderText = newVal
-                                        modified = true
-                                    }
+                    textField().columns(40).applyToComponent {
+                        text = advancedOptions.snippetHeaderText.orEmpty()
+                        addFocusListener(object : FocusAdapter() {
+                            override fun focusLost(e: FocusEvent?) {
+                                val newVal = if (text.isBlank()) null else text
+                                if (newVal != advancedOptions.snippetHeaderText) {
+                                    advancedOptions.snippetHeaderText = newVal
+                                    modified = true
                                 }
-                            })
-                        }
+                            }
+                        })
+                    }
                 }
                 row("Snippet Footer:") {
-                    textField()
-                        .columns(40)
-                        .applyToComponent {
-                            text = advancedOptions.snippetFooterText ?: ""
-                            addFocusListener(object : FocusAdapter() {
-                                override fun focusLost(e: FocusEvent?) {
-                                    val newVal = if (text.isBlank()) null else text
-                                    if (newVal != advancedOptions.snippetFooterText) {
-                                        advancedOptions.snippetFooterText = newVal
-                                        modified = true
-                                    }
+                    textField().columns(40).applyToComponent {
+                        text = advancedOptions.snippetFooterText.orEmpty()
+                        addFocusListener(object : FocusAdapter() {
+                            override fun focusLost(e: FocusEvent?) {
+                                val newVal = if (text.isBlank()) null else text
+                                if (newVal != advancedOptions.snippetFooterText) {
+                                    advancedOptions.snippetFooterText = newVal
+                                    modified = true
                                 }
-                            })
-                        }
-                }
-
-                // NEW row for .gitignore
-                row {
-                    checkBox("Respect .gitignore")
-                        .applyToComponent {
-                            isSelected = advancedOptions.useGitIgnore
-                            addActionListener {
-                                advancedOptions.useGitIgnore = isSelected
-                                modified = true
                             }
-                        }.comment("If enabled, code from ignored files/folders won't be included.")
+                        })
+                    }
+                }
+                row {
+                    checkBox("Respect .gitignore").applyToComponent {
+                        isSelected = advancedOptions.useGitIgnore
+                        addActionListener {
+                            advancedOptions.useGitIgnore = isSelected
+                            modified = true
+                        }
+                    }.comment("If enabled, code from ignored files/folders won't be included.")
                 }
             }
         }
-
-        // Put formPanel into a scroll pane so it doesn't get too large
         val scrollPane = JBScrollPane(formPanel)
         scrollPane.verticalScrollBar.unitIncrement = 16
-        scrollPane.preferredSize = Dimension(600, 600) // or whatever size you want
+        scrollPane.preferredSize = Dimension(600, 600)
         return scrollPane
     }
 
@@ -320,7 +277,6 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
     }
 
     override fun reset() {
-        // No special logic; we reassign text fields from advancedOptions or globalState
         modified = false
     }
 }

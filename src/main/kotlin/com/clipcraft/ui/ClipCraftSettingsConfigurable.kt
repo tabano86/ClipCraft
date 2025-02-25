@@ -1,11 +1,9 @@
 package com.clipcraft.ui
 
-import com.clipcraft.model.ChunkStrategy
-import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.ConcurrencyMode
-import com.clipcraft.model.OutputFormat
-import com.clipcraft.model.OverlapStrategy
+import com.clipcraft.model.OutputTarget
 import com.clipcraft.services.ClipCraftSettingsState
+import com.clipcraft.util.CodeFormatter
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.SearchableConfigurable
@@ -15,15 +13,28 @@ import com.intellij.ui.dsl.builder.panel
 import java.awt.Dimension
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
+import javax.swing.Icon
+import javax.swing.ImageIcon
 import javax.swing.JComponent
+import javax.swing.JTextArea
 
 class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScroll {
+
     private val globalState = ClipCraftSettingsState.getInstance()
     private val advancedOptions = globalState.advancedOptions
     private var modified = false
 
+    // For the preview area
+    private val previewArea = JTextArea().apply {
+        isEditable = false
+        lineWrap = true
+        wrapStyleWord = true
+        text = "Preview will appear here..."
+    }
+
     override fun getId(): String = "clipcraft.settings"
     override fun getDisplayName(): String = "ClipCraft"
+
     override fun createComponent(): JComponent {
         val formPanel = panel {
             group("Global Copy Settings") {
@@ -36,6 +47,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                                 if (newVal != globalState.maxCopyCharacters) {
                                     globalState.maxCopyCharacters = newVal
                                     modified = true
+                                    updatePreview()
                                 }
                             }
                         })
@@ -51,6 +63,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                             if (newVal != advancedOptions.concurrencyMode) {
                                 advancedOptions.concurrencyMode = newVal
                                 modified = true
+                                updatePreview()
                             }
                         }
                     }
@@ -64,138 +77,10 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                                 if (newVal != advancedOptions.maxConcurrentTasks) {
                                     advancedOptions.maxConcurrentTasks = newVal
                                     modified = true
+                                    updatePreview()
                                 }
                             }
                         })
-                    }
-                }
-            }
-            group("Chunking & Compression") {
-                row("Chunk Strategy:") {
-                    comboBox(ChunkStrategy.entries).applyToComponent {
-                        selectedItem = advancedOptions.chunkStrategy
-                        addActionListener {
-                            val newVal = selectedItem as ChunkStrategy
-                            if (newVal != advancedOptions.chunkStrategy) {
-                                advancedOptions.chunkStrategy = newVal
-                                modified = true
-                            }
-                        }
-                    }
-                }
-                row("Chunk Size:") {
-                    textField().columns(6).applyToComponent {
-                        text = advancedOptions.chunkSize.toString()
-                        addFocusListener(object : FocusAdapter() {
-                            override fun focusLost(e: FocusEvent?) {
-                                val newVal = text.toIntOrNull() ?: advancedOptions.chunkSize
-                                if (newVal != advancedOptions.chunkSize) {
-                                    advancedOptions.chunkSize = newVal
-                                    modified = true
-                                }
-                            }
-                        })
-                    }
-                }
-                row("Overlap Strategy:") {
-                    comboBox(OverlapStrategy.entries).applyToComponent {
-                        selectedItem = advancedOptions.overlapStrategy
-                        addActionListener {
-                            val newVal = selectedItem as OverlapStrategy
-                            if (newVal != advancedOptions.overlapStrategy) {
-                                advancedOptions.overlapStrategy = newVal
-                                modified = true
-                            }
-                        }
-                    }
-                }
-                row("Compression Mode:") {
-                    comboBox(CompressionMode.entries).applyToComponent {
-                        selectedItem = advancedOptions.compressionMode
-                        addActionListener {
-                            val newVal = selectedItem as CompressionMode
-                            if (newVal != advancedOptions.compressionMode) {
-                                advancedOptions.compressionMode = newVal
-                                modified = true
-                            }
-                        }
-                    }
-                }
-                row {
-                    checkBox("Selective Compression (ignore lines w/ TODO, DEBUG, etc.)").applyToComponent {
-                        isSelected = advancedOptions.selectiveCompression
-                        addActionListener {
-                            advancedOptions.selectiveCompression = isSelected
-                            modified = true
-                        }
-                    }
-                }
-            }
-            group("Output Formatting") {
-                row("Output Format:") {
-                    comboBox(OutputFormat.entries).applyToComponent {
-                        selectedItem = advancedOptions.outputFormat
-                        addActionListener {
-                            val newVal = selectedItem as OutputFormat
-                            if (newVal != advancedOptions.outputFormat) {
-                                advancedOptions.outputFormat = newVal
-                                modified = true
-                            }
-                        }
-                    }
-                }
-                row {
-                    checkBox("Include Line Numbers").applyToComponent {
-                        isSelected = advancedOptions.includeLineNumbers
-                        addActionListener {
-                            advancedOptions.includeLineNumbers = isSelected
-                            modified = true
-                        }
-                    }
-                }
-                row {
-                    checkBox("Remove Imports").applyToComponent {
-                        isSelected = advancedOptions.removeImports
-                        addActionListener {
-                            advancedOptions.removeImports = isSelected
-                            modified = true
-                        }
-                    }
-                }
-                row {
-                    checkBox("Remove Comments").applyToComponent {
-                        isSelected = advancedOptions.removeComments
-                        addActionListener {
-                            advancedOptions.removeComments = isSelected
-                            modified = true
-                        }
-                    }
-                }
-                row {
-                    checkBox("Trim Whitespace").applyToComponent {
-                        isSelected = advancedOptions.trimWhitespace
-                        addActionListener {
-                            advancedOptions.trimWhitespace = isSelected
-                            modified = true
-                        }
-                    }
-                }
-                row {
-                    checkBox("Remove Empty Lines").applyToComponent {
-                        isSelected = advancedOptions.removeEmptyLines
-                        addActionListener {
-                            advancedOptions.removeEmptyLines = isSelected
-                            modified = true
-                        }
-                    }
-                }
-                row {
-                    checkBox("Single-line Output").applyToComponent {
-                        isSelected = advancedOptions.singleLineOutput
-                        addActionListener {
-                            advancedOptions.singleLineOutput = isSelected
-                            modified = true
-                        }
                     }
                 }
             }
@@ -206,9 +91,11 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                         addActionListener {
                             advancedOptions.includeMetadata = isSelected
                             modified = true
+                            updatePreview()
                         }
                     }
                 }
+                // Small label + icon for placeholders
                 row("Metadata Template:") {
                     textField().columns(40).applyToComponent {
                         text = advancedOptions.metadataTemplate.orEmpty()
@@ -218,10 +105,20 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                                 if (newVal != advancedOptions.metadataTemplate) {
                                     advancedOptions.metadataTemplate = newVal
                                     modified = true
+                                    updatePreview()
                                 }
                             }
                         })
-                    }.comment("Placeholders: {fileName}, {size}, {modified}, etc.")
+                    }
+                    // Provide a help icon or label with example placeholders
+                    val helpIcon: Icon = ImageIcon(javaClass.getResource("/icons/help.svg")) // or any icon
+                    label("").applyToComponent {
+                        icon = helpIcon
+                        toolTipText = """
+                            Common placeholders:
+                            {fileName}, {filePath}, {size}, {modified}, {id}, {relativePath}
+                        """.trimIndent()
+                    }
                 }
                 row("Snippet Header:") {
                     textField().columns(40).applyToComponent {
@@ -232,6 +129,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                                 if (newVal != advancedOptions.snippetHeaderText) {
                                     advancedOptions.snippetHeaderText = newVal
                                     modified = true
+                                    updatePreview()
                                 }
                             }
                         })
@@ -246,6 +144,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                                 if (newVal != advancedOptions.snippetFooterText) {
                                     advancedOptions.snippetFooterText = newVal
                                     modified = true
+                                    updatePreview()
                                 }
                             }
                         })
@@ -257,14 +156,59 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                         addActionListener {
                             advancedOptions.useGitIgnore = isSelected
                             modified = true
+                            updatePreview()
                         }
                     }.comment("If enabled, code from ignored files/folders won't be included.")
                 }
+                row {
+                    checkBox("Hierarchical Directory Summary").applyToComponent {
+                        isSelected = advancedOptions.hierarchicalDirectorySummary
+                        addActionListener {
+                            advancedOptions.hierarchicalDirectorySummary = isSelected
+                            modified = true
+                            updatePreview()
+                        }
+                    }
+                }
+                row {
+                    checkBox("Include IDE Problems").applyToComponent {
+                        isSelected = advancedOptions.includeIdeProblems
+                        addActionListener {
+                            advancedOptions.includeIdeProblems = isSelected
+                            modified = true
+                            updatePreview()
+                        }
+                    }.comment("If enabled, attempts to gather IntelliJ highlights/warnings.")
+                }
+            }
+            group("Output Target & Preview") {
+                row("Output Target:") {
+                    comboBox(OutputTarget.values().toList()).applyToComponent {
+                        selectedItem = advancedOptions.outputTarget
+                        addActionListener {
+                            val newVal = selectedItem as OutputTarget
+                            if (newVal != advancedOptions.outputTarget) {
+                                advancedOptions.outputTarget = newVal
+                                modified = true
+                                updatePreview()
+                            }
+                        }
+                    }
+                }
+                row("Preview:") {
+                    cell(
+                        JBScrollPane(previewArea).apply {
+                            preferredSize = Dimension(400, 160)
+                        },
+                    )
+                }
             }
         }
+
         val scrollPane = JBScrollPane(formPanel)
         scrollPane.verticalScrollBar.unitIncrement = 16
-        scrollPane.preferredSize = Dimension(600, 600)
+        scrollPane.preferredSize = Dimension(700, 700)
+        updatePreview() // initialize
         return scrollPane
     }
 
@@ -278,5 +222,24 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
 
     override fun reset() {
         modified = false
+        updatePreview()
+    }
+
+    /**
+     * Generate a quick example snippet to show how settings will look.
+     */
+    private fun updatePreview() {
+        // Construct a small snippet
+        val sampleSnippet = com.clipcraft.model.Snippet(
+            filePath = "/home/user/projects/demo/src/Sample.kt",
+            relativePath = "demo/src/Sample.kt",
+            fileName = "Sample.kt",
+            fileSizeBytes = 123L,
+            lastModified = 1678999999999L,
+            content = "fun helloWorld() {\n    println(\"Hello, world!\")\n}\n",
+        )
+        val sampleList = listOf(sampleSnippet)
+        val resultBlocks = CodeFormatter.formatSnippets(sampleList, advancedOptions)
+        previewArea.text = resultBlocks.joinToString("\n---\n")
     }
 }

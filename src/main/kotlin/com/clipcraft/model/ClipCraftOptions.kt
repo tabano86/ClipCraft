@@ -19,6 +19,7 @@ data class ClipCraftOptions(
     var removeEmptyLines: Boolean = false,
     var singleLineOutput: Boolean = false,
     var includeDirectorySummary: Boolean = false,
+    var hierarchicalDirectorySummary: Boolean = false,
     var includeMetadata: Boolean = false,
     var metadataTemplate: String? = null,
     var snippetHeaderText: String? = null,
@@ -44,6 +45,8 @@ data class ClipCraftOptions(
     var collapseBlankLines: Boolean = false,
     var removeLeadingBlankLines: Boolean = false,
     var outputMacroTemplate: String? = null,
+    var outputTarget: OutputTarget = OutputTarget.CLIPBOARD,
+    var includeIdeProblems: Boolean = false,
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

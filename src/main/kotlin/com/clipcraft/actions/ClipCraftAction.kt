@@ -2,6 +2,7 @@ package com.clipcraft.actions
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ConcurrencyMode
+import com.clipcraft.model.OutputTarget
 import com.clipcraft.model.Snippet
 import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftSettingsState
@@ -17,6 +18,10 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.util.concurrent.Executors
+import javax.swing.JOptionPane
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
@@ -24,10 +29,6 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.util.concurrent.Executors
-import javax.swing.JOptionPane
 
 class ClipCraftAction : AnAction() {
 
@@ -209,5 +210,46 @@ class ClipCraftAction : AnAction() {
     // Extension: check if .gitignore excludes this file.
     private fun VirtualFile.isGitIgnored(projectBase: String, options: ClipCraftOptions): Boolean {
         return IgnoreUtil.shouldIgnore(java.io.File(path), options, projectBase)
+    }
+
+    private fun postCopy(project: Project, text: String, failedFiles: List<String>, snippetCount: Int, options: ClipCraftOptions) {
+        val globalState = ClipCraftSettingsState.getInstance()
+        if (globalState.maxCopyCharacters > 0 && text.length > globalState.maxCopyCharacters) {
+            val res = JOptionPane.showConfirmDialog(
+                null,
+                "Output is ${text.length} chars, exceeding limit (${globalState.maxCopyCharacters}). Copy anyway?",
+                "ClipCraft Large Copy",
+                JOptionPane.YES_NO_OPTION,
+            )
+            if (res != JOptionPane.YES_OPTION) {
+                logger.info("User canceled large copy.")
+                return
+            }
+        }
+
+        // If the output target is CLIPBOARD or BOTH, copy to the clipboard
+        if (options.outputTarget == OutputTarget.CLIPBOARD || options.outputTarget == OutputTarget.BOTH) {
+            val success = try {
+                val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+                clipboard.setContents(StringSelection(text), null)
+                true
+            } catch (ex: Exception) {
+                logger.error("Clipboard copy failed", ex)
+                false
+            }
+            if (success) {
+                ClipCraftNotificationCenter.info("Copied $snippetCount snippet(s), length: ${text.length} chars.")
+            } else {
+                ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
+            }
+        }
+
+        // If output target is MACRO_ONLY or BOTH, we consider that the macro expansion
+        // is already done in aggregator, so do any additional handling here if needed.
+        // For example, you might do some specialized logging or uploading.
+
+        if (failedFiles.isNotEmpty()) {
+            ClipCraftNotificationCenter.warn("Some files couldn't be read: ${failedFiles.joinToString()}")
+        }
     }
 }

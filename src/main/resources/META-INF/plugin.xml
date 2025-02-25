@@ -16,8 +16,6 @@
     - Fixed mismatch between 'files copied' vs. actual included
     ]]></change-notes>
 
-    <!-- Adjust "241" as appropriate for your IntelliJ build version -->
-    <idea-version since-build="241" until-build="241.*"/>
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -67,11 +65,15 @@
                     text="Open ClipCraft Settings"
                     description="Opens the ClipCraft settings page"/>
             <separator/>
-            <action
-                    id="ClipCraftAddSnippetFromCursorAction"
-                    class="com.clipcraft.actions.ClipCraftAddSnippetFromCursorOrSelectionAction"
-                    text="Add Snippet from Caret"
-                    description="Extract snippet from code near caret or selection"/>
         </group>
+
+        <!-- Editor context-menu for 'Add Snippet' -->
+        <action
+                id="ClipCraftAddSnippetFromCursorActionContext"
+                class="com.clipcraft.actions.ClipCraftAddSnippetFromCursorOrSelectionAction"
+                text="Add Snippet from Caret"
+                description="Extract snippet from code near caret or selection">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>

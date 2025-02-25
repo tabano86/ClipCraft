@@ -138,7 +138,7 @@ jobs:
       - name: "Publish Plugin"
         run: ./gradlew publishPlugin --no-daemon --stacktrace
         env:
-          ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
+          ORG_GRADLE_PROJECT_intellijPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
 
       - name: "Create GitHub Release"
         uses: softprops/action-gh-release@v1

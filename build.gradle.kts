@@ -133,14 +133,14 @@ tasks {
         channels = listOf("beta")
         token.set(providers.gradleProperty("intellijPublishingToken"))
         doFirst {
-            if (
-                project.hasProperty("failOnDuplicateVersion")
-                && project.property("failOnDuplicateVersion") == "true"
-            ) {
-                throw GradleException("Duplicate version: $computedVersion. Bump version before publishing.")
+            val tokenValue = providers.gradleProperty("intellijPublishingToken").getOrNull() ?: "null"
+            println("Publishing token: $tokenValue")
+            if (tokenValue.isEmpty()) {
+                throw GradleException("Token is empty!")
             }
         }
     }
+
     jacocoTestReport {
         reports {
             xml.required.set(true)

@@ -13,6 +13,5 @@ class ClipCraftSetupWizardCore(private val project: Project) {
             maxConcurrentTasks = wizardUI.getMaxConcurrentTasks(),
         )
         currentProfile.copy(options = newOptions)
-        // If persisting multiple profiles, do so here
     }
 }

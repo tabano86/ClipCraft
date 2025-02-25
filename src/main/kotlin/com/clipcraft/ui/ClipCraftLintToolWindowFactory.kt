@@ -22,7 +22,6 @@ class ClipCraftLintToolWindowFactory : ToolWindowFactory, DumbAware {
         val scroll = JBScrollPane(resultsArea)
         panel.add(JLabel("ClipCraft Lint Results:"), BorderLayout.NORTH)
         panel.add(scroll, BorderLayout.CENTER)
-
         val results = project.getService(LintResultsService::class.java)?.getAllResults().orEmpty()
         if (results.isNotEmpty()) {
             resultsArea.text = results.joinToString("\n") { it.formatMessage() }

@@ -17,7 +17,6 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
     private val wizardUI = ClipCraftSetupWizardUI()
     private val cardLayout = CardLayout()
     private val wizardPanel = JPanel(cardLayout)
-
     private val welcomePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = JBUI.Borders.empty(20)
@@ -34,9 +33,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         add(JLabel("• Concurrency").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalGlue())
     }
-
     private var stepIndex = 0
-
     private val backAction = object : DialogWrapperAction("Back") {
         override fun doAction(e: ActionEvent?) {
             if (stepIndex > 0) {
@@ -59,7 +56,6 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
             close(OK_EXIT_CODE)
         }
     }
-
     init {
         title = "ClipCraft Setup Wizard"
         wizardPanel.add(welcomePanel, "Step0")
@@ -67,20 +63,16 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         init()
         updateStepUI()
     }
-
     override fun createCenterPanel(): JComponent = wizardPanel
     override fun createActions(): Array<Action> = arrayOf(backAction, nextAction, finishAction, cancelAction)
-
     private fun updateStepUI() {
         cardLayout.show(wizardPanel, "Step$stepIndex")
         backAction.isEnabled = stepIndex > 0
         nextAction.isEnabled = stepIndex < 1
     }
-
     private fun applyWizardResults() {
         wizardCore.applyWizardResults(wizardUI)
     }
-
     override fun doOKAction() {
         applyWizardResults()
         super.doOKAction()

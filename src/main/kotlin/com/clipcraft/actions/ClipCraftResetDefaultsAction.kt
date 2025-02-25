@@ -1,8 +1,8 @@
 package com.clipcraft.actions
 
+import ClipCraftNotificationCenter
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ClipCraftProfile
-import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftProjectProfileManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent

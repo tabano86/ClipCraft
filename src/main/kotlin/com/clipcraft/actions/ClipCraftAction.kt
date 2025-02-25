@@ -1,9 +1,9 @@
 package com.clipcraft.actions
 
+import ClipCraftNotificationCenter
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.Snippet
-import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftSettingsState
 import com.clipcraft.util.CodeFormatter
 import com.clipcraft.util.IgnoreUtil
@@ -17,6 +17,11 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.util.concurrent.Executors
+import javax.swing.JOptionPane
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
@@ -24,18 +29,10 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.util.concurrent.Executors
-import javax.swing.JOptionPane
-import kotlin.coroutines.CoroutineContext
 
 class ClipCraftAction : AnAction() {
-
     private val logger = Logger.getInstance(ClipCraftAction::class.java)
-
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
-
     override fun update(e: AnActionEvent) {
         val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
         val visible = vFiles != null && vFiles.isNotEmpty()
@@ -46,7 +43,6 @@ class ClipCraftAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return
-
         if (vFiles.isEmpty()) {
             ClipCraftNotificationCenter.warn("No files selected to copy.")
             return
@@ -54,7 +50,6 @@ class ClipCraftAction : AnAction() {
         val globalState = ClipCraftSettingsState.getInstance()
         val options = globalState.advancedOptions
         options.resolveConflicts()
-
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Copy", true) {
             override fun run(indicator: ProgressIndicator) = runBlocking {
                 copyContents(project, vFiles.toList(), options)
@@ -65,12 +60,11 @@ class ClipCraftAction : AnAction() {
     private suspend fun copyContents(project: Project, files: List<VirtualFile>, options: ClipCraftOptions) {
         logger.info("Preparing to copy ${files.size} file(s) with concurrency=${options.concurrencyMode}")
         val allFiles = expandFiles(files)
-
         when (options.concurrencyMode) {
             ConcurrencyMode.DISABLED -> copyContentsSequential(allFiles, project, options)
             ConcurrencyMode.THREAD_POOL,
             ConcurrencyMode.COROUTINES,
-            -> copyContentsCoroutines(allFiles, project, options)
+                -> copyContentsCoroutines(allFiles, project, options)
         }
     }
 
@@ -92,7 +86,6 @@ class ClipCraftAction : AnAction() {
         val failed = mutableListOf<String>()
         var skippedImages = 0
         var ignoredByGit = 0
-
         for (vf in files) {
             if (!options.includeImageFiles && vf.isImageFile()) {
                 skippedImages++
@@ -118,7 +111,6 @@ class ClipCraftAction : AnAction() {
                 ),
             )
         }
-
         val resultText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
         postCopy(project, resultText, failed, snippetList.size, options)
         logger.info("Skipped images: $skippedImages, Git-ignored: $ignoredByGit")
@@ -127,11 +119,9 @@ class ClipCraftAction : AnAction() {
     private suspend fun copyContentsCoroutines(files: List<VirtualFile>, project: Project, options: ClipCraftOptions) {
         val failed = mutableListOf<String>()
         val snippetJobs = mutableListOf<Deferred<Snippet?>>()
-
         val executor = Executors.newFixedThreadPool(options.maxConcurrentTasks)
         val dispatcher: CoroutineContext = executor.asCoroutineDispatcher()
         val scope = CoroutineScope(SupervisorJob() + dispatcher)
-
         try {
             for (vf in files) {
                 snippetJobs.add(
@@ -181,9 +171,8 @@ class ClipCraftAction : AnAction() {
                 return
             }
         }
-
-        // If the output target is CLIPBOARD or BOTH, copy to the clipboard
-        if (options.outputTarget == com.clipcraft.model.OutputTarget.CLIPBOARD ||
+        if (
+            options.outputTarget == com.clipcraft.model.OutputTarget.CLIPBOARD ||
             options.outputTarget == com.clipcraft.model.OutputTarget.BOTH
         ) {
             val success = try {
@@ -200,15 +189,11 @@ class ClipCraftAction : AnAction() {
                 ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
             }
         }
-
-        // If output target is MACRO_ONLY or BOTH, you might do more logic if macros are needed.
-
         if (failedFiles.isNotEmpty()) {
             ClipCraftNotificationCenter.warn("Some files couldn't be read: ${failedFiles.joinToString()}")
         }
     }
 
-    // Extension: read file text or null.
     private fun VirtualFile.readTextOrNull(): String? = try {
         String(contentsToByteArray(), charset)
     } catch (ex: Exception) {
@@ -216,13 +201,11 @@ class ClipCraftAction : AnAction() {
         null
     }
 
-    // Extension: quick check for images.
     private fun VirtualFile.isImageFile(): Boolean {
         val ext = extension?.lowercase()
         return ext in listOf("png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "ico", "svg")
     }
 
-    // Extension: check if .gitignore excludes this file.
     private fun VirtualFile.isGitIgnored(projectBase: String, options: ClipCraftOptions): Boolean {
         return IgnoreUtil.shouldIgnore(java.io.File(path), options, projectBase)
     }

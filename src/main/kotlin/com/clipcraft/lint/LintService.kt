@@ -10,14 +10,11 @@ object LintService {
         return when {
             options.lintErrorsOnly && !options.lintWarningsOnly ->
                 allIssues.filter { it.severity == LintSeverity.ERROR }
-
             options.lintWarningsOnly && !options.lintErrorsOnly ->
                 allIssues.filter { it.severity == LintSeverity.WARNING }
-
             else -> allIssues
         }
     }
-
     private fun lintSnippet(snippet: Snippet): List<LintIssue> {
         val lines = snippet.content.lines()
         return lines.mapIndexedNotNull { index, line ->
@@ -29,17 +26,14 @@ object LintService {
                     num,
                     "Line exceeds 120 characters (${line.length} chars).",
                 )
-
                 line.contains('\t') -> LintIssue(
                     LintSeverity.ERROR,
                     snippet.filePath,
                     num,
                     "Tabs are not allowed; use spaces instead.",
                 )
-
                 line.endsWith(" ") || line.endsWith("\t") ->
                     LintIssue(LintSeverity.WARNING, snippet.filePath, num, "Trailing whitespace found.")
-
                 else -> null
             }
         }

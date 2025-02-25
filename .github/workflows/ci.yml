@@ -96,7 +96,7 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-      - name: "Auto-tag if pushing to 'main' without a tag"
+      - name: "Auto-tag if on main branch without a tag"
         if: startsWith(github.ref, 'refs/heads/main')
         run: |
           TAG="auto-v$(date +%Y%m%d%H%M%S)-${GITHUB_SHA:0:7}"
@@ -105,7 +105,7 @@ jobs:
           git push origin "$TAG"
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-      - name: "Set RELEASE_TAG"
+      - name: "Set RELEASE_TAG if not set"
         run: |
           if [ -z "${RELEASE_TAG}" ]; then
             if [[ "${GITHUB_REF}" == "refs/tags/"* ]]; then
@@ -118,9 +118,15 @@ jobs:
             fi
           fi
 
-      - name: "Minimal Build (skip tests) & Publish"
+      - name: "Print Gradle Version"
+        run: ./gradlew --version --no-daemon
+
+      - name: "Print Computed Plugin Version"
+        run: ./gradlew printVersion --no-daemon --stacktrace
+
+      - name: "Run Release Build & Publish Plugin"
         run: |
-          ./gradlew clean buildPlugin patchPluginXml --no-daemon --stacktrace --parallel
+          ./gradlew clean releasePlugin patchPluginXml --no-daemon --stacktrace --parallel
           ls -lah build/distributions
 
       - name: "Upload Plugin Artifact"
@@ -130,8 +136,7 @@ jobs:
           path: build/distributions/*.zip
 
       - name: "Publish Plugin"
-        run: |
-          ./gradlew publishPlugin --no-daemon --stacktrace
+        run: ./gradlew publishPlugin --no-daemon --stacktrace
         env:
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
 
@@ -140,7 +145,7 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: "Release ${{ env.RELEASE_TAG }}"
-          body: "Plugin published. Automated release."
+          body: "Plugin published via automated workflow."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -155,7 +160,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
         with:
           script: |
-            const topics = ['plugin','ci','automation','release'];
+            const topics = ['plugin', 'ci', 'automation', 'release'];
             await github.rest.repos.replaceAllTopics({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -173,6 +178,4 @@ jobs:
           issue-number: 1
           body: |
             :tada: A new release [${{ env.RELEASE_TAG }}](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}) is available.
-            - Pushed directly to main or triggered by tag.
-            - Minimal build performed. 
-            - Repository UI updated (topics, description).
+            - Released via automated workflow.

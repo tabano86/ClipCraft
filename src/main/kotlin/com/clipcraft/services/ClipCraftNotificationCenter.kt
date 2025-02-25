@@ -4,6 +4,7 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 
 object ClipCraftNotificationCenter {
+
     fun info(message: String) {
         NotificationGroupManager.getInstance()
             .getNotificationGroup("ClipCraft Notifications")

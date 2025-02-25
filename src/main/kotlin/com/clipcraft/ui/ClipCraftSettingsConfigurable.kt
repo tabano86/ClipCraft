@@ -4,9 +4,11 @@ import com.clipcraft.model.ConcurrencyMode
 import com.clipcraft.model.OutputTarget
 import com.clipcraft.services.ClipCraftSettingsState
 import com.clipcraft.util.CodeFormatter
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.SearchableConfigurable
+import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
@@ -14,10 +16,13 @@ import java.awt.Dimension
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
 import javax.swing.Icon
-import javax.swing.ImageIcon
 import javax.swing.JComponent
 import javax.swing.JTextArea
 
+/**
+ * A single settings panel. If you want multiple sub-panels, create more classes
+ * and add them to the parent root configurable's getConfigurables().
+ */
 class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScroll {
 
     private val globalState = ClipCraftSettingsState.getInstance()
@@ -32,8 +37,8 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
         text = "Preview will appear here..."
     }
 
-    override fun getId(): String = "clipcraft.settings"
-    override fun getDisplayName(): String = "ClipCraft"
+    override fun getId(): String = "clipcraft.settings.child"
+    override fun getDisplayName(): String = "ClipCraft Configuration"
 
     override fun createComponent(): JComponent {
         val formPanel = panel {
@@ -95,7 +100,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                         }
                     }
                 }
-                // Small label + icon for placeholders
+                // Example label + icon for placeholders
                 row("Metadata Template:") {
                     textField().columns(40).applyToComponent {
                         text = advancedOptions.metadataTemplate.orEmpty()
@@ -110,8 +115,8 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                             }
                         })
                     }
-                    // Provide a help icon or label with example placeholders
-                    val helpIcon: Icon = ImageIcon(javaClass.getResource("/icons/help.svg")) // or any icon
+                    val helpIcon: Icon =
+                        IconLoader.findIcon("/icons/help.svg", this::class.java) ?: AllIcons.General.ContextHelp
                     label("").applyToComponent {
                         icon = helpIcon
                         toolTipText = """
@@ -229,17 +234,44 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
      * Generate a quick example snippet to show how settings will look.
      */
     private fun updatePreview() {
-        // Construct a small snippet
         val sampleSnippet = com.clipcraft.model.Snippet(
             filePath = "/home/user/projects/demo/src/Sample.kt",
             relativePath = "demo/src/Sample.kt",
             fileName = "Sample.kt",
             fileSizeBytes = 123L,
             lastModified = 1678999999999L,
-            content = "fun helloWorld() {\n    println(\"Hello, world!\")\n}\n",
+            content = """
+                package com.clipcraft.utils;
+                
+                
+                import java.io.PrintStream;  // comment
+                
+                
+                /**
+                 * Utility class
+                 */
+                public class Utils {
+                
+                    private static final String TAG = "Utils"; // comment
+                
+                
+                    // TODO: a todo...
+                
+                
+                    /**
+                     * Prints greeting.
+                     *
+                     * @param out the PrintStream to which the greeting will be printed
+                     */
+                    public static void helloWorld(PrintStream out) {
+                        out.println("Hello, world!");
+                    }
+                    
+
+                }
+            """.trimIndent(),
         )
-        val sampleList = listOf(sampleSnippet)
-        val resultBlocks = CodeFormatter.formatSnippets(sampleList, advancedOptions)
+        val resultBlocks = CodeFormatter.formatSnippets(listOf(sampleSnippet), advancedOptions)
         previewArea.text = resultBlocks.joinToString("\n---\n")
     }
 }

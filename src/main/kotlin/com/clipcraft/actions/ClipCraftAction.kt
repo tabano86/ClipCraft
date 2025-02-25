@@ -2,7 +2,6 @@ package com.clipcraft.actions
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ConcurrencyMode
-import com.clipcraft.model.OutputTarget
 import com.clipcraft.model.Snippet
 import com.clipcraft.services.ClipCraftNotificationCenter
 import com.clipcraft.services.ClipCraftSettingsState
@@ -18,10 +17,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.util.concurrent.Executors
-import javax.swing.JOptionPane
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +24,11 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.util.concurrent.Executors
+import javax.swing.JOptionPane
+import kotlin.coroutines.CoroutineContext
 
 class ClipCraftAction : AnAction() {
 
@@ -38,27 +38,26 @@ class ClipCraftAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
         val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
-        e.presentation.isVisible = vFiles != null && vFiles.isNotEmpty()
-        e.presentation.isEnabled = vFiles != null && vFiles.isNotEmpty()
+        val visible = vFiles != null && vFiles.isNotEmpty()
+        e.presentation.isVisible = visible
+        e.presentation.isEnabled = visible
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return
+
         if (vFiles.isEmpty()) {
             ClipCraftNotificationCenter.warn("No files selected to copy.")
             return
         }
-
         val globalState = ClipCraftSettingsState.getInstance()
         val options = globalState.advancedOptions
         options.resolveConflicts()
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Copy", true) {
-            override fun run(indicator: ProgressIndicator) {
-                runBlocking {
-                    copyContents(project, vFiles.toList(), options)
-                }
+            override fun run(indicator: ProgressIndicator) = runBlocking {
+                copyContents(project, vFiles.toList(), options)
             }
         })
     }
@@ -121,19 +120,20 @@ class ClipCraftAction : AnAction() {
         }
 
         val resultText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
-        postCopy(project, resultText, failed, snippetList.size)
+        postCopy(project, resultText, failed, snippetList.size, options)
         logger.info("Skipped images: $skippedImages, Git-ignored: $ignoredByGit")
     }
 
     private suspend fun copyContentsCoroutines(files: List<VirtualFile>, project: Project, options: ClipCraftOptions) {
         val failed = mutableListOf<String>()
         val snippetJobs = mutableListOf<Deferred<Snippet?>>()
+
         val executor = Executors.newFixedThreadPool(options.maxConcurrentTasks)
-        val dispatcher = executor.asCoroutineDispatcher()
+        val dispatcher: CoroutineContext = executor.asCoroutineDispatcher()
         val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
         try {
-            files.forEach { vf ->
+            for (vf in files) {
                 snippetJobs.add(
                     scope.async {
                         if (!options.includeImageFiles && vf.isImageFile()) return@async null
@@ -155,13 +155,19 @@ class ClipCraftAction : AnAction() {
             }
             val snippetList = snippetJobs.awaitAll().filterNotNull()
             val resultText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
-            postCopy(project, resultText, failed, snippetList.size)
+            postCopy(project, resultText, failed, snippetList.size, options)
         } finally {
             executor.shutdown()
         }
     }
 
-    private fun postCopy(project: Project, text: String, failedFiles: List<String>, snippetCount: Int) {
+    private fun postCopy(
+        project: Project,
+        text: String,
+        failedFiles: List<String>,
+        snippetCount: Int,
+        options: ClipCraftOptions,
+    ) {
         val globalState = ClipCraftSettingsState.getInstance()
         if (globalState.maxCopyCharacters > 0 && text.length > globalState.maxCopyCharacters) {
             val res = JOptionPane.showConfirmDialog(
@@ -175,19 +181,28 @@ class ClipCraftAction : AnAction() {
                 return
             }
         }
-        val success = try {
-            val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-            clipboard.setContents(StringSelection(text), null)
-            true
-        } catch (ex: Exception) {
-            logger.error("Clipboard copy failed", ex)
-            false
+
+        // If the output target is CLIPBOARD or BOTH, copy to the clipboard
+        if (options.outputTarget == com.clipcraft.model.OutputTarget.CLIPBOARD ||
+            options.outputTarget == com.clipcraft.model.OutputTarget.BOTH
+        ) {
+            val success = try {
+                val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+                clipboard.setContents(StringSelection(text), null)
+                true
+            } catch (ex: Exception) {
+                logger.error("Clipboard copy failed", ex)
+                false
+            }
+            if (success) {
+                ClipCraftNotificationCenter.info("Copied $snippetCount snippet(s), length: ${text.length} chars.")
+            } else {
+                ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
+            }
         }
-        if (success) {
-            ClipCraftNotificationCenter.info("Copied $snippetCount snippet(s), length: ${text.length} chars.")
-        } else {
-            ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
-        }
+
+        // If output target is MACRO_ONLY or BOTH, you might do more logic if macros are needed.
+
         if (failedFiles.isNotEmpty()) {
             ClipCraftNotificationCenter.warn("Some files couldn't be read: ${failedFiles.joinToString()}")
         }
@@ -210,46 +225,5 @@ class ClipCraftAction : AnAction() {
     // Extension: check if .gitignore excludes this file.
     private fun VirtualFile.isGitIgnored(projectBase: String, options: ClipCraftOptions): Boolean {
         return IgnoreUtil.shouldIgnore(java.io.File(path), options, projectBase)
-    }
-
-    private fun postCopy(project: Project, text: String, failedFiles: List<String>, snippetCount: Int, options: ClipCraftOptions) {
-        val globalState = ClipCraftSettingsState.getInstance()
-        if (globalState.maxCopyCharacters > 0 && text.length > globalState.maxCopyCharacters) {
-            val res = JOptionPane.showConfirmDialog(
-                null,
-                "Output is ${text.length} chars, exceeding limit (${globalState.maxCopyCharacters}). Copy anyway?",
-                "ClipCraft Large Copy",
-                JOptionPane.YES_NO_OPTION,
-            )
-            if (res != JOptionPane.YES_OPTION) {
-                logger.info("User canceled large copy.")
-                return
-            }
-        }
-
-        // If the output target is CLIPBOARD or BOTH, copy to the clipboard
-        if (options.outputTarget == OutputTarget.CLIPBOARD || options.outputTarget == OutputTarget.BOTH) {
-            val success = try {
-                val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-                clipboard.setContents(StringSelection(text), null)
-                true
-            } catch (ex: Exception) {
-                logger.error("Clipboard copy failed", ex)
-                false
-            }
-            if (success) {
-                ClipCraftNotificationCenter.info("Copied $snippetCount snippet(s), length: ${text.length} chars.")
-            } else {
-                ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
-            }
-        }
-
-        // If output target is MACRO_ONLY or BOTH, we consider that the macro expansion
-        // is already done in aggregator, so do any additional handling here if needed.
-        // For example, you might do some specialized logging or uploading.
-
-        if (failedFiles.isNotEmpty()) {
-            ClipCraftNotificationCenter.warn("Some files couldn't be read: ${failedFiles.joinToString()}")
-        }
     }
 }

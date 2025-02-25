@@ -2,6 +2,7 @@ plugins {
     id("org.danilopianini.gradle-pre-commit-git-hooks") version "2.0.20"
 }
 
+// Only install hooks in non-CI environments
 if (System.getenv("CI") == null) {
     gitHooks {
         preCommit {
@@ -15,16 +16,14 @@ if (System.getenv("CI") == null) {
             appendScript {
                 """
                 if [ $? -ne 0 ]; then
-                    echo "❌ Pre-commit checks failed! Please run './gradlew spotlessCheck detekt' for more details and fix the issues before committing."
+                  echo "❌ Pre-commit checks failed!"
+                  echo "Please fix issues before committing."
                 fi
                 """.trimIndent()
             }
         }
         commitMsg {
-            conventionalCommits {
-                // Enable full conventional commit types: fix, feat, build, chore, ci, docs, perf, refactor, revert, style, test.
-                defaultTypes()
-            }
+            conventionalCommits { defaultTypes() }
         }
         createHooks(overwriteExisting = true)
     }

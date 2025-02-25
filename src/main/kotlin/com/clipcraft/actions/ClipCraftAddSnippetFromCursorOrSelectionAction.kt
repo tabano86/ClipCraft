@@ -9,12 +9,17 @@ import com.clipcraft.services.ClipCraftQueueService
 import com.clipcraft.services.ClipCraftSettings
 import com.clipcraft.services.ClipCraftSnippetsManager
 import com.clipcraft.util.CodeFormatter
+import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
@@ -39,6 +44,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         val project = event.project ?: return
         val options = ClipCraftSettings.getInstance().getCurrentProfile().options
 
+        // Build snippet
         val finalSnippetContent = snippetText.withClipCraftHeaders()
         val snippet = Snippet(
             filePath = psiFile.virtualFile?.path ?: "InMemory",
@@ -56,7 +62,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             ClipCraftSnippetsManager.getInstance(project).addSnippet(snippet)
         }
 
-        // Build group from all current snippets
+        // Combine all existing snippets
         val allSnippets = ClipCraftSnippetsManager.getInstance(project).getAllSnippets()
         val group = SnippetGroup("Aggregated Snippets").apply {
             snippets.addAll(allSnippets)
@@ -74,9 +80,6 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         ClipCraftNotificationCenter.info("Snippet added and aggregated output processed.")
     }
 
-    /**
-     * Combine snippet text, hierarchical directory summary, lint results, and possibly IDE problems.
-     */
     private fun aggregateFinalOutput(
         project: Project,
         group: SnippetGroup,
@@ -109,15 +112,14 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         }
 
         val finalOutput = buildString {
-            // The CodeFormatter itself handles snippetHeaderText + metadata + snippetFooterText on each snippet.
-            // If you want a top-level header, you can add it here.
+            // CodeFormatter handles snippet-level metadata, headers, footers
             append(codeBlocks)
             if (dirStruct.isNotEmpty()) appendLine().appendLine(dirStruct)
             if (lintSummary.isNotEmpty()) appendLine(lintSummary)
             if (problemsSection.isNotEmpty()) appendLine(problemsSection)
         }
 
-        // Optionally expand macros
+        // Optionally apply macros
         if (!options.outputMacroTemplate.isNullOrBlank()) {
             val context = mapOf("output" to finalOutput, "timestamp" to System.currentTimeMillis().toString())
             return ClipCraftMacroManager.getInstance(project).expandMacro(options.outputMacroTemplate!!, context)
@@ -125,22 +127,16 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         return finalOutput
     }
 
-    /**
-     * Actually delivers the final output according to the user’s setting:
-     *  - CLIPBOARD
-     *  - MACRO_ONLY
-     *  - BOTH
-     */
     private fun deliverOutput(project: Project, text: String, options: com.clipcraft.model.ClipCraftOptions) {
         when (options.outputTarget) {
             com.clipcraft.model.OutputTarget.CLIPBOARD -> copyToClipboard(text)
             com.clipcraft.model.OutputTarget.MACRO_ONLY -> {
-                // You could do anything else here, but typically the macro expansion is done above
-                // so "MACRO_ONLY" means we just skip the direct clipboard copy
+                // In MACRO_ONLY mode, we do nothing else here unless you want logging, etc.
             }
+
             com.clipcraft.model.OutputTarget.BOTH -> {
+                // Macro is presumably done above, now also copy to clipboard
                 copyToClipboard(text)
-                // Macro expansion is already done in aggregateFinalOutput if desired
             }
         }
     }
@@ -150,24 +146,11 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         CopyPasteManager.getInstance().setContents(selection)
     }
 
-    /**
-     * Build a hierarchical directory summary in Markdown, for example:
-     * ```
-     * RootFolder
-     * ├─ subfolder
-     * │  └─ SomeFile.kt
-     * └─ AnotherFile.kt
-     * ```
-     */
+    // Example: hierarchical directory summary
     private fun buildHierarchicalDirectoryTree(snippets: List<Snippet>): String {
-        // We'll do a very simple representation: group by directory path
-        // This is just an illustration and can be made more sophisticated.
-        val rootMap = mutableMapOf<String, MutableList<String>>() // path -> children
+        val rootMap = mutableMapOf<String, MutableList<String>>() // top-level folder -> list of sub-paths
         for (s in snippets) {
-            val path = s.filePath
-            // parse path segments
-            val segments = path.split(Regex("[/\\\\]"))
-            // We won't implement a real tree for brevity, just a naive approach
+            val segments = s.filePath.split(Regex("[/\\\\]"))
             rootMap.getOrPut(segments.first()) { mutableListOf() } += segments.drop(1).joinToString("/")
         }
         val sb = StringBuilder("\nHierarchical Directory Tree:\n")
@@ -180,9 +163,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         return sb.toString()
     }
 
-    /**
-     * Simple flat directory summary
-     */
+    // Example: flat directory summary
     private fun buildFlatDirectorySummary(snippets: List<Snippet>): String {
         val lines = snippets.mapNotNull { it.relativePath }.distinct().sorted()
         if (lines.isEmpty()) return ""
@@ -207,13 +188,45 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         }
     }
 
-    /**
-     * Example method to gather IntelliJ “File Problems” from the PSI or highlighting system.
-     * This is a placeholder that you can adapt to your environment.
-     */
     private fun gatherIdeProblems(psiFile: PsiFile): List<String> {
-        // TODO: implement a real method that queries the daemon highlight passes, etc.
-        // For now, we return a fake placeholder.
-        return listOf("Example: 'Missing semicolon' at line 10", "Example: 'Unused import' at line 24")
+        val project = psiFile.project
+        val document = PsiDocumentManager.getInstance(project).getDocument(psiFile) ?: return emptyList()
+        val result = mutableListOf<String>()
+
+        ApplicationManager.getApplication().runReadAction {
+            // Collect all HighlightInfo objects for this file
+            val highlightInfos = mutableListOf<HighlightInfo>()
+            val startOffset = 0
+            val endOffset = document.textLength
+
+            DaemonCodeAnalyzerEx.processHighlights(
+                document,
+                project,
+                null, // Pass null to collect all severities
+                startOffset,
+                endOffset,
+            ) { info ->
+                highlightInfos.add(info)
+                true // returning true means "keep processing"
+            }
+
+            // Convert each HighlightInfo into a textual summary
+            for (info in highlightInfos) {
+                val lineNumber = document.getLineNumber(info.startOffset) + 1
+                val severity = info.severity // e.g. HighlightSeverity.WARNING, ERROR, etc.
+                val message = info.description // The user-visible text (e.g., "Unused import")
+
+                // Some highlights may have a null 'description', fallback to summary if needed:
+                val msg = message ?: info.text ?: "Unknown issue"
+
+                // Only show issues of a certain severity if desired,
+                // or keep everything:
+                if (severity >= HighlightSeverity.INFORMATION) {
+                    result += "[$severity] line:$lineNumber  $msg"
+                }
+            }
+        }
+
+        return result
     }
 }

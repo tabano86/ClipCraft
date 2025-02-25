@@ -2,27 +2,31 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     java
-    // Kotlin plugin
     id("org.jetbrains.kotlin.jvm") version "1.9.23"
-    // (Optional) Kotlin serialization if you use kotlinx-serialization in code
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.21"
-    // IntelliJ Platform plugin (instead of the older org.jetbrains.intellij)
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
     id("org.jetbrains.intellij.platform") version "2.2.1"
-    // Release versioning (axion-release)
+
+    // Optional: Axion Release for automated semantic versioning
     id("pl.allegro.tech.build.axion-release") version "1.18.16"
-    // Spotless for code formatting
+
+    // Optional: Spotless for code format
     id("com.diffplug.spotless") version "6.20.0"
-    // Detekt for static analysis
+
+    // Optional: Detekt for static analysis
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
-    // Gradle Versions plugin for dependency updates
+
+    // Optional: Gradle Versions plugin
     id("com.github.ben-manes.versions") version "0.48.0"
-    // Jacoco for coverage
+
+    // Optional: Code coverage
     jacoco
 }
 
 group = "com.clipcraft"
 
-// Configure axion-release for semantic versioning
+// ----------------------------------------------------
+// 1) Axion Release (remove if unneeded)
+// ----------------------------------------------------
 scmVersion {
     tag {
         prefix.set("v")
@@ -33,15 +37,16 @@ scmVersion {
     branchVersionIncrementer.putAll(
         mapOf("main" to pl.allegro.tech.build.axion.release.domain.properties.VersionProperties.Incrementer { ctx ->
             val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
-            val message = process.inputStream.bufferedReader().readText().trim()
+            val msg = process.inputStream.bufferedReader().readText().trim()
             when {
-                "BREAKING CHANGE" in message || Regex("^.*!:").containsMatchIn(message) ->
+                "BREAKING CHANGE" in msg ||
+                        Regex("^.*!:").containsMatchIn(msg) ->
                     ctx.currentVersion.incrementMajorVersion()
 
-                message.startsWith("feat", ignoreCase = true) ->
+                msg.startsWith("feat", ignoreCase = true) ->
                     ctx.currentVersion.incrementMinorVersion()
 
-                message.startsWith("fix", ignoreCase = true) ->
+                msg.startsWith("fix", ignoreCase = true) ->
                     ctx.currentVersion.incrementPatchVersion()
 
                 else -> ctx.currentVersion
@@ -52,14 +57,27 @@ scmVersion {
     createReleaseCommit.set(false)
 }
 
+// If not using Axion, just hardcode or set version = "0.7.0-SNAPSHOT"
 version = scmVersion.version
 
-val ktorVersion = "2.2.4"
-val kotlinxSerializationVersion = "1.5.1"
+
+// ----------------------------------------------------
+// 2) Dynamic CHANGENOTES from last commit
+// ----------------------------------------------------
+val dynamicChangeNotes: String by lazy {
+    val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
+    val lastCommit = process.inputStream.bufferedReader().readText().trim()
+    // Wrap in CDATA
+    """
+    <![CDATA[
+    $lastCommit
+    ]]>
+    """.trimIndent()
+}
+
 
 repositories {
     mavenCentral()
-    // Use IntelliJ’s platform repository from the new plugin
     intellijPlatform {
         defaultRepositories()
     }
@@ -69,20 +87,58 @@ kotlin {
     jvmToolchain(17)
 }
 
-// Configure tasks
-tasks {
-    test {
-        useJUnitPlatform()
+// ----------------------------------------------------
+// Dependencies
+// ----------------------------------------------------
+dependencies {
+    // IntelliJ
+    intellijPlatform {
+        intellijIdeaCommunity("2024.1")
+        bundledPlugin("com.intellij.java")
+        testFramework(TestFrameworkType.Platform)
+        pluginVerifier()
+        zipSigner()
     }
+
+    // Optional: kotlinx.serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
+    // Tests
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+
+    // If using commons-text / commons-lang
+    implementation("org.apache.commons:commons-text:1.13.0")
+    implementation("org.apache.commons:commons-lang3:3.17.0")
+}
+
+
+// ----------------------------------------------------
+// Tasks
+// ----------------------------------------------------
+tasks {
     compileKotlin {
         kotlinOptions.jvmTarget = "17"
     }
-    // Publish to JetBrains Marketplace if desired
+    test {
+        useJUnitPlatform()
+    }
+
+    patchPluginXml {
+        // Overwrite <change-notes> with last commit
+        changeNotes.set(dynamicChangeNotes)
+        // Example: override idea-version range
+        sinceBuild.set("241.*")
+        untilBuild.set("299.*")
+    }
+
     publishPlugin {
-        channels = listOf("beta")
+        channels = listOf("beta")  // or "stable"
         token = providers.gradleProperty("intellijPlatformPublishingToken")
     }
-    // Jacoco test report
+
+    // Jacoco coverage
     jacocoTestReport {
         reports {
             xml.required.set(true)
@@ -91,51 +147,33 @@ tasks {
     }
 }
 
-// Spotless config
+// ----------------------------------------------------
+// Spotless (Optional)
+// ----------------------------------------------------
 spotless {
     kotlin {
         target("**/*.kt")
-        ktlint("0.48.2").userData(mapOf("indent_size" to "4", "max_line_length" to "120"))
+        ktlint("0.48.2").userData(
+            mapOf(
+                "indent_size" to "4",
+                "max_line_length" to "120"
+            )
+        )
     }
 }
 
-// Detekt config
+// ----------------------------------------------------
+// Detekt (Optional)
+// ----------------------------------------------------
 detekt {
     config.setFrom(files("detekt-config.yml"))
     buildUponDefaultConfig = true
     autoCorrect = true
 }
 
-// Jacoco config
+// ----------------------------------------------------
+// Jacoco (Optional)
+// ----------------------------------------------------
 jacoco {
     toolVersion = "0.8.12"
-}
-
-// Patch plugin.xml to set since/until build versions
-tasks.patchPluginXml {
-    sinceBuild.set("239.*")
-    untilBuild.set("299.*")
-}
-
-dependencies {
-    // IntelliJ platform + Java plugin
-    intellijPlatform {
-        intellijIdeaCommunity("2024.1")
-        bundledPlugin("com.intellij.java")
-        pluginVerifier()
-        zipSigner()
-        testFramework(TestFrameworkType.Platform)
-    }
-    // If you use kotlinx-serialization in code
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
-
-    // For testing
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
-
-    // If you rely on org.apache.commons.text.StringEscapeUtils in code:
-    implementation("org.apache.commons:commons-text:1.13.0")
-    implementation("org.apache.commons:commons-lang3:3.17.0")
 }

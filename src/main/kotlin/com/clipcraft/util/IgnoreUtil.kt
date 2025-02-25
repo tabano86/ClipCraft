@@ -13,13 +13,8 @@ object IgnoreUtil {
         if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
     }
 
-    fun parseCustomIgnoreFiles(opts: ClipCraftOptions, projectBase: String, files: List<String>) {
-        files.forEach { loadIgnoreFile(Paths.get(projectBase, it), opts) }
-    }
-
     fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
         parseGitIgnoreIfNeeded(opts, projectBase)
-
         if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
 
@@ -62,7 +57,7 @@ object IgnoreUtil {
         if (basePath.isEmpty()) return absPath
         return try {
             val base = File(basePath).absolutePath
-            if (absPath.length < base.length || !absPath.startsWith(base)) {
+            if (!absPath.startsWith(base)) {
                 absPath
             } else {
                 absPath.substring(base.length).trimStart(File.separatorChar)
@@ -93,7 +88,8 @@ object IgnoreUtil {
         var inGroup = false
         var i = 0
         while (i < glob.length) {
-            when (val c = glob[i]) {
+            val c = glob[i]
+            when (c) {
                 in listOf('/', '$', '^', '+', '.', '(', ')', '=', '!', '|') -> sb.append('\\').append(c)
                 '?' -> sb.append("[^/]")
                 '[', ']' ->
@@ -122,7 +118,11 @@ object IgnoreUtil {
                         starCount++
                         i++
                     }
-                    if (!globstar) sb.append(".*") else sb.append("([^/]*)")
+                    if (!globstar) {
+                        sb.append(".*")
+                    } else {
+                        sb.append("([^/]*)")
+                    }
                 }
 
                 else -> sb.append(c)

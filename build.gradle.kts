@@ -102,7 +102,6 @@ tasks {
         changeNotes.set(dynamicChangeNotes)
         // Adjust the compatibility range so the current build (e.g. 241.14494.240) is accepted.
         sinceBuild.set("241.0")
-        untilBuild.set("999.*")
     }
 
     publishPlugin {

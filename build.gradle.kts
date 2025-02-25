@@ -64,15 +64,19 @@ version = scmVersion.version
 // ----------------------------------------------------
 // 2) Dynamic CHANGENOTES from last commit
 // ----------------------------------------------------
-val dynamicChangeNotes: String by lazy {
-    val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
-    val lastCommit = process.inputStream.bufferedReader().readText().trim()
-    // Wrap in CDATA
+val dynamicChangeNotes by lazy {
+    val p = Runtime.getRuntime().exec("git log -1 --pretty=%B")
+    val rawCommit = p.inputStream.bufferedReader().readText().trim()
+    val sanitized = rawCommit.replace("]]>", "]]]]><![CDATA[>")
     """
     <![CDATA[
-    $lastCommit
+    $sanitized
     ]]>
     """.trimIndent()
+}
+
+tasks.patchPluginXml {
+    changeNotes.set(dynamicChangeNotes)
 }
 
 

@@ -1,11 +1,7 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <!-- This version can be overwritten by patchPluginXml OR match your Gradle version -->
-    <version>0.7.0-SNAPSHOT</version>
-
-    <vendor email="support@clipcraft.io" url="https://github.com/clipcraft">ClipCraft Inc.</vendor>
-
+    <vendor email="tabano86@gmail.com" url="https://github.com/clipcraft">ClipCraft</vendor>
     <description><![CDATA[
     ClipCraft extracts, formats, and merges code from multiple sources.
     Includes concurrency, .gitignore, metadata, macros, etc.

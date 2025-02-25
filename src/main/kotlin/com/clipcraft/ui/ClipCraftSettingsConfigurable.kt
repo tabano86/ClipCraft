@@ -106,7 +106,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                                 advancedOptions.includeImageFiles = it
                                 modified = true
                                 updatePreview()
-                            }
+                            },
                         )
                 }
                 row("Metadata Template:") {

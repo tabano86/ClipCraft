@@ -17,11 +17,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.util.concurrent.Executors
-import javax.swing.JOptionPane
-import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +24,11 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.util.concurrent.Executors
+import javax.swing.JOptionPane
+import kotlin.coroutines.CoroutineContext
 
 class ClipCraftAction : AnAction() {
     private val logger = Logger.getInstance(ClipCraftAction::class.java)
@@ -64,7 +64,7 @@ class ClipCraftAction : AnAction() {
             ConcurrencyMode.DISABLED -> copyContentsSequential(allFiles, project, options)
             ConcurrencyMode.THREAD_POOL,
             ConcurrencyMode.COROUTINES,
-                -> copyContentsCoroutines(allFiles, project, options)
+            -> copyContentsCoroutines(allFiles, project, options)
         }
     }
 

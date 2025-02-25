@@ -20,9 +20,9 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
-import java.awt.datatransfer.StringSelection
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
+import java.awt.datatransfer.StringSelection
 
 class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {

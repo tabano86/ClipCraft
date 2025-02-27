@@ -125,6 +125,8 @@ jobs:
         run: ./gradlew printVersion --no-daemon --stacktrace
 
       - name: "Run Release Build & Publish Plugin"
+        env:
+          ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
           ./gradlew clean releasePlugin patchPluginXml --no-daemon --stacktrace --parallel
           ls -lah build/distributions

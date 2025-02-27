@@ -11,15 +11,18 @@ class ClipCraftSettingsService : PersistentStateComponent<ClipCraftSettingsServi
         var someOldSetting: Boolean = false,
         var legacyValue: String = "",
     )
+
     private var state = State()
     override fun getState(): State = state
     override fun loadState(state: State) {
         this.state = state
     }
+
     companion object {
         fun getInstance(): ClipCraftSettingsService =
             ApplicationManager.getApplication().getService(ClipCraftSettingsService::class.java)
     }
+
     fun persist() {
         ApplicationManager.getApplication().saveSettings()
     }

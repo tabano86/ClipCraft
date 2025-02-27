@@ -20,6 +20,7 @@ class ClipCraftSetupWizardUI {
             cell(concurrencyField)
         }
     }
+
     fun getMainPanel(): JPanel = mainPanel
     fun isIncludeMetadata() = includeMetadataCheck.isSelected
     fun isUseGitIgnore() = useGitIgnoreCheck.isSelected

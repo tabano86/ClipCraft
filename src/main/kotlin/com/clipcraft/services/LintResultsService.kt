@@ -12,5 +12,6 @@ class LintResultsService(project: Project) {
         lintIssues.clear()
         lintIssues.addAll(results)
     }
+
     fun getAllResults(): List<LintIssue> = lintIssues.toList()
 }

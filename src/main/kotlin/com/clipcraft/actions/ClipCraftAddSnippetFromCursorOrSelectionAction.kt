@@ -1,5 +1,6 @@
 package com.clipcraft.actions
 
+import ClipCraftNotificationCenter
 import com.clipcraft.lint.LintService
 import com.clipcraft.model.Snippet
 import com.clipcraft.model.SnippetGroup
@@ -63,6 +64,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         deliverOutput(project, finalOutput, options)
         ClipCraftNotificationCenter.info("Snippet added and aggregated output processed.")
     }
+
     private fun aggregateFinalOutput(
         project: Project,
         group: SnippetGroup,
@@ -102,6 +104,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         }
         return finalOutput
     }
+
     private fun deliverOutput(project: Project, text: String, options: com.clipcraft.model.ClipCraftOptions) {
         when (options.outputTarget) {
             com.clipcraft.model.OutputTarget.CLIPBOARD -> copyToClipboard(text)
@@ -109,10 +112,12 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             com.clipcraft.model.OutputTarget.BOTH -> copyToClipboard(text)
         }
     }
+
     private fun copyToClipboard(text: String) {
         val selection = StringSelection(text)
         CopyPasteManager.getInstance().setContents(selection)
     }
+
     private fun buildHierarchicalDirectoryTree(snippets: List<Snippet>): String {
         val rootMap = mutableMapOf<String, MutableList<String>>()
         for (s in snippets) {
@@ -128,17 +133,20 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
         }
         return sb.toString()
     }
+
     private fun buildFlatDirectorySummary(snippets: List<Snippet>): String {
         val lines = snippets.mapNotNull { it.relativePath }.distinct().sorted()
         if (lines.isEmpty()) return ""
         return "Directory Structure:\n" + lines.joinToString("\n") { "  $it" }
     }
+
     private fun Editor.extractSnippetOrMethod(psiFile: PsiFile): String {
         selectionModel.selectedText?.let { return it }
         val elem = psiFile.findElementAt(caretModel.offset) ?: return ""
         val method = UastFacade.convertElementWithParent(elem, UMethod::class.java) as? UMethod
         return method?.sourcePsi?.text.orEmpty()
     }
+
     private fun String.withClipCraftHeaders(): String {
         val settings = ClipCraftSettings.getInstance()
         val prefix = settings.getSnippetPrefix().trim()
@@ -149,6 +157,7 @@ class ClipCraftAddSnippetFromCursorOrSelectionAction : AnAction() {
             if (suffix.isNotEmpty()) appendLine().appendLine(suffix)
         }
     }
+
     private fun gatherIdeProblems(psiFile: PsiFile): List<String> {
         val project = psiFile.project
         val document = PsiDocumentManager.getInstance(project).getDocument(psiFile) ?: return emptyList()

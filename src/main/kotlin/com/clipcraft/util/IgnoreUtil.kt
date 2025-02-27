@@ -11,6 +11,7 @@ object IgnoreUtil {
     private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
         if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
     }
+
     fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
         parseGitIgnoreIfNeeded(opts, projectBase)
         if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
@@ -30,13 +31,16 @@ object IgnoreUtil {
         }
         return if (opts.invertIgnorePatterns) !ignored else ignored
     }
+
     private fun fileInIgnoreFiles(f: File, ignoreFiles: List<String>?): Boolean =
         ignoreFiles?.any { it.equals(f.name, ignoreCase = true) } == true
+
     private fun folderInIgnoreFolders(f: File, ignoreFolders: List<String>?, basePath: String): Boolean {
         val rel = toRelative(f.absolutePath, basePath).replace('\\', '/').removePrefix("/")
         val lastSegment = rel.substringAfterLast('/')
         return ignoreFolders?.any { it.equals(lastSegment, ignoreCase = true) } == true
     }
+
     private fun gatherAllPatterns(opts: ClipCraftOptions): List<String> {
         val addl = opts.additionalIgnorePatterns
             ?.split(",")
@@ -45,6 +49,7 @@ object IgnoreUtil {
             ?: emptyList()
         return (opts.ignorePatterns + addl).filter { it.isNotBlank() }
     }
+
     private fun toRelative(absPath: String, basePath: String): String {
         if (basePath.isEmpty()) return absPath
         return try {
@@ -58,6 +63,7 @@ object IgnoreUtil {
             absPath
         }
     }
+
     private fun loadIgnoreFile(p: Path, opts: ClipCraftOptions) {
         val file = p.toFile()
         if (!file.exists() || !file.isFile) return
@@ -72,6 +78,7 @@ object IgnoreUtil {
             logger.warn("Error reading ${file.absolutePath}", e)
         }
     }
+
     fun standardGlobToRegex(glob: String, options: GlobOptions = GlobOptions()): Regex {
         val (extended, globstar, flags) = options
         val sb = StringBuilder()
@@ -84,20 +91,24 @@ object IgnoreUtil {
                 '?' -> sb.append("[^/]")
                 '[', ']' ->
                     if (extended) sb.append(c) else sb.append('\\').append(c)
+
                 '{' ->
                     if (extended) {
                         inGroup = true; sb.append('(')
                     } else {
                         sb.append("\\{")
                     }
+
                 '}' ->
                     if (extended) {
                         inGroup = false; sb.append(')')
                     } else {
                         sb.append("\\}")
                     }
+
                 ',' ->
                     if (inGroup) sb.append('|') else sb.append("\\,")
+
                 '*' -> {
                     var starCount = 1
                     while (i + 1 < glob.length && glob[i + 1] == '*') {
@@ -110,6 +121,7 @@ object IgnoreUtil {
                         sb.append("([^/]*)")
                     }
                 }
+
                 else -> sb.append(c)
             }
             i++

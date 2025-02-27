@@ -18,6 +18,7 @@ object CodeFormatter {
             ChunkStrategy.BY_METHODS -> chunkByMethods(mergedContent)
         }
     }
+
     private fun processSnippet(snippet: Snippet, options: ClipCraftOptions): String {
         val lang = snippet.language?.takeIf { it.isNotBlank() } ?: detectLanguage(snippet.fileName)
         var text = snippet.content
@@ -38,6 +39,7 @@ object CodeFormatter {
             wrapped
         }
     }
+
     private fun buildMetadataBlock(snippet: Snippet, opts: ClipCraftOptions): String {
         val template = opts.metadataTemplate?.takeIf { it.isNotBlank() }
             ?: "**File:** {fileName} | **Size:** {size} bytes | **Modified:** {modified}"
@@ -53,6 +55,7 @@ object CodeFormatter {
         placeholders.forEach { (k, v) -> meta = meta.replace("{$k}", v) }
         return meta
     }
+
     fun detectLanguage(fileName: String?): String {
         val ext = fileName?.substringAfterLast('.', "")?.lowercase().orEmpty()
         return when (ext) {
@@ -73,6 +76,7 @@ object CodeFormatter {
             else -> "none"
         }
     }
+
     fun removeImports(text: String, lang: String?): String {
         val lines = text.lines()
         return when {
@@ -81,16 +85,19 @@ object CodeFormatter {
                     val t = it.trim().lowercase()
                     t.startsWith("import ") || t.startsWith("from ")
                 }
+
             lang?.contains("ruby", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("require ") || t.startsWith("load ")
                 }
+
             lang?.contains("php", true) == true ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
                     t.startsWith("use ") || t.startsWith("require ")
                 }
+
             else ->
                 lines.filterNot {
                     val t = it.trim().lowercase()
@@ -98,16 +105,19 @@ object CodeFormatter {
                 }
         }.joinToString("\n")
     }
+
     fun removeComments(text: String, lang: String?): String {
         return when {
             lang?.contains("python", true) == true || lang.equals("ruby", true) ->
                 text.lines().filterNot { it.trim().startsWith("#") }.joinToString("\n")
+
             lang.equals("php", true) ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
                     .lines()
                     .map { it.replace(Regex("//.*$"), "").replace(Regex("#.*$"), "").trimEnd() }
                     .filter { it.isNotBlank() }
                     .joinToString("\n")
+
             else ->
                 text.replace(Regex("(?s)/\\*.*?\\*/"), "")
                     .lines()
@@ -116,17 +126,21 @@ object CodeFormatter {
                     .joinToString("\n")
         }
     }
+
     fun trimWhitespace(value: String, collapse: Boolean, removeLeading: Boolean): String {
         val lines = value.lines().map { it.replace("\u200B", "").trim() }
         val trimmed = if (removeLeading) lines.dropWhile { it.isEmpty() } else lines
         return if (collapse) collapseEmpty(trimmed.joinToString("\n")) else trimmed.joinToString("\n")
     }
+
     fun collapseEmpty(text: String): String {
         return text.replace(Regex("(\\n\\s*){2,}"), "\n\n").trim()
     }
+
     fun singleLine(text: String): String {
         return text.replace(Regex("\\s+"), " ").trim()
     }
+
     fun compress(input: String, o: ClipCraftOptions): String {
         return when (o.compressionMode) {
             CompressionMode.NONE -> input
@@ -134,6 +148,7 @@ object CodeFormatter {
                 input.lines().joinToString("\n") {
                     it.replace("\u200B", " ").replace(Regex("\\s+"), " ")
                 }
+
             CompressionMode.ULTRA ->
                 input.lines().map {
                     it.replace("\uFEFF", "")
@@ -149,9 +164,11 @@ object CodeFormatter {
                 }.joinToString(" ") { ln -> ln.replace(Regex("\\s+"), " ") }
         }
     }
+
     fun lineNumbers(text: String): String {
         return text.lines().mapIndexed { i, line -> "${i + 1}: $line" }.joinToString("\n")
     }
+
     private fun wrapCodeBlock(content: String, format: OutputFormat, lang: String?): String {
         val l = lang ?: "none"
         return when (format) {
@@ -160,6 +177,7 @@ object CodeFormatter {
             OutputFormat.PLAIN -> content
         }
     }
+
     fun chunkBySize(text: String, maxChunkSize: Int, preserveWords: Boolean): List<String> {
         require(maxChunkSize > 0)
         if (text.length <= maxChunkSize) return listOf(text)
@@ -186,6 +204,7 @@ object CodeFormatter {
         }
         return results
     }
+
     fun chunkByMethods(text: String): List<String> {
         val pattern = Regex("(?m)(?=^\\s*(fun\\s|public\\s|private\\s|def\\s|class\\s|function\\s|override\\s))")
         val parts = text.split(pattern)

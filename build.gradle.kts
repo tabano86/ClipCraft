@@ -126,14 +126,12 @@ tasks {
         sinceBuild.set("233")
         untilBuild.set("299.*")
     }
-    // Provided by plugin:
-    //   buildPlugin, publishPlugin, runIde, buildSearchableOptions, etc.
 
     publishPlugin {
         channels = listOf("beta")
         token.set(providers.gradleProperty("intellijPublishingToken"))
         doFirst {
-            val tokenValue = providers.gradleProperty("intellijPublishingToken").getOrNull() ?: "null"
+            val tokenValue = providers.gradleProperty("intellijPlatformPublishingToken").getOrElse("")
             println("Publishing token: $tokenValue")
             if (tokenValue.isEmpty()) {
                 throw GradleException("Token is empty!")

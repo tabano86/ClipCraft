@@ -39,6 +39,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
         wrapStyleWord = true
         text = "Preview will appear here..."
     }
+
     override fun getId(): String = "clipcraft.settings.child"
     override fun getDisplayName(): String = "ClipCraft Configuration"
     override fun createComponent(): JComponent {
@@ -123,7 +124,8 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                     )
                     label("").applyToComponent {
                         icon =
-                            IconLoader.findIcon("/icons/help.svg", ClipCraftIcons::class.java) ?: AllIcons.General.ContextHelp
+                            IconLoader.findIcon("/icons/help.svg", ClipCraftIcons::class.java)
+                                ?: AllIcons.General.ContextHelp
                         toolTipText = """
                                         Use the following placeholders:
                                         • {fileName} - the name of the file.
@@ -226,6 +228,7 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
         updatePreview()
         return scrollPane
     }
+
     override fun isModified(): Boolean = modified
 
     @Throws(ConfigurationException::class)
@@ -233,10 +236,12 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
         advancedOptions.resolveConflicts()
         modified = false
     }
+
     override fun reset() {
         modified = false
         updatePreview()
     }
+
     private fun updatePreview() {
         val sampleSnippet = Snippet(
             filePath = "/home/user/projects/demo/src/Sample.kt",
@@ -266,6 +271,7 @@ out.println("Hello, world!");
         val resultBlocks = CodeFormatter.formatSnippets(listOf(sampleSnippet), advancedOptions)
         previewArea.text = resultBlocks.joinToString("\n---\n")
     }
+
     private fun resetToDefaults() {
         globalState.maxCopyCharacters = 1000000
         advancedOptions.concurrencyMode = ConcurrencyMode.DISABLED
@@ -281,6 +287,7 @@ out.println("Hello, world!");
         modified = true
         updatePreview()
     }
+
     private fun exportSettings() {
         JOptionPane.showMessageDialog(
             null,
@@ -289,6 +296,7 @@ out.println("Hello, world!");
             JOptionPane.INFORMATION_MESSAGE,
         )
     }
+
     private fun importSettings() {
         JOptionPane.showMessageDialog(
             null,
@@ -297,6 +305,7 @@ out.println("Hello, world!");
             JOptionPane.INFORMATION_MESSAGE,
         )
     }
+
     private fun Row.spinnerTextField(
         initialValue: Int,
         min: Int,
@@ -316,6 +325,7 @@ class SpinnerTextField(
     private val textField: JTextField = JTextField(initialValue.toString(), 5)
     private val incrementButton: JButton = JButton("+")
     private val decrementButton: JButton = JButton("-")
+
     init {
         textField.maximumSize = Dimension(50, textField.preferredSize.height)
         add(decrementButton)
@@ -347,10 +357,12 @@ class SpinnerTextField(
             }
         })
     }
+
     fun whenValueChanged(listener: (Int) -> Unit) {
         addPropertyChangeListener("value") { evt ->
             (evt.newValue as? Int)?.let { listener(it) }
         }
     }
+
     fun getValue(): Int = textField.text.toIntOrNull() ?: min
 }

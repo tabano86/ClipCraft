@@ -12,9 +12,11 @@ class ClipCraftSettingsRootConfigurable : SearchableConfigurable.Parent {
     override fun apply() {
         getConfigurables().firstOrNull()?.apply()
     }
+
     override fun reset() {
         getConfigurables().firstOrNull()?.reset()
     }
+
     override fun getConfigurables(): Array<SearchableConfigurable> = arrayOf(
         ClipCraftSettingsConfigurable(),
     )

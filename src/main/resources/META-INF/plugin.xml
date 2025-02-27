@@ -16,7 +16,7 @@ Initial change-notes placeholder.
         <notificationGroup
                 id="ClipCraft Notifications"
                 displayType="BALLOON"
-                isLogByDefault="true" />
+                isLogByDefault="true"/>
         <applicationConfigurable
                 displayName="ClipCraft"
                 instance="com.clipcraft.ui.ClipCraftSettingsRootConfigurable"

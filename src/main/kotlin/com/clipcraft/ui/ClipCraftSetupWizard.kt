@@ -56,6 +56,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
             close(OK_EXIT_CODE)
         }
     }
+
     init {
         title = "ClipCraft Setup Wizard"
         wizardPanel.add(welcomePanel, "Step0")
@@ -63,6 +64,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         init()
         updateStepUI()
     }
+
     override fun createCenterPanel(): JComponent = wizardPanel
     override fun createActions(): Array<Action> = arrayOf(backAction, nextAction, finishAction, cancelAction)
     private fun updateStepUI() {
@@ -70,9 +72,11 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         backAction.isEnabled = stepIndex > 0
         nextAction.isEnabled = stepIndex < 1
     }
+
     private fun applyWizardResults() {
         wizardCore.applyWizardResults(wizardUI)
     }
+
     override fun doOKAction() {
         applyWizardResults()
         super.doOKAction()

@@ -39,6 +39,7 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
         }
         return repos
     }
+
     private fun retrieveCurrentRevision(root: VirtualFile): String? {
         return try {
             val process = ProcessBuilder("git", "rev-parse", "HEAD")
@@ -57,6 +58,7 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
             null
         }
     }
+
     companion object {
         fun getInstance(project: Project): ClipCraftGitRepositoryManager = ClipCraftGitRepositoryManager(project)
     }

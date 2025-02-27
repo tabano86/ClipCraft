@@ -9,6 +9,7 @@ class ClipCraftPerformanceMetrics(project: Project) {
     fun startProcessing() {
         startTime = System.currentTimeMillis()
     }
+
     fun stopProcessingAndLog(operationName: String) {
         val elapsed = System.currentTimeMillis() - startTime
         logger.info("$operationName took $elapsed ms")

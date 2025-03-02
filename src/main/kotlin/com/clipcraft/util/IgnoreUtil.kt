@@ -8,14 +8,23 @@ import java.nio.file.Paths
 
 object IgnoreUtil {
     private val logger = Logger.getInstance(IgnoreUtil::class.java)
-    private fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
-        if (opts.useGitIgnore) loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
+
+    private var alreadyParsed = false
+
+    /**
+     * Only parse .gitignore once if useGitIgnore==true.
+     */
+    fun parseGitIgnoreIfNeeded(opts: ClipCraftOptions, basePath: String) {
+        if (!alreadyParsed && opts.useGitIgnore) {
+            loadIgnoreFile(Paths.get(basePath, ".gitignore"), opts)
+            alreadyParsed = true
+        }
     }
 
     fun shouldIgnore(file: File, opts: ClipCraftOptions, projectBase: String): Boolean {
-        parseGitIgnoreIfNeeded(opts, projectBase)
         if (fileInIgnoreFiles(file, opts.ignoreFiles)) return true
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
+
         val rel = toRelative(file.absolutePath, projectBase).replace('\\', '/').removePrefix("/")
         val patterns = gatherAllPatterns(opts)
         var ignored = false

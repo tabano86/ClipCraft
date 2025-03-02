@@ -7,8 +7,10 @@ class ClipCraftSettingsRootConfigurable : SearchableConfigurable.Parent {
     override fun getId(): String = "clipcraft.settings"
     override fun getDisplayName(): String = "ClipCraft"
     override fun hasOwnContent(): Boolean = true
+
     override fun createComponent(): JComponent? = getConfigurables().firstOrNull()?.createComponent()
     override fun isModified(): Boolean = getConfigurables().firstOrNull()?.isModified == true
+
     override fun apply() {
         getConfigurables().firstOrNull()?.apply()
     }
@@ -18,6 +20,6 @@ class ClipCraftSettingsRootConfigurable : SearchableConfigurable.Parent {
     }
 
     override fun getConfigurables(): Array<SearchableConfigurable> = arrayOf(
-        ClipCraftSettingsConfigurable(),
+        ClipCraftSettingsConfigurable()
     )
 }

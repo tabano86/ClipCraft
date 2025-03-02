@@ -7,7 +7,9 @@ import com.intellij.openapi.project.Project
 class ClipCraftMacroManager(private val project: Project) {
     fun expandMacro(template: String, context: Map<String, String>): String {
         var result = template
-        context.forEach { (k, v) -> result = result.replace("{$k}", v) }
+        context.forEach { (k, v) ->
+            result = result.replace("{$k}", v)
+        }
         return result
     }
 

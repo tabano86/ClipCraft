@@ -1,6 +1,6 @@
 package com.clipcraft.ui
 
-import com.clipcraft.services.LintResultsService
+import com.clipcraft.lint.LintResultsService
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -22,12 +22,13 @@ class ClipCraftLintToolWindowFactory : ToolWindowFactory, DumbAware {
         val scroll = JBScrollPane(resultsArea)
         panel.add(JLabel("ClipCraft Lint Results:"), BorderLayout.NORTH)
         panel.add(scroll, BorderLayout.CENTER)
+
         val results = project.getService(LintResultsService::class.java)?.getAllResults().orEmpty()
         if (results.isNotEmpty()) {
             resultsArea.text = results.joinToString("\n") { it.formatMessage() }
         }
         toolWindow.contentManager.addContent(
-            toolWindow.contentManager.factory.createContent(panel, "Lint Results", false),
+            toolWindow.contentManager.factory.createContent(panel, "Lint Results", false)
         )
     }
 }

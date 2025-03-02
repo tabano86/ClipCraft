@@ -27,14 +27,14 @@ object LintService {
                     LintSeverity.WARNING,
                     snippet.filePath,
                     num,
-                    "Line exceeds 120 characters (${line.length} chars).",
+                    "Line exceeds 120 characters (${line.length} chars)."
                 )
 
                 line.contains('\t') -> LintIssue(
                     LintSeverity.ERROR,
                     snippet.filePath,
                     num,
-                    "Tabs are not allowed; use spaces instead.",
+                    "Tabs are not allowed; use spaces instead."
                 )
 
                 line.endsWith(" ") || line.endsWith("\t") ->

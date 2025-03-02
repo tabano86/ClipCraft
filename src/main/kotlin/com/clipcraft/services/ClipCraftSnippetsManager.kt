@@ -8,7 +8,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 @Service(Service.Level.PROJECT)
 class ClipCraftSnippetsManager(private val project: Project) {
-
     private val logger = Logger.getInstance(ClipCraftSnippetsManager::class.java)
     private val snippets = CopyOnWriteArrayList<Snippet>()
 

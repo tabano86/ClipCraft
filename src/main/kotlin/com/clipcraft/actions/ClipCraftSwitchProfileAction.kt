@@ -10,18 +10,20 @@ class ClipCraftSwitchProfileAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val mgr = project.getService(ClipCraftProjectProfileManager::class.java) ?: return
+
         val names = mgr.listProfiles().map { it.profileName }.toTypedArray()
         if (names.isEmpty()) {
             ClipCraftNotificationCenter.warn("No profiles available.")
             return
         }
+
         val chosen = Messages.showEditableChooseDialog(
             "Select a ClipCraft Profile:",
             "Switch ClipCraft Profile",
             Messages.getQuestionIcon(),
             names,
             names[0],
-            null,
+            null
         )
         if (chosen != null) {
             mgr.switchActiveProfile(chosen)

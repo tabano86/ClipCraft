@@ -46,7 +46,7 @@ data class ClipCraftOptions(
     var removeLeadingBlankLines: Boolean = false,
     var outputMacroTemplate: String? = null,
     var outputTarget: OutputTarget = OutputTarget.CLIPBOARD,
-    var includeIdeProblems: Boolean = false,
+    var includeIdeProblems: Boolean = false
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE

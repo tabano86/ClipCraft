@@ -7,11 +7,14 @@ class ClipCraftSetupWizardCore(private val project: Project) {
     fun applyWizardResults(wizardUI: ClipCraftSetupWizardUI) {
         val settings = ClipCraftSettings.getInstance()
         val currentProfile = settings.getCurrentProfile()
-        val newOptions = currentProfile.options.copy(
+        currentProfile.options.copy(
             includeMetadata = wizardUI.isIncludeMetadata(),
             useGitIgnore = wizardUI.isUseGitIgnore(),
-            maxConcurrentTasks = wizardUI.getMaxConcurrentTasks(),
+            maxConcurrentTasks = wizardUI.getMaxConcurrentTasks()
         )
-        currentProfile.copy(options = newOptions)
+        // Typically you’d reassign the profile with updated options or store them:
+        // currentProfile.options = newOptions
+        // Or do it more explicitly if you have an active manager:
+        // ...
     }
 }

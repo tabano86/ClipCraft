@@ -11,9 +11,11 @@ class ClipCraftResetDefaultsAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val manager = project.getService(ClipCraftProjectProfileManager::class.java) ?: return
+
         val defaultProfile = ClipCraftProfile("Default", ClipCraftOptions())
         manager.addOrUpdateProfile(defaultProfile)
         manager.switchActiveProfile("Default")
+
         ClipCraftNotificationCenter.info("ClipCraft settings reset to defaults.")
     }
 }

@@ -5,13 +5,15 @@ import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.CompressionMode
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.Snippet
-import org.apache.commons.text.StringEscapeUtils
 import kotlin.math.min
+import org.apache.commons.text.StringEscapeUtils
 
 object CodeFormatter {
     fun formatSnippets(snippets: List<Snippet>, options: ClipCraftOptions): List<String> {
         options.resolveConflicts()
+        // Merge snippet content
         val mergedContent = snippets.joinToString("\n\n") { processSnippet(it, options) }.trim()
+
         return when (options.chunkStrategy) {
             ChunkStrategy.NONE -> listOf(mergedContent)
             ChunkStrategy.BY_SIZE -> chunkBySize(mergedContent, options.chunkSize, preserveWords = true)
@@ -22,6 +24,7 @@ object CodeFormatter {
     private fun processSnippet(snippet: Snippet, options: ClipCraftOptions): String {
         val lang = snippet.language?.takeIf { it.isNotBlank() } ?: detectLanguage(snippet.fileName)
         var text = snippet.content
+
         if (options.removeImports) text = removeImports(text, lang)
         if (options.removeComments) text = removeComments(text, lang)
         if (options.trimWhitespace) {
@@ -31,6 +34,7 @@ object CodeFormatter {
         if (options.singleLineOutput) text = singleLine(text)
         text = compress(text, options)
         if (options.includeLineNumbers) text = lineNumbers(text)
+
         val wrapped = wrapCodeBlock(text, options.outputFormat, lang)
         return if (options.includeMetadata) {
             val meta = buildMetadataBlock(snippet, options)
@@ -49,10 +53,12 @@ object CodeFormatter {
             "relativePath" to (snippet.relativePath ?: snippet.fileName),
             "size" to snippet.fileSizeBytes.toString(),
             "modified" to snippet.lastModified.toString(),
-            "id" to snippet.id,
+            "id" to snippet.id
         )
         var meta = template
-        placeholders.forEach { (k, v) -> meta = meta.replace("{$k}", v) }
+        placeholders.forEach { (k, v) ->
+            meta = meta.replace("{$k}", v)
+        }
         return meta
     }
 
@@ -82,20 +88,17 @@ object CodeFormatter {
         return when {
             lang?.contains("python", true) == true ->
                 lines.filterNot {
-                    val t = it.trim().lowercase()
-                    t.startsWith("import ") || t.startsWith("from ")
+                    it.trim().lowercase().startsWith("import ") || it.trim().lowercase().startsWith("from ")
                 }
 
             lang?.contains("ruby", true) == true ->
                 lines.filterNot {
-                    val t = it.trim().lowercase()
-                    t.startsWith("require ") || t.startsWith("load ")
+                    it.trim().lowercase().startsWith("require ") || it.trim().lowercase().startsWith("load ")
                 }
 
             lang?.contains("php", true) == true ->
                 lines.filterNot {
-                    val t = it.trim().lowercase()
-                    t.startsWith("use ") || t.startsWith("require ")
+                    it.trim().lowercase().startsWith("use ") || it.trim().lowercase().startsWith("require ")
                 }
 
             else ->
@@ -150,18 +153,18 @@ object CodeFormatter {
                 }
 
             CompressionMode.ULTRA ->
-                input.lines().map {
-                    it.replace("\uFEFF", "")
-                        .replace("\u200B", "")
-                        .replace(Regex("\\p{C}+"), "")
-                        .trim()
-                }.filter {
-                    if (!o.selectiveCompression) {
-                        it.isNotBlank()
-                    } else {
-                        it.isNotBlank() && !it.uppercase().contains("TODO") && !it.uppercase().contains("DEBUG")
+                input.lines()
+                    .map {
+                        it.replace("\uFEFF", "")
+                            .replace("\u200B", "")
+                            .replace(Regex("\\p{C}+"), "")
+                            .trim()
                     }
-                }.joinToString(" ") { ln -> ln.replace(Regex("\\s+"), " ") }
+                    .filter {
+                        if (!o.selectiveCompression) it.isNotBlank()
+                        else it.isNotBlank() && !it.uppercase().contains("TODO") && !it.uppercase().contains("DEBUG")
+                    }
+                    .joinToString(" ") { ln -> ln.replace(Regex("\\s+"), " ") }
         }
     }
 
@@ -191,6 +194,7 @@ object CodeFormatter {
             }
             return chunks
         }
+
         val results = mutableListOf<String>()
         var i = 0
         while (i < text.length) {

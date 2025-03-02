@@ -11,6 +11,7 @@ class ClipCraftSharingService(private val project: Project) {
 
     fun shareSnippet(snippet: Snippet): String {
         logger.info("Sharing snippet from file: ${snippet.filePath}")
+        // Simple mock: In real life, call an external REST service, etc.
         return "https://share.clipcraft.com/snippet/${snippet.id}"
     }
 }

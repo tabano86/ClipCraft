@@ -22,17 +22,16 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
         border = JBUI.Borders.empty(20)
         add(JLabel("Welcome to ClipCraft Setup Wizard!").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalStrut(JBUI.scale(20)))
-        add(
-            JLabel("This wizard helps configure basic ClipCraft settings:").apply {
-                alignmentX = JComponent.CENTER_ALIGNMENT
-            },
-        )
+        add(JLabel("This wizard helps configure basic ClipCraft settings:").apply {
+            alignmentX = JComponent.CENTER_ALIGNMENT
+        })
         add(Box.createVerticalStrut(JBUI.scale(10)))
         add(JLabel("• Metadata Inclusion").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(JLabel("• GitIgnore usage").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(JLabel("• Concurrency").apply { alignmentX = JComponent.CENTER_ALIGNMENT })
         add(Box.createVerticalGlue())
     }
+
     private var stepIndex = 0
     private val backAction = object : DialogWrapperAction("Back") {
         override fun doAction(e: ActionEvent?) {
@@ -67,6 +66,7 @@ class ClipCraftSetupWizard(private val project: Project) : DialogWrapper(true) {
 
     override fun createCenterPanel(): JComponent = wizardPanel
     override fun createActions(): Array<Action> = arrayOf(backAction, nextAction, finishAction, cancelAction)
+
     private fun updateStepUI() {
         cardLayout.show(wizardPanel, "Step$stepIndex")
         backAction.isEnabled = stepIndex > 0

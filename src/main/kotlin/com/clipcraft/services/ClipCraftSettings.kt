@@ -1,18 +1,20 @@
 package com.clipcraft.services
 
+import com.clipcraft.model.ClipCraftOptions
+import com.clipcraft.model.ClipCraftProfile
 import com.intellij.openapi.diagnostic.Logger
 
 class ClipCraftSettings private constructor() {
     private val logger = Logger.getInstance(ClipCraftSettings::class.java)
-    private val fallbackProfile =
-        com.clipcraft.model.ClipCraftProfile("Global Default", com.clipcraft.model.ClipCraftOptions())
-    private val allProfiles = mutableListOf<com.clipcraft.model.ClipCraftProfile>()
+    private val fallbackProfile = ClipCraftProfile("Global Default", ClipCraftOptions())
+    private val allProfiles = mutableListOf<ClipCraftProfile>()
     private var currentProfileName: String = fallbackProfile.profileName
     private val listeners = mutableSetOf<SettingsChangeListener>()
 
     companion object {
         @Volatile
         private var instance: ClipCraftSettings? = null
+
         fun getInstance(): ClipCraftSettings {
             return instance ?: synchronized(this) {
                 instance ?: ClipCraftSettings().also { instance = it }
@@ -27,7 +29,7 @@ class ClipCraftSettings private constructor() {
         }
     }
 
-    fun getCurrentProfile(): com.clipcraft.model.ClipCraftProfile {
+    fun getCurrentProfile(): ClipCraftProfile {
         return allProfiles.find { it.profileName == currentProfileName } ?: fallbackProfile
     }
 
@@ -42,6 +44,7 @@ class ClipCraftSettings private constructor() {
 
     fun getSnippetPrefix(): String = getCurrentProfile().options.snippetHeaderText.orEmpty()
     fun getSnippetSuffix(): String = getCurrentProfile().options.snippetFooterText.orEmpty()
+
     fun addSettingsChangeListener(listener: SettingsChangeListener) {
         listeners.add(listener)
     }

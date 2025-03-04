@@ -4,7 +4,7 @@ plugins {
     java
     id("org.jetbrains.kotlin.jvm") version "1.9.23"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
-    id("org.jetbrains.intellij.platform") version "2.2.1"
+    id("org.jetbrains.intellij.platform") version "2.3.0"
     id("pl.allegro.tech.build.axion-release") version "1.18.16"
     id("com.diffplug.spotless") version "6.20.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.7"

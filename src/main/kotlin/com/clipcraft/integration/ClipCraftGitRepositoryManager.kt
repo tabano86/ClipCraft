@@ -1,4 +1,4 @@
-package com.clipcraft.integration
+package com.clipcraft.services
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger

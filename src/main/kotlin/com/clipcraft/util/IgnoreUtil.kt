@@ -8,7 +8,6 @@ import java.nio.file.Paths
 
 object IgnoreUtil {
     private val logger = Logger.getInstance(IgnoreUtil::class.java)
-
     private var alreadyParsed = false
 
     /**
@@ -26,7 +25,8 @@ object IgnoreUtil {
         if (folderInIgnoreFolders(file, opts.ignoreFolders, projectBase)) return true
 
         val rel = toRelative(file.absolutePath, projectBase).replace('\\', '/').removePrefix("/")
-        val patterns = gatherAllPatterns(opts)
+        // FIX: take a snapshot of the patterns to prevent concurrent modifications
+        val patterns = gatherAllPatterns(opts).toList()
         var ignored = false
         for (p in patterns) {
             if (p.isBlank()) continue
@@ -94,43 +94,29 @@ object IgnoreUtil {
         var inGroup = false
         var i = 0
         while (i < glob.length) {
-            val c = glob[i]
-            when (c) {
+            when (val c = glob[i]) {
                 in listOf('/', '$', '^', '+', '.', '(', ')', '=', '!', '|') -> sb.append('\\').append(c)
                 '?' -> sb.append("[^/]")
-                '[', ']' ->
-                    if (extended) sb.append(c) else sb.append('\\').append(c)
-
-                '{' ->
-                    if (extended) {
-                        inGroup = true; sb.append('(')
-                    } else {
-                        sb.append("\\{")
-                    }
-
-                '}' ->
-                    if (extended) {
-                        inGroup = false; sb.append(')')
-                    } else {
-                        sb.append("\\}")
-                    }
-
-                ',' ->
-                    if (inGroup) sb.append('|') else sb.append("\\,")
-
+                '[', ']' -> if (extended) sb.append(c) else sb.append('\\').append(c)
+                '{' -> if (extended) {
+                    inGroup = true; sb.append('(')
+                } else {
+                    sb.append("\\{")
+                }
+                '}' -> if (extended) {
+                    inGroup = false; sb.append(')')
+                } else {
+                    sb.append("\\}")
+                }
+                ',' -> if (inGroup) sb.append('|') else sb.append("\\,")
                 '*' -> {
                     var starCount = 1
                     while (i + 1 < glob.length && glob[i + 1] == '*') {
                         starCount++
                         i++
                     }
-                    if (!globstar) {
-                        sb.append(".*")
-                    } else {
-                        sb.append("([^/]*)")
-                    }
+                    if (!globstar) sb.append(".*") else sb.append("([^/]*)")
                 }
-
                 else -> sb.append(c)
             }
             i++

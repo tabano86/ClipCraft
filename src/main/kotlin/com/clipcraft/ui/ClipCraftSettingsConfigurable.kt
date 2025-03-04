@@ -111,10 +111,11 @@ class ClipCraftSettingsConfigurable : SearchableConfigurable, Configurable.NoScr
                         }
                     )
                     label("").applyToComponent {
-                        icon = IconLoader.findIcon("/icons/help.svg", this::class.java) ?: AllIcons.General.ContextHelp
+                        icon = IconLoader.getIcon("/icons/help.svg", ClipCraftSettingsConfigurable::class.java)
+                            ?: AllIcons.General.ContextHelp
                         toolTipText = """
-                            Use placeholders: {fileName}, {filePath}, {size}, {modified}, {id}, {relativePath}
-                        """.trimIndent()
+          Use placeholders: {fileName}, {filePath}, {size}, {modified}, {id}, {relativePath}
+        """.trimIndent()
                     }
                 }
                 row("Snippet Header:") {

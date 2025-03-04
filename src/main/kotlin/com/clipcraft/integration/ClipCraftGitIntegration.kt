@@ -1,6 +1,7 @@
 package com.clipcraft.integration
 
 import com.clipcraft.model.Snippet
+import com.clipcraft.services.ClipCraftGitRepositoryManager
 import com.intellij.openapi.project.Project
 
 object ClipCraftGitIntegration {

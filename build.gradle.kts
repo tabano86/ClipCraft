@@ -114,13 +114,7 @@ tasks {
 
     publishPlugin {
         channels = listOf("beta")
-        token.set(providers.gradleProperty("intellijPublishingToken"))
-        doFirst {
-            val tokenValue = providers.gradleProperty("intellijPlatformPublishingToken").getOrElse("")
-            if (tokenValue.isEmpty()) {
-                throw GradleException("Token is empty!")
-            }
-        }
+        token.set(project.findProperty("intellijPlatformPublishingToken") as String?)
     }
 }
 

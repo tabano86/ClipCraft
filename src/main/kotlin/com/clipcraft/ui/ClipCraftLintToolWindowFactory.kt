@@ -28,7 +28,7 @@ class ClipCraftLintToolWindowFactory : ToolWindowFactory, DumbAware {
             resultsArea.text = results.joinToString("\n") { it.formatMessage() }
         }
         toolWindow.contentManager.addContent(
-            toolWindow.contentManager.factory.createContent(panel, "Lint Results", false)
+            toolWindow.contentManager.factory.createContent(panel, "Lint Results", false),
         )
     }
 }

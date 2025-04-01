@@ -29,8 +29,10 @@ class ClipCraftGitRepositoryManager private constructor(private val project: Pro
                     val commitHash = retrieveCurrentRevision(gitRoot)
                     repos.add(GitRepository(gitRoot, commitHash))
                     false
-                } else true
-            }
+                } else {
+                    true
+                }
+            },
         )
         if (repos.isEmpty()) {
             logger.warn("No Git repositories found in project.")

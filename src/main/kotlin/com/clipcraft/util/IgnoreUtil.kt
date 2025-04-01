@@ -103,11 +103,13 @@ object IgnoreUtil {
                 } else {
                     sb.append("\\{")
                 }
+
                 '}' -> if (extended) {
                     inGroup = false; sb.append(')')
                 } else {
                     sb.append("\\}")
                 }
+
                 ',' -> if (inGroup) sb.append('|') else sb.append("\\,")
                 '*' -> {
                     var starCount = 1
@@ -117,6 +119,7 @@ object IgnoreUtil {
                     }
                     if (!globstar) sb.append(".*") else sb.append("([^/]*)")
                 }
+
                 else -> sb.append(c)
             }
             i++

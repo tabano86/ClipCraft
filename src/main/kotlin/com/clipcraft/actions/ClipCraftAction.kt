@@ -31,7 +31,7 @@ class ClipCraftAction : AnAction() {
                     project = project,
                     files = vFiles.toList(),
                     options = options,
-                    indicator = indicator
+                    indicator = indicator,
                 )
             }
         })

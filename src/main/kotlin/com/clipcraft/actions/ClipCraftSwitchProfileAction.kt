@@ -23,7 +23,7 @@ class ClipCraftSwitchProfileAction : AnAction() {
             Messages.getQuestionIcon(),
             names,
             names[0],
-            null
+            null,
         )
         if (chosen != null) {
             mgr.switchActiveProfile(chosen)

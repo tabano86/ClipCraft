@@ -1,58 +1,53 @@
 package com.clipcraft.ui
 
-import java.awt.FlowLayout
-import java.awt.event.FocusAdapter
-import java.awt.event.FocusEvent
-import javax.swing.JButton
-import javax.swing.JPanel
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
 import javax.swing.JTextField
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
+import kotlin.math.max
+import kotlin.math.min
 
-class SpinnerTextField(
-    initialValue: Int,
-    private val min: Int,
-    private val max: Int
-) : JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)) {
-
-    private val textField: JTextField = JTextField(initialValue.toString(), 5)
-    private val incrementButton: JButton = JButton("+")
-    private val decrementButton: JButton = JButton("-")
-
+class SpinnerTextField(initialValue: Int, private val minValue: Int, private val maxValue: Int) : JTextField() {
     init {
-        add(decrementButton)
-        add(textField)
-        add(incrementButton)
+        text = initialValue.toString()
 
-        incrementButton.addActionListener {
-            val current = textField.text.toIntOrNull() ?: initialValue
-            if (current < max) {
-                textField.text = (current + 1).toString()
-                firePropertyChange("value", current, current + 1)
-            }
-        }
-        decrementButton.addActionListener {
-            val current = textField.text.toIntOrNull() ?: initialValue
-            if (current > min) {
-                textField.text = (current - 1).toString()
-                firePropertyChange("value", current, current - 1)
-            }
-        }
-        textField.addFocusListener(object : FocusAdapter() {
-            override fun focusLost(e: FocusEvent?) {
-                val current = textField.text.toIntOrNull() ?: min
-                val clamped = current.coerceIn(min, max)
-                if (clamped != current) {
-                    textField.text = clamped.toString()
-                    firePropertyChange("value", current, clamped)
+        addKeyListener(object : KeyAdapter() {
+            override fun keyTyped(e: KeyEvent?) {
+                val c = e?.keyChar ?: return
+                // Only allow digits, backspace, delete
+                if (!c.isDigit() && c != '\b' && c != 127.toChar()) {
+                    e.consume()
                 }
             }
         })
     }
 
-    fun whenValueChanged(listener: (Int) -> Unit) {
-        addPropertyChangeListener("value") { evt ->
-            (evt.newValue as? Int)?.let { listener(it) }
-        }
+    fun getIntValue(): Int {
+        val num = text.toIntOrNull() ?: minValue
+        return max(minValue, min(maxValue, num))
     }
 
-    fun getValue(): Int = textField.text.toIntOrNull() ?: min
+    fun setIntValue(value: Int) {
+        text = max(minValue, min(maxValue, value)).toString()
+    }
+
+    /**
+     * Helper to track changes and notify when value changes.
+     */
+    fun SpinnerTextField.whenValueChanged(listener: (Int) -> Unit) {
+        this.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent?) {
+                listener(getIntValue())
+            }
+
+            override fun removeUpdate(e: DocumentEvent?) {
+                listener(getIntValue())
+            }
+
+            override fun changedUpdate(e: DocumentEvent?) {
+                listener(getIntValue())
+            }
+        })
+    }
 }

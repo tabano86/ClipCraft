@@ -11,6 +11,7 @@ class ClipCraftProjectProfileManager(private val project: Project) {
 
     fun getProfile(name: String): ClipCraftProfile? = profiles[name]
 
+    @Synchronized
     fun addOrUpdateProfile(profile: ClipCraftProfile) {
         profiles[profile.profileName] = profile
         if (activeProfile == null) activeProfile = profile

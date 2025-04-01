@@ -21,9 +21,9 @@ data class ClipCraftOptions(
     var includeDirectorySummary: Boolean = false,
     var hierarchicalDirectorySummary: Boolean = false,
     var includeMetadata: Boolean = false,
-    var metadataTemplate: String? = null,
-    var snippetHeaderText: String? = null,
-    var snippetFooterText: String? = null,
+    var metadataTemplate: String? = "", // friendly default is empty
+    var snippetHeaderText: String? = "",
+    var snippetFooterText: String? = "",
     var showLint: Boolean = false,
     var lintErrorsOnly: Boolean = false,
     var lintWarningsOnly: Boolean = false,
@@ -46,11 +46,26 @@ data class ClipCraftOptions(
     var removeLeadingBlankLines: Boolean = false,
     var outputMacroTemplate: String? = null,
     var outputTarget: OutputTarget = OutputTarget.CLIPBOARD,
-    var includeIdeProblems: Boolean = false
+    var includeIdeProblems: Boolean = false,
+    var maxCopyCharacters: Int = 1_000_000,
 ) {
     fun resolveConflicts() {
         if (singleLineOutput) chunkStrategy = ChunkStrategy.NONE
         if (chunkSize < 1) chunkSize = 4000
         if (binaryCheckThreshold < 1) binaryCheckThreshold = 1000
+    }
+
+    fun copy(): ClipCraftOptions {
+        return ClipCraftOptions(
+            concurrencyMode, maxConcurrentTasks, chunkStrategy, chunkSize, overlapStrategy,
+            compressionMode, selectiveCompression, outputFormat, includeLineNumbers, removeImports,
+            removeComments, trimWhitespace, removeEmptyLines, singleLineOutput, includeDirectorySummary,
+            hierarchicalDirectorySummary, includeMetadata, metadataTemplate, snippetHeaderText,
+            snippetFooterText, showLint, lintErrorsOnly, lintWarningsOnly, includeLintInOutput, includeGitInfo,
+            useGitIgnore, enableDirectoryPatternMatching, additionalIgnorePatterns, invertIgnorePatterns,
+            ignorePatterns.toMutableList(), ignoreFiles, ignoreFolders, detectBinary, binaryCheckThreshold,
+            addSnippetToQueue, includeImageFiles, autoDetectLanguage, themeMode, collapseBlankLines,
+            removeLeadingBlankLines, outputMacroTemplate, outputTarget, includeIdeProblems, maxCopyCharacters,
+        )
     }
 }

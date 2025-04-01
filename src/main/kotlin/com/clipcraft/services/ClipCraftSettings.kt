@@ -2,41 +2,36 @@ package com.clipcraft.services
 
 import com.clipcraft.model.ClipCraftOptions
 import com.clipcraft.model.ClipCraftProfile
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
 import com.intellij.openapi.diagnostic.Logger
 
-class ClipCraftSettings private constructor() {
+@Service
+@State(name = "ClipCraftSettings", storages = [Storage("ClipCraftSettings.xml")])
+class ClipCraftSettings : PersistentStateComponent<ClipCraftSettings.State> {
     private val logger = Logger.getInstance(ClipCraftSettings::class.java)
-    private val fallbackProfile = ClipCraftProfile("Global Default", ClipCraftOptions())
-    private val allProfiles = mutableListOf<ClipCraftProfile>()
-    private var currentProfileName: String = fallbackProfile.profileName
-    private val listeners = mutableSetOf<SettingsChangeListener>()
 
-    companion object {
-        @Volatile
-        private var instance: ClipCraftSettings? = null
+    // Rename property to avoid JVM signature clash.
+    var myState = State()
 
-        fun getInstance(): ClipCraftSettings {
-            return instance ?: synchronized(this) {
-                instance ?: ClipCraftSettings().also { instance = it }
-            }
-        }
-    }
-
-    init {
-        if (allProfiles.isEmpty()) {
-            allProfiles.add(fallbackProfile)
-            currentProfileName = fallbackProfile.profileName
-        }
-    }
+    data class State(
+        var currentProfileName: String = "Global Default",
+        var allProfiles: MutableList<ClipCraftProfile> = mutableListOf(
+            ClipCraftProfile("Global Default", ClipCraftOptions()),
+            ),
+    )
 
     fun getCurrentProfile(): ClipCraftProfile {
-        return allProfiles.find { it.profileName == currentProfileName } ?: fallbackProfile
+        return myState.allProfiles.find { it.profileName == myState.currentProfileName }
+            ?: myState.allProfiles.first()
     }
 
     fun setCurrentProfile(name: String) {
-        if (allProfiles.any { it.profileName == name }) {
-            currentProfileName = name
-            notifyListeners()
+        if (myState.allProfiles.any { it.profileName == name }) {
+            myState.currentProfileName = name
         } else {
             logger.warn("Profile not found: $name")
         }
@@ -45,25 +40,15 @@ class ClipCraftSettings private constructor() {
     fun getSnippetPrefix(): String = getCurrentProfile().options.snippetHeaderText.orEmpty()
     fun getSnippetSuffix(): String = getCurrentProfile().options.snippetFooterText.orEmpty()
 
-    fun addSettingsChangeListener(listener: SettingsChangeListener) {
-        listeners.add(listener)
+    override fun getState(): State = myState
+
+    override fun loadState(newState: State) {
+        myState = newState
     }
 
-    fun removeSettingsChangeListener(listener: SettingsChangeListener) {
-        listeners.remove(listener)
-    }
-
-    private fun notifyListeners() {
-        listeners.forEach {
-            try {
-                it.onSettingsChanged(this)
-            } catch (ex: Exception) {
-                logger.warn("Error notifying listener: ${ex.message}", ex)
-            }
+    companion object {
+        fun getInstance(): ClipCraftSettings {
+            return ApplicationManager.getApplication().getService(ClipCraftSettings::class.java)
         }
-    }
-
-    interface SettingsChangeListener {
-        fun onSettingsChanged(settings: ClipCraftSettings)
     }
 }

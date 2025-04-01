@@ -38,7 +38,7 @@ class ClipCraftAddSnippetFromCursorAction : AnAction() {
             fileName = psiFile.name,
             fileSizeBytes = finalSnippetContent.length.toLong(),
             lastModified = System.currentTimeMillis(),
-            content = finalSnippetContent
+            content = finalSnippetContent,
         )
 
         if (options.addSnippetToQueue) {
@@ -66,7 +66,7 @@ class ClipCraftAddSnippetFromCursorAction : AnAction() {
         options: com.clipcraft.model.ClipCraftOptions,
         lintResults: List<com.clipcraft.lint.LintIssue>,
     ): String {
-        val codeBlocks = CodeFormatter.formatSnippets(group.snippets, options).joinToString("\n---\n")
+        val codeBlocks = CodeFormatter.formatSnippets(group.snippets, options)
         // ... optional directory summary, lint summary, etc. omitted for brevity
         val finalOutput = buildString {
             append(codeBlocks)
@@ -85,7 +85,8 @@ class ClipCraftAddSnippetFromCursorAction : AnAction() {
     private fun deliverOutput(text: String, options: com.clipcraft.model.ClipCraftOptions) {
         when (options.outputTarget) {
             com.clipcraft.model.OutputTarget.CLIPBOARD,
-            com.clipcraft.model.OutputTarget.BOTH -> {
+            com.clipcraft.model.OutputTarget.BOTH,
+            -> {
                 val success = try {
                     val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
                     clipboard.setContents(java.awt.datatransfer.StringSelection(text), null)

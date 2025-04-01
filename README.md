@@ -1,76 +1,48 @@
-# ClipCraft
+File: ClipCraftAction.kt | Path: C:
+/Users/Taban/IdeaProjects/ClipCraft/src/main/kotlin/com/clipcraft/actions/ClipCraftAction.kt | Size: 1531 bytes
 
-ClipCraft is an IntelliJ plugin that lets you copy, format, and organize code snippets quickly—across multiple files or
-directories. It supports concurrency (thread pools or coroutines), GPT integration stubs, a snippet queue, chunking,
-ignoring files/folders (including `.gitignore`), and a live preview in settings.
+File: ClipCraftAction.kt | Path: C:
+/Users/Taban/IdeaProjects/ClipCraft/src/main/kotlin/com/clipcraft/actions/ClipCraftAction.kt
 
-<p style="display: flex; justify-content: center;">
-  <img src="src/main/resources/icons/clipcraft_32.svg" alt="ClipCraft Logo" width="150"/>
-</p>
+```kotlin
+package com.clipcraft.actions
 
-## Features
+import com.clipcraft.concurrency.ClipCraftFileCopyService
+import com.clipcraft.services.ClipCraftSettingsState
+import com.clipcraft.util.ClipCraftNotificationCenter
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
+import kotlinx.coroutines.runBlocking
 
-- **Concurrency Modes**
-  Choose between disabled, thread pool, or Kotlin coroutines to process files in parallel.
+class ClipCraftAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val vFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return
 
-- **Chunking & Overlap**
-  Split code by size or methods. Ideal for GPT-based flows, large code generation, or partial refactors.
+        if (vFiles.isEmpty()) {
+            ClipCraftNotificationCenter.warn("No files selected to copy.")
+            return
+        }
 
-- **Directory & File Ignores**
-  Automatic `.gitignore` usage, plus custom ignore patterns or folder-level ignoring.
+        val globalState = ClipCraftSettingsState.getInstance()
+        val options = globalState.advancedOptions
+        options.resolveConflicts()
 
-- **GPT Integration (Stubs)**
-  Send snippet text plus a prompt to a GPT-based service (mocked for demonstration). Great for code explanation or quick
-  generation.
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "ClipCraft Copy", true) {
+            override fun run(indicator: ProgressIndicator) = runBlocking {
+                ClipCraftFileCopyService().copyFiles(
+                    project = project,
+                    files = vFiles.toList(),
+                    options = options,
+                    indicator = indicator
+                )
+            }
+        })
+    }
+}
 
-- **User-Friendly UI**
-  A dedicated settings page with chunk/overlap preview, plus a snippet queue window, wizard for initial setup, and
-  multiple actions in the context menus.
-
-- **Additional Goodies**
-  Pre-commit Git hooks (for Conventional Commits) set up by default, code style checks, Detekt for static analysis, and
-  Spotless for code formatting.
-
-## Quick Start
-
-1. **Install the Plugin**
-    - Build the plugin using Gradle, or download the latest release from JetBrains Marketplace (if available).
-
-2. **Open Settings**
-    - Go to `Settings > Tools > ClipCraft`.
-    - Configure concurrency, chunking, ignore patterns, etc.
-
-3. **Use ClipCraft Actions**
-    - Right-click in the Project panel or Editor, then select **ClipCraft Copy** or **ClipCraft Submenu** actions.
-    - Or use the dedicated snippet queue or GPT chat tool window.
-
-## Repository Layout
-
-- **`settings.gradle.kts`**
-  Applies the Gradle pre-commit Git hooks plugin and sets up Conventional Commits.
-- **`build.gradle.kts`**
-  Configures dependencies, Axion release versioning, IntelliJ plugin details, Detekt, Spotless, and more.
-- **`src/`**
-  Core plugin code, including:
-    - **`actions`**: IntelliJ actions (e.g., `ClipCraftAction` for copying snippets, `ClipCraftGPTAction`, etc.).
-    - **`model`**: Data classes like `Snippet`, `ClipCraftOptions`, concurrency modes, etc.
-    - **`services`**: Project/application-level services (profile manager, snippet queue, GPT stubs).
-    - **`ui`**: UI components for setup wizard, snippet queue panel, settings, etc.
-    - **`integration`**: Git or search integration stubs.
-    - **`util`**: Utility classes (e.g. `CodeFormatter`, ignore logic).
-
-## Documentation
-
-- [Overview](./docs/Overview.md)
-- [Usage & Actions](./docs/Usage.md)
-- [Configuration](./docs/Configuration.md)
-- [FAQ](./docs/FAQ.md)
-
-## Contributing
-
-We welcome pull requests and suggestions. Please see [Contributing.md](./docs/Contributing.md) for details on how to
-contribute, run tests, or share ideas.
-
-## License
-
-Apache 2.0. See [LICENSE](./LICENSE) for details.
+```

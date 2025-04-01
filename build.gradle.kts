@@ -113,9 +113,11 @@ tasks {
     }
 
     publishPlugin {
-        channels = listOf("beta")
+        // Remove the channels configuration to publish as an official release.
+        // channels = listOf("beta")
         token.set(project.findProperty("intellijPlatformPublishingToken") as String?)
     }
+
 }
 
 spotless {

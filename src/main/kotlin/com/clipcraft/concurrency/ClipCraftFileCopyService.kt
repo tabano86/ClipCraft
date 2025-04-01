@@ -5,16 +5,17 @@ import com.clipcraft.model.Snippet
 import com.clipcraft.util.ClipCraftNotificationCenter
 import com.clipcraft.util.CodeFormatter
 import com.clipcraft.util.IgnoreUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.util.concurrent.Semaphore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import java.awt.datatransfer.StringSelection
+import java.util.concurrent.Semaphore
 
 class ClipCraftFileCopyService {
     private val logger = Logger.getInstance(ClipCraftFileCopyService::class.java)
@@ -23,19 +24,22 @@ class ClipCraftFileCopyService {
         project: Project,
         files: List<VirtualFile>,
         options: ClipCraftOptions,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ) = coroutineScope {
         // Pre-parse .gitignore once to avoid repeated I/O
         IgnoreUtil.parseGitIgnoreIfNeeded(options, project.basePath ?: "")
 
         val expanded = expandFiles(files)
         val snippetList = when (options.concurrencyMode) {
-            com.clipcraft.model.ConcurrencyMode.DISABLED -> readSequential(expanded, project, options, indicator)
-            else -> readConcurrently(expanded, project, options, indicator)
+            com.clipcraft.model.ConcurrencyMode.DISABLED ->
+                readSequential(expanded, project, options, indicator)
+
+            else ->
+                readConcurrently(expanded, project, options, indicator)
         }
 
         // Format in chunks, etc.
-        val combinedText = CodeFormatter.formatSnippets(snippetList, options).joinToString("\n---\n")
+        val combinedText = CodeFormatter.formatSnippets(snippetList, options)
 
         // Optional user prompt if too large
         val globalMaxChars = com.clipcraft.services.ClipCraftSettingsState.getInstance().maxCopyCharacters
@@ -44,7 +48,7 @@ class ClipCraftFileCopyService {
                 null,
                 "Output is ${combinedText.length} chars (limit $globalMaxChars). Copy anyway?",
                 "ClipCraft Large Copy",
-                javax.swing.JOptionPane.YES_NO_OPTION
+                javax.swing.JOptionPane.YES_NO_OPTION,
             )
             if (userChoice != javax.swing.JOptionPane.YES_OPTION) {
                 logger.info("User canceled large copy.")
@@ -53,15 +57,20 @@ class ClipCraftFileCopyService {
         }
 
         // Copy to clipboard if configured
-        if (options.outputTarget == com.clipcraft.model.OutputTarget.CLIPBOARD
-            || options.outputTarget == com.clipcraft.model.OutputTarget.BOTH
+        if (options.outputTarget == com.clipcraft.model.OutputTarget.CLIPBOARD ||
+            options.outputTarget == com.clipcraft.model.OutputTarget.BOTH
         ) {
-            try {
-                Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(combinedText), null)
-                ClipCraftNotificationCenter.info("Copied ${snippetList.size} snippet(s), length: ${combinedText.length} chars.")
-            } catch (ex: Exception) {
-                logger.error("Clipboard copy failed", ex)
-                ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
+            // Must ensure on EDT for reliable system clipboard
+            ApplicationManager.getApplication().invokeLater {
+                try {
+                    CopyPasteManager.getInstance().setContents(StringSelection(combinedText))
+                    ClipCraftNotificationCenter.info(
+                        "Copied ${snippetList.size} snippet(s), length: ${combinedText.length} chars.",
+                    )
+                } catch (ex: Exception) {
+                    logger.error("Clipboard copy failed", ex)
+                    ClipCraftNotificationCenter.error("Failed to copy to clipboard.")
+                }
             }
         }
     }
@@ -83,7 +92,7 @@ class ClipCraftFileCopyService {
         files: List<VirtualFile>,
         project: Project,
         options: ClipCraftOptions,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ): List<Snippet> {
         val result = mutableListOf<Snippet>()
         for ((index, vf) in files.withIndex()) {
@@ -98,8 +107,8 @@ class ClipCraftFileCopyService {
                     relativePath = null,
                     fileSizeBytes = content.length.toLong(),
                     lastModified = System.currentTimeMillis(),
-                    content = content
-                )
+                    content = content,
+                ),
             )
         }
         return result
@@ -109,7 +118,7 @@ class ClipCraftFileCopyService {
         files: List<VirtualFile>,
         project: Project,
         options: ClipCraftOptions,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ): List<Snippet> = coroutineScope {
         val semaphore = Semaphore(options.maxConcurrentTasks)
         files.mapIndexed { index, vf ->
@@ -127,7 +136,7 @@ class ClipCraftFileCopyService {
                             relativePath = null,
                             fileSizeBytes = it.length.toLong(),
                             lastModified = System.currentTimeMillis(),
-                            content = it
+                            content = it,
                         )
                     }
                 } finally {
@@ -139,7 +148,12 @@ class ClipCraftFileCopyService {
 
     private fun shouldInclude(vf: VirtualFile, project: Project, options: ClipCraftOptions): Boolean {
         if (!options.includeImageFiles && vf.isImageFile()) return false
-        if (options.useGitIgnore && IgnoreUtil.shouldIgnore(java.io.File(vf.path), options, project.basePath ?: "")) {
+        if (options.useGitIgnore && com.clipcraft.util.IgnoreUtil.shouldIgnore(
+                java.io.File(vf.path),
+                options,
+                project.basePath ?: "",
+            )
+        ) {
             return false
         }
         return true

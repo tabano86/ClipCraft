@@ -23,48 +23,42 @@ defaults:
     shell: bash
 
 jobs:
-  # --- Common Step Definitions ---
-  _setup: &setup
-    - name: "Checkout Repository (Full History)"
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: "Set up JDK ${{ env.JAVA_VERSION }}"
-      uses: actions/setup-java@v4
-      with:
-        distribution: ${{ env.JAVA_DIST }}
-        java-version: ${{ env.JAVA_VERSION }}
-        cache: gradle
-
-    - name: "Ensure gradlew is Executable"
-      run: chmod +x ./gradlew
-
-    - name: "Print Gradle & Java Versions"
-      run: |
-        ./gradlew --version
-        java -version
-
-  _cache: &cache
-    - name: "Cache Gradle Directories"
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-          .gradle
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-
   # --- Pull Request Validation ---
   test-pr:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - <<: *setup
-      - <<: *cache
+      - name: "Checkout Repository (Full History)"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Set up JDK ${{ env.JAVA_VERSION }}"
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DIST }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: "Ensure gradlew is Executable"
+        run: chmod +x ./gradlew
+
+      - name: "Print Gradle & Java Versions"
+        run: |
+          ./gradlew --version
+          java -version
+
+      - name: "Cache Gradle Directories"
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: "Run Dependency Updates Check"
         run: ./gradlew dependencyUpdates --stacktrace --parallel
@@ -91,8 +85,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - <<: *setup
-      - <<: *cache
+      - name: "Checkout Repository (Full History)"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Set up JDK ${{ env.JAVA_VERSION }}"
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DIST }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: "Ensure gradlew is Executable"
+        run: chmod +x ./gradlew
+
+      - name: "Print Gradle & Java Versions"
+        run: |
+          ./gradlew --version
+          java -version
+
+      - name: "Cache Gradle Directories"
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: "Configure Git Remote"
         run: |
@@ -172,7 +194,7 @@ jobs:
             });
 
       - name: "Post Release Announcement"
-        uses: peter-evans/create-or-update-comment@v4.1.0
+        uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
           issue-number: 1

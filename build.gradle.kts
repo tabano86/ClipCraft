@@ -1,6 +1,7 @@
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.api.Task
+import org.jetbrains.intellij.tasks.PublishPluginTask
 
 plugins {
     id("java")
@@ -46,9 +47,13 @@ tasks.runIde {
     jvmArgs("-Didea.is.internal=true")
 }
 
-// Add this task to resolve the build error
 tasks.register<Task>("printVersion") {
     doLast {
         println(project.version)
     }
+}
+
+// Configure the publishPlugin task directly and explicitly
+tasks.named<PublishPluginTask>("publishPlugin") {
+    token.set(System.getenv("ORG_GRADLE_PROJECT_marketplaceToken"))
 }

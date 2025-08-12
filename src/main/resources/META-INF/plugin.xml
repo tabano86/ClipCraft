@@ -1,77 +1,55 @@
+
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <version>0.0.2</version>
-    <vendor email="support@clipcraft.com" url="https://github.com/clipcraft">ClipCraft</vendor>
+    <vendor>ClipCraft</vendor>
+
+    <resource-bundle>messages.ClipCraftBundle</resource-bundle>
+    <idea-version since-build="241"/>
 
     <description><![CDATA[
-      ClipCraft extracts, formats, and merges code from multiple sources.
-      It includes support for concurrency, .gitignore handling, metadata,
-      macros, and more.
-    ]]></description>
-
-    <change-notes><![CDATA[
-      Fixed system clipboard copying (now uses CopyPasteManager) and
-      improved settings persistence and action to open correct settings panel.
-    ]]></change-notes>
+    A professional tool to recursively copy files and directory contents as a formatted Markdown string.
+    <br/>
+    Features:
+    <ul>
+        <li>Handles text files (with content) and binary files (by name).</li>
+        <li>Configurable include/exclude globs and file size limits via a settings UI.</li>
+        <li>Fully asynchronous with a background progress indicator.</li>
+    </ul>
+  ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
-    <idea-version since-build="233" until-build="299.*"/>
 
     <extensions defaultExtensionNs="com.intellij">
-        <notificationGroup
-                id="ClipCraft Notifications"
-                displayType="BALLOON"
-                isLogByDefault="true"/>
-
+        <applicationService
+                serviceImplementation="com.clipcraft.settings.SettingsStateProvider"/>
         <applicationConfigurable
-                displayName="ClipCraft"
-                instance="com.clipcraft.ui.ClipCraftSettingsRootConfigurable"
-                id="clipcraft.settings"
                 parentId="tools"
-                groupWeight="300"/>
+                instance="com.clipcraft.settings.ClipCraftConfigurable"
+                id="com.clipcraft.settings.ClipCraftConfigurable"
+                key="settings.displayName"/>
+        <notificationGroup id="ClipCraft notifications" displayType="BALLOON" key="notification.group.name"/>
     </extensions>
 
     <actions>
-        <action id="ClipCraftCopyAction"
-                class="com.clipcraft.actions.ClipCraftAction"
-                text="ClipCraft Copy"
-                description="Copies code from selected files">
-            <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
-        </action>
+        <action
+                id="com.clipcraft.action.ClipCraftAction"
+                class="com.clipcraft.action.ClipCraftAction"
+                icon="AllIcons.Actions.Copy"
+                text="Copy as Markdown"
+                description="Copies selected files or directory contents as a formatted Markdown string.">
 
-        <group id="ClipCraft.Submenu"
-               text="ClipCraft Toolbox"
-               description="Extra ClipCraft features"
-               popup="true"
-               class="com.intellij.openapi.actionSystem.DefaultActionGroup">
-            <add-to-group group-id="CutCopyPasteGroup" anchor="last"/>
+            <!-- Project tool window -->
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
 
-            <action id="ClipCraftResetDefaultsAction"
-                    class="com.clipcraft.actions.ClipCraftResetDefaultsAction"
-                    text="Reset Defaults"
-                    description="Reset ClipCraft settings"/>
+            <!-- Git/Version Control Changes view -->
+            <add-to-group group-id="ChangesViewPopupMenu" anchor="last"/>
 
-            <action id="ClipCraftSwitchProfileAction"
-                    class="com.clipcraft.actions.ClipCraftSwitchProfileAction"
-                    text="Switch Profile"
-                    description="Switch among saved profiles"/>
-
-            <action id="OpenClipCraftSettings"
-                    class="com.clipcraft.actions.OpenClipCraftSettingsAction"
-                    text="Settings"
-                    description="Opens ClipCraft settings">
-                <add-to-group group-id="ToolsMenu" anchor="last"/>
-            </action>
-
-            <separator/>
-        </group>
-
-        <action id="ClipCraftAddSnippetFromCursorActionContext"
-                class="com.clipcraft.actions.ClipCraftAddSnippetFromCursorAction"
-                text="Add Snippet from Caret"
-                description="Extract snippet from caret or selection">
+            <!-- Editor right-click menu -->
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+
+            <!-- Optional: Favorites/Scope view -->
+            <add-to-group group-id="ScopeViewPopupMenu" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>

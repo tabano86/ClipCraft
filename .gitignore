@@ -1,51 +1,10 @@
-# IntelliJ IDEA project settings & metadata
-/.idea/
+# IDE files
+.idea/
 *.iws
 *.iml
 *.ipr
-/.idea_modules/
-/.intellijPlatform/
-
-# Exclude workspace configuration and local settings (do not share)
-# User-specific temporary files
-*.swp
-*.swo
-
-# Build, generated, and dependency directories
-.gradle/
-build/
-target/
 out/
-logs/
-coverage/
-
-# Allow Gradle wrapper files
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
-
-# Local configuration files (do not commit sensitive information)
-local.properties
-
-# OS-specific files
+build/
+.gradle/
 .DS_Store
-Thumbs.db
-
-# Log files
-*.log
-
-# Temporary & backup files
-tmp/
-*.tmp
-*.bak
-*.backup
-
-# Environment configuration
-.env
-
-# IntelliJ Platform local platform artifacts
-
-# Kotlin specific files
-*.kotlin_metadata
-
-# Miscellaneous
-*.lock
+*~

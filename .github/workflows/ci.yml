@@ -2,13 +2,10 @@ name: "Build, Test, Publish & Enhance Repository UI"
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
   push:
-    branches:
-      - main
-    tags:
-      - "v*"
+    branches: [ main ]
+    tags: [ "v*" ]
   workflow_dispatch:
 
 permissions:
@@ -16,79 +13,86 @@ permissions:
   checks: write
   id-token: write
 
+env:
+  JAVA_VERSION: "17"
+  JAVA_DIST: "temurin"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.configureondemand=true"
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
+  # --- Common Step Definitions ---
+  _setup: &setup
+    - name: "Checkout Repository (Full History)"
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: "Set up JDK ${{ env.JAVA_VERSION }}"
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{ env.JAVA_DIST }}
+        java-version: ${{ env.JAVA_VERSION }}
+        cache: gradle
+
+    - name: "Ensure gradlew is Executable"
+      run: chmod +x ./gradlew
+
+    - name: "Print Gradle & Java Versions"
+      run: |
+        ./gradlew --version
+        java -version
+
+  _cache: &cache
+    - name: "Cache Gradle Directories"
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          .gradle
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+  # --- Pull Request Validation ---
   test-pr:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: "Checkout Repository (Full History)"
-        uses: actions/checkout@v4.1.7
-        with:
-          fetch-depth: 0
+      - <<: *setup
+      - <<: *cache
 
-      - name: "Set up JDK"
-        uses: actions/setup-java@v4.2.1
-        with:
-          distribution: temurin
-          java-version: 17
+      - name: "Run Dependency Updates Check"
+        run: ./gradlew dependencyUpdates --stacktrace --parallel
 
-      - name: "Ensure gradlew is Executable"
-        run: chmod +x ./gradlew
-
-      - name: "Cache Gradle Directories"
-        uses: actions/cache@v4.0.2
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            .gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
-
-      - name: "Run Dependency Updates"
-        run: ./gradlew dependencyUpdates --no-daemon --stacktrace --parallel
-
-      - name: "Run Tests, Quality Checks"
-        run: ./gradlew clean test patchPluginXml spotlessCheck detekt jacocoTestReport --no-daemon --stacktrace --parallel
+      - name: "Run Tests, Code Quality, and Coverage"
+        run: ./gradlew clean test patchPluginXml spotlessCheck detekt jacocoTestReport --stacktrace --parallel
 
       - name: "Publish Test Report"
         if: always()
-        uses: dorny/test-reporter@v1.9.1
+        uses: dorny/test-reporter@v1
         with:
           name: "JUnit Tests"
           path: build/test-results/test/*.xml
-          reporter: "java-junit"
-          list-suites: 'all'
-          list-tests: 'all'
-          max-annotations: '10'
-          fail-on-error: 'true'
-          fail-on-empty: 'true'
+          reporter: java-junit
+          list-suites: all
+          list-tests: all
+          max-annotations: 20
+          fail-on-error: true
+          fail-on-empty: true
 
+  # --- Release Job ---
   release:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: "Checkout Repository (Full History)"
-        uses: actions/checkout@v4.1.7
-        with:
-          fetch-depth: 0
-
-      - name: "Set up JDK"
-        uses: actions/setup-java@v4.2.1
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: "Ensure gradlew is Executable"
-        run: chmod +x ./gradlew
-
-      - name: "Cache Gradle Directories"
-        uses: actions/cache@v4.0.2
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            .gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+      - <<: *setup
+      - <<: *cache
 
       - name: "Configure Git Remote"
         run: |
@@ -108,7 +112,7 @@ jobs:
       - name: "Set RELEASE_TAG if not set"
         run: |
           if [ -z "${RELEASE_TAG}" ]; then
-            if [[ "${GITHUB_REF}" == "refs/tags/"* ]]; then
+            if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
               TAG_NAME="${GITHUB_REF#refs/tags/}"
               echo "Using existing tag: $TAG_NAME"
               echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
@@ -118,27 +122,24 @@ jobs:
             fi
           fi
 
-      - name: "Print Gradle Version"
-        run: ./gradlew --version --no-daemon
-
-      - name: "Print Computed Plugin Version"
-        run: ./gradlew printVersion --no-daemon --stacktrace
+      - name: "Compute and Print Plugin Version"
+        run: ./gradlew printVersion --stacktrace
 
       - name: "Run Release Build & Publish Plugin"
         env:
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
-          ./gradlew clean publishPlugin patchPluginXml --no-daemon --stacktrace --parallel
+          ./gradlew clean patchPluginXml publishPlugin --stacktrace --parallel
           ls -lah build/distributions
 
       - name: "Upload Plugin Artifact"
-        uses: actions/upload-artifact@v4.3.4
+        uses: actions/upload-artifact@v4
         with:
           name: plugin-distribution
           path: build/distributions/*.zip
 
       - name: "Create GitHub Release"
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: "Release ${{ env.RELEASE_TAG }}"
@@ -146,13 +147,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # --- Repository Metadata Update ---
   update-ui:
     if: github.event_name != 'pull_request'
     needs: release
     runs-on: ubuntu-latest
     steps:
       - name: "Update Repository Topics and Description"
-        uses: actions/github-script@v7.0.1
+        uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
         with:
@@ -168,7 +170,8 @@ jobs:
               repo: context.repo.repo,
               description: "Automated Build, Test, Publish & UI Enhancements workflow powered by prebuilt actions."
             });
-      - name: "Create or Update Release Announcement"
+
+      - name: "Post Release Announcement"
         uses: peter-evans/create-or-update-comment@v4.1.0
         with:
           token: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}

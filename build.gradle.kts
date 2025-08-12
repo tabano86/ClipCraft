@@ -1,59 +1,136 @@
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.gradle.api.Task
-import org.jetbrains.intellij.tasks.PublishPluginTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
-    id("java")
-    id("org.jetbrains.kotlin.jvm") version "1.9.24"
-    id("org.jetbrains.intellij") version "1.17.4"
+    java
+    id("org.jetbrains.kotlin.jvm") version "1.9.23"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
+    id("org.jetbrains.intellij.platform") version "2.3.0"
+    id("pl.allegro.tech.build.axion-release") version "1.18.16"
+    id("com.diffplug.spotless") version "6.20.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.7"
+    id("com.github.ben-manes.versions") version "0.48.0"
+    jacoco
 }
 
 group = "com.clipcraft"
-version = "1.0.1"
+
+// Axion Release Config
+scmVersion {
+    tag {
+        prefix.set("v")
+        versionSeparator.set("")
+    }
+    useHighestVersion.set(true)
+    ignoreUncommittedChanges.set(true)
+    // Example incremental logic
+    branchVersionIncrementer.putAll(
+        mapOf("main" to pl.allegro.tech.build.axion.release.domain.properties.VersionProperties.Incrementer { ctx ->
+            val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
+            val msg = process.inputStream.bufferedReader().readText().trim()
+            when {
+                "BREAKING CHANGE" in msg -> ctx.currentVersion.incrementMajorVersion()
+                msg.startsWith("feat", ignoreCase = true) -> ctx.currentVersion.incrementMinorVersion()
+                msg.startsWith("fix", ignoreCase = true) -> ctx.currentVersion.incrementPatchVersion()
+                else -> ctx.currentVersion
+            }
+        })
+    )
+    versionIncrementer("incrementPatch")
+    createReleaseCommit.set(false)
+}
+
+version = scmVersion.version
+val computedVersion = project.version.toString()
+
+// Dynamic Change Notes from last commit
+val dynamicChangeNotes = providers.provider {
+    val process = Runtime.getRuntime().exec("git log -1 --pretty=%B")
+    val rawMsg = process.inputStream.bufferedReader().readText().trim()
+    rawMsg.replace("<![CDATA[", "<<_CDATA_START_").replace("]]>", "<<_CDATA_END_")
+}
 
 repositories {
     mavenCentral()
-}
-
-intellij {
-    // Update the platform version to a more recent one to fix the internal error
-    version.set("2024.1.4")
-    type.set("IC") // IntelliJ Community Edition
-    plugins.set(listOf("com.intellij.java"))
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+    intellijPlatform {
+        defaultRepositories()
     }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    sourceCompatibility = "17"
-    targetCompatibility = "17"
+dependencies {
+    intellijPlatform {
+        // Example: Target IntelliJ IDEA Community 2023.3
+        intellijIdeaCommunity("2023.3")
+        bundledPlugin("com.intellij.java")
+        testFramework(TestFrameworkType.Platform)
+        pluginVerifier()
+        zipSigner()
+    }
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+    implementation("org.apache.commons:commons-text:1.13.0")
+    implementation("org.apache.commons:commons-lang3:3.17.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "17"
+kotlin {
+    jvmToolchain(17)
 }
 
-tasks.patchPluginXml {
-    sinceBuild.set("241")   // Corresponds to 2024.1
-    untilBuild.set("241.*") // Up to and including 2024.1.x
-}
+tasks {
+    compileKotlin {
+        kotlinOptions.jvmTarget = "17"
+    }
+    test {
+        useJUnitPlatform()
+    }
+    patchPluginXml {
+        changeNotes.set(dynamicChangeNotes)
+        version = computedVersion
+        sinceBuild.set("233")
+        untilBuild.set("299.*")
+    }
+    jacocoTestReport {
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+    }
+    register<DefaultTask>("printVersion") {
+        doLast {
+            println("Computed plugin version: $computedVersion")
+        }
+    }
+    register<DefaultTask>("releasePlugin") {
+        group = "release"
+        description = "Publish plugin to Marketplace."
+        dependsOn("patchPluginXml", "publishPlugin")
+        doLast {
+            println("Release complete. Version: $computedVersion")
+        }
+    }
 
-tasks.runIde {
-    jvmArgs("-Didea.is.internal=true")
-}
-
-tasks.register<Task>("printVersion") {
-    doLast {
-        println(project.version)
+    publishPlugin {
+        token.set(project.findProperty("intellijPlatformPublishingToken") as String?)
     }
 }
 
-// Configure the publishPlugin task directly and explicitly
-tasks.named<PublishPluginTask>("publishPlugin") {
-    token.set(System.getenv("ORG_GRADLE_PROJECT_marketplaceToken"))
+spotless {
+    kotlin {
+        target("**/*.kt")
+        ktlint("0.48.2").userData(mapOf("indent_size" to "4", "max_line_length" to "120"))
+    }
 }
+detekt {
+    config.setFrom(files("detekt-config.yml"))
+    buildUponDefaultConfig = true
+    autoCorrect = true
+}
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+gradle.startParameter.isParallelProjectExecutionEnabled = true
+gradle.startParameter.isBuildCacheEnabled = true

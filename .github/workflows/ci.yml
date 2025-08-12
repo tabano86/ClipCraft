@@ -22,12 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Repository (Full History)"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.7
         with:
           fetch-depth: 0
 
       - name: "Set up JDK"
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.2.1
         with:
           distribution: temurin
           java-version: 17
@@ -36,7 +36,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: "Cache Gradle Directories"
-        uses: actions/cache@v3
+        uses: actions/cache@v4.0.2
         with:
           path: |
             ~/.gradle/caches
@@ -52,7 +52,7 @@ jobs:
 
       - name: "Publish Test Report"
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v1.9.1
         with:
           name: "JUnit Tests"
           path: build/test-results/test/*.xml
@@ -68,12 +68,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Repository (Full History)"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.7
         with:
           fetch-depth: 0
 
       - name: "Set up JDK"
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.2.1
         with:
           distribution: temurin
           java-version: 17
@@ -82,7 +82,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: "Cache Gradle Directories"
-        uses: actions/cache@v3
+        uses: actions/cache@v4.0.2
         with:
           path: |
             ~/.gradle/caches
@@ -128,17 +128,17 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
-          ./gradlew clean releasePlugin patchPluginXml --no-daemon --stacktrace --parallel
+          ./gradlew clean publishPlugin patchPluginXml --no-daemon --stacktrace --parallel
           ls -lah build/distributions
 
       - name: "Upload Plugin Artifact"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.3.4
         with:
           name: plugin-distribution
           path: build/distributions/*.zip
 
       - name: "Create GitHub Release"
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.0.8
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: "Release ${{ env.RELEASE_TAG }}"
@@ -152,7 +152,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Update Repository Topics and Description"
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
         with:
@@ -169,7 +169,7 @@ jobs:
               description: "Automated Build, Test, Publish & UI Enhancements workflow powered by prebuilt actions."
             });
       - name: "Create or Update Release Announcement"
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v4.1.0
         with:
           token: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
           issue-number: 1

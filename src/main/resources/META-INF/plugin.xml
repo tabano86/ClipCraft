@@ -8,13 +8,38 @@
     <idea-version since-build="241"/>
 
     <description><![CDATA[
-    A professional tool to recursively copy files and directory contents as a formatted Markdown string.
-    <br/>
-    Features:
+    <h2>ClipCraft - Professional Code Export for AI & Documentation</h2>
+    <p>The ultimate IntelliJ plugin for exporting code to AI assistants, documentation, and team collaboration.</p>
+
+    <h3>🚀 Key Features</h3>
     <ul>
-        <li>Handles text files (with content) and binary files (by name).</li>
-        <li>Configurable include/exclude globs and file size limits via a settings UI.</li>
-        <li>Fully asynchronous with a background progress indicator.</li>
+        <li><b>Multiple Export Formats:</b> Markdown, XML, JSON, HTML, Plain Text</li>
+        <li><b>AI-Optimized:</b> Claude, ChatGPT, and Gemini optimized formats with token estimation</li>
+        <li><b>Smart Presets:</b> AI/LLM, Documentation, Code Review, Full Project, Test Files</li>
+        <li><b>Export Options:</b> Copy to clipboard or save to file</li>
+        <li><b>Advanced Filtering:</b> Glob patterns, regex, .gitignore support, file size limits</li>
+        <li><b>Token Estimation:</b> Know exactly how much context you're using</li>
+        <li><b>Smart Chunking:</b> Automatically split large exports for AI context windows</li>
+        <li><b>Security:</b> Secret detection and masking, PII warnings</li>
+        <li><b>Rich Metadata:</b> Git info, timestamps, file statistics, table of contents</li>
+        <li><b>Customization:</b> Line numbers, comment stripping, custom formatting</li>
+        <li><b>Quick Actions:</b> One-click export current file or entire project</li>
+    </ul>
+
+    <h3>📋 Usage</h3>
+    <ul>
+        <li>Right-click files/folders → ClipCraft → Choose export option</li>
+        <li>Tools → ClipCraft → Quick Export Project</li>
+        <li>Configure presets in Settings → Tools → ClipCraft Settings</li>
+    </ul>
+
+    <h3>💡 Perfect For</h3>
+    <ul>
+        <li>Sharing code context with AI assistants (Claude, ChatGPT, Gemini)</li>
+        <li>Creating documentation from code</li>
+        <li>Code review preparation</li>
+        <li>Team collaboration and knowledge sharing</li>
+        <li>Project analysis and audits</li>
     </ul>
   ]]></description>
 
@@ -25,31 +50,73 @@
                 serviceImplementation="com.clipcraft.settings.SettingsStateProvider"/>
         <applicationConfigurable
                 parentId="tools"
-                instance="com.clipcraft.settings.ClipCraftConfigurable"
-                id="com.clipcraft.settings.ClipCraftConfigurable"
+                instance="com.clipcraft.settings.EnhancedClipCraftConfigurable"
+                id="com.clipcraft.settings.EnhancedClipCraftConfigurable"
                 key="settings.displayName"/>
         <notificationGroup id="ClipCraft notifications" displayType="BALLOON" key="notification.group.name"/>
     </extensions>
 
     <actions>
-        <action
-                id="com.clipcraft.action.ClipCraftAction"
-                class="com.clipcraft.action.ClipCraftAction"
-                icon="AllIcons.Actions.Copy"
-                text="Copy as Markdown"
-                description="Copies selected files or directory contents as a formatted Markdown string.">
-
-            <!-- Project tool window -->
+        <!-- Main ClipCraft action group -->
+        <group id="com.clipcraft.MainActionGroup" text="ClipCraft" description="Export files in various formats" popup="true" icon="AllIcons.Actions.Copy">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-
-            <!-- Git/Version Control Changes view -->
             <add-to-group group-id="ChangesViewPopupMenu" anchor="last"/>
-
-            <!-- Editor right-click menu -->
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-
-            <!-- Optional: Favorites/Scope view -->
             <add-to-group group-id="ScopeViewPopupMenu" anchor="last"/>
-        </action>
+
+            <!-- Primary action -->
+            <action
+                    id="com.clipcraft.action.ClipCraftAction"
+                    class="com.clipcraft.action.ClipCraftAction"
+                    text="Copy as Markdown"
+                    description="Copy selected files as formatted Markdown to clipboard"
+                    icon="AllIcons.Actions.Copy"/>
+
+            <separator/>
+
+            <!-- Quick actions -->
+            <action
+                    id="com.clipcraft.action.QuickExportCurrentFileAction"
+                    class="com.clipcraft.action.QuickExportCurrentFileAction"
+                    text="Quick Export Current File"
+                    description="Quickly export the current file to clipboard"
+                    icon="AllIcons.Actions.QuickfixBulb"/>
+
+            <action
+                    id="com.clipcraft.action.QuickExportProjectAction"
+                    class="com.clipcraft.action.QuickExportProjectAction"
+                    text="Quick Export Project"
+                    description="Export entire project with AI/LLM preset"
+                    icon="AllIcons.Nodes.Module"/>
+
+            <separator/>
+
+            <!-- Advanced actions -->
+            <action
+                    id="com.clipcraft.action.ExportWithPresetAction"
+                    class="com.clipcraft.action.ExportWithPresetAction"
+                    text="Export with Preset..."
+                    description="Choose from predefined export presets"
+                    icon="AllIcons.Actions.ListFiles"/>
+
+            <action
+                    id="com.clipcraft.action.ExportToFileAction"
+                    class="com.clipcraft.action.ExportToFileAction"
+                    text="Export to File..."
+                    description="Export to a file in various formats (MD, XML, JSON, HTML)"
+                    icon="AllIcons.Actions.MenuSaveall"/>
+        </group>
+
+        <!-- Tools menu actions -->
+        <group id="com.clipcraft.ToolsMenuGroup" text="ClipCraft" description="ClipCraft export tools">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+
+            <action
+                    id="com.clipcraft.action.QuickExportProjectActionToolsMenu"
+                    class="com.clipcraft.action.QuickExportProjectAction"
+                    text="Quick Export Project"
+                    description="Export entire project with AI/LLM preset"
+                    icon="AllIcons.Actions.Copy"/>
+        </group>
     </actions>
 </idea-plugin>

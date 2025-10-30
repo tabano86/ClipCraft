@@ -1,6 +1,7 @@
 package com.clipcraft.model
 
 data class SettingsState(
+    // Basic filtering
     var includeGlobs: String = """
         **/*.kt
         **/*.java
@@ -66,5 +67,53 @@ data class SettingsState(
         **/*.zip
         **/*.tar.gz
     """.trimIndent(),
-    var maxFileSizeKb: Int = 2048
-)
+    var maxFileSizeKb: Int = 2048,
+
+    // Output options
+    var defaultOutputFormat: String = "MARKDOWN",
+    var includeLineNumbers: Boolean = false,
+    var stripComments: Boolean = false,
+    var includeMetadata: Boolean = true,
+    var includeGitInfo: Boolean = false,
+    var includeTableOfContents: Boolean = false,
+
+    // Advanced options
+    var respectGitignore: Boolean = true,
+    var detectSecrets: Boolean = true,
+    var maskSecrets: Boolean = true,
+    var groupByDirectory: Boolean = true,
+
+    // Chunking options
+    var enableChunking: Boolean = false,
+    var maxTokens: Int = 100000,
+    var chunkStrategy: String = "BY_SIZE"
+) {
+    fun toExportOptions(): ExportOptions {
+        return ExportOptions(
+            includeGlobs = includeGlobs,
+            excludeGlobs = excludeGlobs,
+            maxFileSizeKb = maxFileSizeKb,
+            outputFormat = try {
+                OutputFormat.valueOf(defaultOutputFormat)
+            } catch (e: Exception) {
+                OutputFormat.MARKDOWN
+            },
+            includeLineNumbers = includeLineNumbers,
+            stripComments = stripComments,
+            includeMetadata = includeMetadata,
+            includeGitInfo = includeGitInfo,
+            includeTableOfContents = includeTableOfContents,
+            respectGitignore = respectGitignore,
+            detectSecrets = detectSecrets,
+            maskSecrets = maskSecrets,
+            groupByDirectory = groupByDirectory,
+            enableChunking = enableChunking,
+            maxTokens = maxTokens,
+            chunkStrategy = try {
+                ChunkStrategy.valueOf(chunkStrategy)
+            } catch (e: Exception) {
+                ChunkStrategy.BY_SIZE
+            }
+        )
+    }
+}

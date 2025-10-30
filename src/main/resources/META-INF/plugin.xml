@@ -2,10 +2,13 @@
 <idea-plugin>
     <id>com.clipcraft</id>
     <name>ClipCraft</name>
-    <vendor>ClipCraft</vendor>
+    <vendor email="anthony.tabano.dev@gmail.com" url="https://github.com/tabano86/ClipCraft">ClipCraft Team</vendor>
 
     <resource-bundle>messages.ClipCraftBundle</resource-bundle>
-    <idea-version since-build="241"/>
+    <idea-version since-build="233"/>
+
+    <category>Tools</category>
+    <tags>export,ai,llm,claude,chatgpt,gemini,markdown,documentation,code-review</tags>
 
     <description><![CDATA[
     <h2>ClipCraft - Professional Code Export for AI & Documentation</h2>
@@ -13,10 +16,11 @@
 
     <h3>🚀 Key Features</h3>
     <ul>
-        <li><b>Multiple Export Formats:</b> Markdown, XML, JSON, HTML, Plain Text</li>
+        <li><b>Multiple Export Formats:</b> Markdown, XML, JSON, HTML, Plain Text, ZIP archives</li>
         <li><b>AI-Optimized:</b> Claude, ChatGPT, and Gemini optimized formats with token estimation</li>
         <li><b>Smart Presets:</b> AI/LLM, Documentation, Code Review, Full Project, Test Files</li>
-        <li><b>Export Options:</b> Copy to clipboard or save to file</li>
+        <li><b>Export Options:</b> Copy to clipboard, save to file, or export as ZIP</li>
+        <li><b>Keyboard Shortcuts:</b> 6 quick keyboard shortcuts for instant access</li>
         <li><b>Advanced Filtering:</b> Glob patterns, regex, .gitignore support, file size limits</li>
         <li><b>Token Estimation:</b> Know exactly how much context you're using</li>
         <li><b>Smart Chunking:</b> Automatically split large exports for AI context windows</li>
@@ -28,9 +32,20 @@
 
     <h3>📋 Usage</h3>
     <ul>
-        <li>Right-click files/folders → ClipCraft → Choose export option</li>
-        <li>Tools → ClipCraft → Quick Export Project</li>
-        <li>Configure presets in Settings → Tools → ClipCraft Settings</li>
+        <li><b>Right-click context menus:</b> Available in Project View, Editor, Editor Tabs, Changes View, Structure View, Favorites, and more</li>
+        <li><b>Main menu:</b> ClipCraft menu in the top menu bar</li>
+        <li><b>Tools menu:</b> Tools → ClipCraft</li>
+        <li><b>Keyboard shortcuts:</b>
+            <ul>
+                <li>Ctrl+Alt+C: Copy as Markdown</li>
+                <li>Ctrl+Alt+E: Quick Export Current File</li>
+                <li>Ctrl+Alt+Shift+E: Quick Export Project</li>
+                <li>Ctrl+Alt+P: Export with Preset</li>
+                <li>Ctrl+Alt+F: Export to File</li>
+                <li>Ctrl+Alt+Z: Quick Export as ZIP</li>
+            </ul>
+        </li>
+        <li><b>Settings:</b> Configure presets in Settings → Tools → ClipCraft Settings</li>
     </ul>
 
     <h3>💡 Perfect For</h3>
@@ -59,10 +74,15 @@
     <actions>
         <!-- Main ClipCraft action group -->
         <group id="com.clipcraft.MainActionGroup" text="ClipCraft" description="Export files in various formats" popup="true" icon="AllIcons.Actions.Copy">
+            <!-- Add to multiple context menus for better accessibility -->
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-            <add-to-group group-id="ChangesViewPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
+            <add-to-group group-id="ChangesViewPopupMenu" anchor="last"/>
             <add-to-group group-id="ScopeViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="StructureViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="FavoritesViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="NavBarToolBar" anchor="last"/>
 
             <!-- Primary action -->
             <action
@@ -70,7 +90,10 @@
                     class="com.clipcraft.action.ClipCraftAction"
                     text="Copy as Markdown"
                     description="Copy selected files as formatted Markdown to clipboard"
-                    icon="AllIcons.Actions.Copy"/>
+                    icon="AllIcons.Actions.Copy">
+                <!-- Add keyboard shortcut for quick access -->
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
+            </action>
 
             <separator/>
 
@@ -80,14 +103,20 @@
                     class="com.clipcraft.action.QuickExportCurrentFileAction"
                     text="Quick Export Current File"
                     description="Quickly export the current file to clipboard"
-                    icon="AllIcons.Actions.QuickfixBulb"/>
+                    icon="AllIcons.Actions.QuickfixBulb">
+                <!-- Add keyboard shortcut -->
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt E"/>
+            </action>
 
             <action
                     id="com.clipcraft.action.QuickExportProjectAction"
                     class="com.clipcraft.action.QuickExportProjectAction"
                     text="Quick Export Project"
                     description="Export entire project with AI/LLM preset"
-                    icon="AllIcons.Nodes.Module"/>
+                    icon="AllIcons.Nodes.Module">
+                <!-- Add keyboard shortcut -->
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift E"/>
+            </action>
 
             <separator/>
 
@@ -97,14 +126,30 @@
                     class="com.clipcraft.action.ExportWithPresetAction"
                     text="Export with Preset..."
                     description="Choose from predefined export presets"
-                    icon="AllIcons.Actions.ListFiles"/>
+                    icon="AllIcons.Actions.ListFiles">
+                <!-- Add keyboard shortcut -->
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
+            </action>
 
             <action
                     id="com.clipcraft.action.ExportToFileAction"
                     class="com.clipcraft.action.ExportToFileAction"
                     text="Export to File..."
-                    description="Export to a file in various formats (MD, XML, JSON, HTML)"
-                    icon="AllIcons.Actions.MenuSaveall"/>
+                    description="Export to a file in various formats (MD, XML, JSON, HTML, ZIP)"
+                    icon="AllIcons.Actions.MenuSaveall">
+                <!-- Add keyboard shortcut -->
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt F"/>
+            </action>
+
+            <action
+                    id="com.clipcraft.action.QuickExportAsZipAction"
+                    class="com.clipcraft.action.QuickExportAsZipAction"
+                    text="Quick Export as ZIP"
+                    description="Quickly export files as a ZIP archive"
+                    icon="AllIcons.FileTypes.Archive">
+                <!-- Add keyboard shortcut -->
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt Z"/>
+            </action>
         </group>
 
         <!-- Tools menu actions -->
@@ -117,6 +162,55 @@
                     text="Quick Export Project"
                     description="Export entire project with AI/LLM preset"
                     icon="AllIcons.Actions.Copy"/>
+
+            <action
+                    id="com.clipcraft.action.ExportWithPresetActionToolsMenu"
+                    class="com.clipcraft.action.ExportWithPresetAction"
+                    text="Export with Preset..."
+                    description="Choose from predefined export presets"
+                    icon="AllIcons.Actions.ListFiles"/>
+
+            <action
+                    id="com.clipcraft.action.QuickExportAsZipActionToolsMenu"
+                    class="com.clipcraft.action.QuickExportAsZipAction"
+                    text="Quick Export as ZIP"
+                    description="Quickly export files as a ZIP archive"
+                    icon="AllIcons.FileTypes.Archive"/>
+        </group>
+
+        <!-- Main menu integration for better discoverability -->
+        <group id="com.clipcraft.MainMenuGroup" text="ClipCraft" description="ClipCraft export tools" popup="true" icon="AllIcons.Actions.Copy">
+            <add-to-group group-id="MainMenu" anchor="before" relative-to-action="ToolsMenu"/>
+
+            <action
+                    id="com.clipcraft.action.QuickExportCurrentFileActionMainMenu"
+                    class="com.clipcraft.action.QuickExportCurrentFileAction"
+                    text="Export Current File"
+                    description="Quickly export the current file to clipboard"
+                    icon="AllIcons.Actions.QuickfixBulb"/>
+
+            <action
+                    id="com.clipcraft.action.QuickExportProjectActionMainMenu"
+                    class="com.clipcraft.action.QuickExportProjectAction"
+                    text="Export Project"
+                    description="Export entire project with AI/LLM preset"
+                    icon="AllIcons.Nodes.Module"/>
+
+            <separator/>
+
+            <action
+                    id="com.clipcraft.action.ExportWithPresetActionMainMenu"
+                    class="com.clipcraft.action.ExportWithPresetAction"
+                    text="Export with Preset..."
+                    description="Choose from predefined export presets"
+                    icon="AllIcons.Actions.ListFiles"/>
+
+            <action
+                    id="com.clipcraft.action.QuickExportAsZipActionMainMenu"
+                    class="com.clipcraft.action.QuickExportAsZipAction"
+                    text="Export as ZIP"
+                    description="Quickly export files as a ZIP archive"
+                    icon="AllIcons.FileTypes.Archive"/>
         </group>
     </actions>
 </idea-plugin>

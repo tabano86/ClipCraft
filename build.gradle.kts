@@ -113,9 +113,7 @@ dependencies {
     implementation("com.formdev:flatlaf-extras:3.5.2")
     implementation("com.formdev:flatlaf-intellij-themes:3.5.2")
 
-    // Kotlin coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
+    // Note: Kotlin coroutines are provided by the IntelliJ Platform, no need to add them explicitly
 
     // Testing - Modern stack
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
@@ -128,12 +126,12 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 tasks {
     compileKotlin {
-        kotlinOptions.jvmTarget = "21"
+        kotlinOptions.jvmTarget = "17"
     }
     test {
         useJUnitPlatform()

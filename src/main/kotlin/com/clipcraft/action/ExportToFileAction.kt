@@ -16,7 +16,10 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Paths
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class ExportToFileAction : DumbAwareAction() {
 
@@ -37,7 +40,7 @@ class ExportToFileAction : DumbAwareAction() {
         val descriptor = FileSaverDescriptor(
             "Export to File",
             "Choose where to save the export",
-            "md", "txt", "xml", "json", "html"
+            "md", "txt", "xml", "json", "html", "zip"
         )
 
         val fileChooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
@@ -77,26 +80,58 @@ class ExportToFileAction : DumbAwareAction() {
                 override fun run(indicator: ProgressIndicator) {
                     indicator.isIndeterminate = false
 
-                    val result = EnhancedFileProcessingService.processFiles(
-                        project, files, options, projectBasePath, indicator
-                    )
-
-                    if (result.content.isBlank()) {
-                        NotificationService.showWarning(project, "ClipCraft: No files matched filters")
-                        return
-                    }
-
-                    try {
-                        outputFile.writeText(result.content)
-                        NotificationService.showSuccess(
-                            project,
-                            "ClipCraft: Exported ${result.metadata.filesProcessed} files to ${outputFile.name}"
+                    if (extension == "zip") {
+                        // Export individual files to ZIP archive
+                        try {
+                            ZipOutputStream(FileOutputStream(outputFile)).use { zipOut ->
+                                files.forEachIndexed { index, virtualFile ->
+                                    indicator.fraction = index.toDouble() / files.size
+                                    indicator.text = "Processing ${virtualFile.name}..."
+                                    
+                                    if (virtualFile.isDirectory) return@forEachIndexed
+                                    
+                                    val relativePath = virtualFile.path.removePrefix(projectBasePath.toString())
+                                        .removePrefix("/").removePrefix("\\")
+                                    
+                                    val entry = ZipEntry(relativePath)
+                                    zipOut.putNextEntry(entry)
+                                    zipOut.write(virtualFile.contentsToByteArray())
+                                    zipOut.closeEntry()
+                                }
+                            }
+                            NotificationService.showSuccess(
+                                project,
+                                "ClipCraft: Exported ${files.size} files to ${outputFile.name}"
+                            )
+                        } catch (ex: Exception) {
+                            NotificationService.showWarning(
+                                project,
+                                "ClipCraft: Failed to create ZIP: ${ex.message}"
+                            )
+                        }
+                    } else {
+                        // Standard export to single file
+                        val result = EnhancedFileProcessingService.processFiles(
+                            project, files, options, projectBasePath, indicator
                         )
-                    } catch (ex: Exception) {
-                        NotificationService.showWarning(
-                            project,
-                            "ClipCraft: Failed to write file: ${ex.message}"
-                        )
+
+                        if (result.content.isBlank()) {
+                            NotificationService.showWarning(project, "ClipCraft: No files matched filters")
+                            return
+                        }
+
+                        try {
+                            outputFile.writeText(result.content)
+                            NotificationService.showSuccess(
+                                project,
+                                "ClipCraft: Exported ${result.metadata.filesProcessed} files to ${outputFile.name}"
+                            )
+                        } catch (ex: Exception) {
+                            NotificationService.showWarning(
+                                project,
+                                "ClipCraft: Failed to write file: ${ex.message}"
+                            )
+                        }
                     }
                 }
             }

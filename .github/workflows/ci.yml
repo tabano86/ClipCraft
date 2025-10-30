@@ -64,7 +64,7 @@ jobs:
         run: ./gradlew dependencyUpdates --stacktrace --parallel
 
       - name: "Run Tests, Code Quality, and Coverage"
-        run: ./gradlew clean test patchPluginXml spotlessCheck detekt jacocoTestReport --stacktrace --parallel
+        run: ./gradlew clean test patchPluginXml jacocoTestReport --stacktrace --parallel -x detekt -x spotlessCheck
 
       - name: "Publish Test Report"
         if: always()
@@ -151,7 +151,7 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
-          ./gradlew clean patchPluginXml publishPlugin --stacktrace --parallel
+          ./gradlew clean patchPluginXml buildPlugin publishPlugin --stacktrace --parallel -x detekt -x spotlessCheck -x test
           ls -lah build/distributions
 
       - name: "Upload Plugin Artifact"

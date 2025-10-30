@@ -177,9 +177,8 @@ jobs:
     steps:
       - name: "Update Repository Topics and Description"
         uses: actions/github-script@v7
-        env:
-          GITHUB_TOKEN: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
         with:
+          github-token: ${{ secrets.CLIPCRAFT_GH_WRITE_TOKEN }}
           script: |
             const topics = ['plugin', 'ci', 'automation', 'release'];
             await github.rest.repos.replaceAllTopics({

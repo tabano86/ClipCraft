@@ -75,7 +75,6 @@ class CopyProjectForAIAction : DumbAwareAction() {
                         totalSize = result.metadata.totalBytes,
                         estimatedTokens = result.metadata.estimatedTokens,
                         presetName = "AI Optimized",
-                        options = options,
                         exportedPaths = listOf(project.basePath ?: ""),
                         preview = result.content
                     )

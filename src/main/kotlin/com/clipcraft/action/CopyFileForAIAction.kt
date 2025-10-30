@@ -62,7 +62,6 @@ class CopyFileForAIAction : DumbAwareAction() {
             totalSize = file.length,
             estimatedTokens = result.metadata.estimatedTokens,
             presetName = "AI Optimized",
-            options = options,
             exportedPaths = listOf(file.path),
             preview = result.content
         )

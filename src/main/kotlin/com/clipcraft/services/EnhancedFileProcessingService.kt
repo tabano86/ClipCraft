@@ -74,6 +74,7 @@ object EnhancedFileProcessingService {
         val formattedMetadata = ProfessionalFormatter.FormattedMetadata(
             filesProcessed = fileInfos.size,
             filesSkipped = distinctFiles.size - fileInfos.size,
+            totalBytes = totalBytes,
             estimatedTokens = totalTokens
         )
 

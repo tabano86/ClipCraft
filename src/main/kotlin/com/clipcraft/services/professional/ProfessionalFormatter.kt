@@ -77,6 +77,7 @@ object ProfessionalFormatter {
     data class FormattedMetadata(
         val filesProcessed: Int,
         val filesSkipped: Int,
+        val totalBytes: Long,
         val estimatedTokens: Int
     )
 
@@ -368,14 +369,14 @@ object ProfessionalFormatter {
             val infoSpan = headerDiv.appendElement("span").addClass("file-info")
             infoSpan.text("${file.language} | ${file.lineCount} lines | ${formatBytes(file.byteSize)}")
 
-            val copyBtn = headerDiv.appendElement("button")
+            headerDiv.appendElement("button")
                 .addClass("copy-btn")
                 .attr("onclick", "copyToClipboard('code-$index')")
                 .text("📋 Copy")
 
             val contentDiv = fileDiv.appendElement("div").addClass("file-content")
             val pre = contentDiv.appendElement("pre")
-            val code = pre.appendElement("code")
+            pre.appendElement("code")
                 .attr("id", "code-$index")
                 .addClass("language-${file.language}")
                 .text(file.content)

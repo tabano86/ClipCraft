@@ -35,7 +35,7 @@ class ShowExportHistoryAction : DumbAwareAction() {
         val history = historyService.getHistory()
 
         if (history.isEmpty()) {
-            NotificationService.showInfo(project, "No export history yet. Start exporting to see your history here!")
+            NotificationService.showWarning(project, "No export history yet. Start exporting to see your history here!")
             return
         }
 
@@ -82,7 +82,7 @@ class ShowExportHistoryAction : DumbAwareAction() {
             val selected = historyList.selectedValue
             if (selected != null) {
                 // Would need to re-generate or store the full export content
-                NotificationService.showInfo(project, "Preview copied to clipboard")
+                NotificationService.showSuccess(project, "Preview copied to clipboard")
                 CopyPasteManager.getInstance().setContents(StringSelection(selected.preview))
             }
         }

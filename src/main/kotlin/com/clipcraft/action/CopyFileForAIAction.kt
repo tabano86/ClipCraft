@@ -45,11 +45,15 @@ class CopyFileForAIAction : DumbAwareAction() {
             includeTableOfContents = false,
             includeStatistics = false,
             groupByDirectory = false,
-            includeLineNumbers = false
+            includeLineNumbers = false,
         )
 
         val result = EnhancedFileProcessingService.processFiles(
-            project, listOf(file), options, projectBasePath, EmptyProgressIndicator()
+            project,
+            listOf(file),
+            options,
+            projectBasePath,
+            EmptyProgressIndicator(),
         )
 
         CopyPasteManager.getInstance().setContents(StringSelection(result.content))
@@ -63,13 +67,13 @@ class CopyFileForAIAction : DumbAwareAction() {
             estimatedTokens = result.metadata.estimatedTokens,
             presetName = "AI Optimized",
             exportedPaths = listOf(file.path),
-            preview = result.content
+            preview = result.content,
         )
         ExportHistoryService.getInstance().addEntry(historyEntry)
 
         NotificationService.showSuccess(
             project,
-            "✓ Copied ${file.name} - Ready for AI!"
+            "✓ Copied ${file.name} - Ready for AI!",
         )
     }
 }

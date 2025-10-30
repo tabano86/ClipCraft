@@ -17,7 +17,7 @@ data class ExportHistoryEntry(
     val exportedPaths: List<String>, // Relative paths of exported files
     val preview: String, // First 200 chars of export
     val success: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
 ) {
     companion object {
         fun create(
@@ -28,7 +28,7 @@ data class ExportHistoryEntry(
             estimatedTokens: Int,
             presetName: String? = null,
             exportedPaths: List<String>,
-            preview: String
+            preview: String,
         ): ExportHistoryEntry {
             return ExportHistoryEntry(
                 id = java.util.UUID.randomUUID().toString(),
@@ -40,7 +40,7 @@ data class ExportHistoryEntry(
                 estimatedTokens = estimatedTokens,
                 presetName = presetName,
                 exportedPaths = exportedPaths,
-                preview = preview.take(200)
+                preview = preview.take(200),
             )
         }
     }
@@ -71,7 +71,7 @@ data class ExportHistoryEntry(
                 <estimatedTokens>$estimatedTokens</estimatedTokens>
                 <presetName>${presetName ?: ""}</presetName>
                 <exportedPaths>${exportedPaths.joinToString(",")}</exportedPaths>
-                <preview><![CDATA[${preview}]]></preview>
+                <preview><![CDATA[$preview]]></preview>
                 <success>$success</success>
                 <errorMessage>${errorMessage ?: ""}</errorMessage>
             </entry>

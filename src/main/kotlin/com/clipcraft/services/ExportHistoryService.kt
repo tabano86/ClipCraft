@@ -20,7 +20,7 @@ class ExportHistoryService : PersistentStateComponent<ExportHistoryService.State
 
     data class State(
         var historyJson: String = "[]",
-        var maxHistorySize: Int = 100
+        var maxHistorySize: Int = 100,
     )
 
     private var myState = State()
@@ -66,10 +66,10 @@ class ExportHistoryService : PersistentStateComponent<ExportHistoryService.State
         val lowerQuery = query.lowercase()
         return getHistory().filter { entry ->
             entry.presetName?.lowercase()?.contains(lowerQuery) == true ||
-            entry.exportType.lowercase().contains(lowerQuery) ||
-            entry.format.lowercase().contains(lowerQuery) ||
-            entry.exportedPaths.any { it.lowercase().contains(lowerQuery) } ||
-            entry.preview.lowercase().contains(lowerQuery)
+                entry.exportType.lowercase().contains(lowerQuery) ||
+                entry.format.lowercase().contains(lowerQuery) ||
+                entry.exportedPaths.any { it.lowercase().contains(lowerQuery) } ||
+                entry.preview.lowercase().contains(lowerQuery)
         }
     }
 
@@ -106,7 +106,7 @@ class ExportHistoryService : PersistentStateComponent<ExportHistoryService.State
             successfulExports = history.count { it.success },
             failedExports = history.count { !it.success },
             mostUsedFormat = history.groupingBy { it.format }.eachCount().maxByOrNull { it.value }?.key ?: "N/A",
-            mostUsedPreset = history.mapNotNull { it.presetName }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: "N/A"
+            mostUsedPreset = history.mapNotNull { it.presetName }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: "N/A",
         )
     }
 
@@ -122,6 +122,6 @@ class ExportHistoryService : PersistentStateComponent<ExportHistoryService.State
         val successfulExports: Int,
         val failedExports: Int,
         val mostUsedFormat: String,
-        val mostUsedPreset: String
+        val mostUsedPreset: String,
     )
 }

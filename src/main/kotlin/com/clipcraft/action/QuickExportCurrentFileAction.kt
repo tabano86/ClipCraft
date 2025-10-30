@@ -1,7 +1,6 @@
 package com.clipcraft.action
 
 import com.clipcraft.model.ExportOptions
-import com.clipcraft.model.ExportPreset
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.services.ClipboardService
 import com.clipcraft.services.EnhancedFileProcessingService
@@ -40,7 +39,7 @@ class QuickExportCurrentFileAction : DumbAwareAction() {
             outputFormat = OutputFormat.MARKDOWN,
             includeMetadata = true,
             includeTimestamp = true,
-            includeStatistics = true
+            includeStatistics = true,
         )
 
         ProgressManager.getInstance().run(
@@ -49,7 +48,11 @@ class QuickExportCurrentFileAction : DumbAwareAction() {
                     indicator.isIndeterminate = false
 
                     val result = EnhancedFileProcessingService.processFiles(
-                        project, listOf(file), options, projectBasePath, indicator
+                        project,
+                        listOf(file),
+                        options,
+                        projectBasePath,
+                        indicator,
                     )
 
                     if (result.content.isBlank()) {
@@ -60,10 +63,10 @@ class QuickExportCurrentFileAction : DumbAwareAction() {
                     ClipboardService.copyToClipboard(result.content)
                     NotificationService.showSuccess(
                         project,
-                        "ClipCraft: Exported ${file.name} (${result.metadata.estimatedTokens} tokens)"
+                        "ClipCraft: Exported ${file.name} (${result.metadata.estimatedTokens} tokens)",
                     )
                 }
-            }
+            },
         )
     }
 }

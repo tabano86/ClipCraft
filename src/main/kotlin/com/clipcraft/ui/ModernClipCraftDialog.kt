@@ -2,10 +2,8 @@ package com.clipcraft.ui
 
 import com.clipcraft.model.ExportPreset
 import com.clipcraft.model.OutputFormat
-import com.clipcraft.services.professional.ProfessionalFormatter
 import com.clipcraft.services.professional.ProfessionalTokenEstimator
 import com.formdev.flatlaf.FlatClientProperties
-import com.formdev.flatlaf.extras.FlatSVGIcon
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.JBColor
@@ -43,7 +41,7 @@ import javax.swing.Timer
 class ModernClipCraftDialog(
     project: Project,
     private val initialContent: String,
-    private val estimatedTokens: Int
+    private val estimatedTokens: Int,
 ) : DialogWrapper(project) {
 
     private val previewArea: JBTextArea
@@ -94,13 +92,21 @@ class ModernClipCraftDialog(
                 // Modern gradient (theme-aware)
                 val gradient = if (JBColor.isBright()) {
                     GradientPaint(
-                        0f, 0f, Color(102, 126, 234),
-                        width.toFloat(), height.toFloat(), Color(118, 75, 162)
+                        0f,
+                        0f,
+                        Color(102, 126, 234),
+                        width.toFloat(),
+                        height.toFloat(),
+                        Color(118, 75, 162),
                     )
                 } else {
                     GradientPaint(
-                        0f, 0f, Color(66, 86, 174),
-                        width.toFloat(), height.toFloat(), Color(78, 55, 122)
+                        0f,
+                        0f,
+                        Color(66, 86, 174),
+                        width.toFloat(),
+                        height.toFloat(),
+                        Color(78, 55, 122),
                     )
                 }
 
@@ -154,25 +160,31 @@ class ModernClipCraftDialog(
 
             // Format selection
             val formatPanel = JPanel(FlowLayout(FlowLayout.LEFT, 10, 5)).apply {
-                add(JLabel("Output Format:").apply {
-                    font = Font(font.family, Font.BOLD, 12)
-                })
+                add(
+                    JLabel("Output Format:").apply {
+                        font = Font(font.family, Font.BOLD, 12)
+                    },
+                )
                 add(formatComboBox)
             }
 
             // Preset selection
             val presetPanel = JPanel(FlowLayout(FlowLayout.LEFT, 10, 5)).apply {
-                add(JLabel("Quick Preset:").apply {
-                    font = Font(font.family, Font.BOLD, 12)
-                })
+                add(
+                    JLabel("Quick Preset:").apply {
+                        font = Font(font.family, Font.BOLD, 12)
+                    },
+                )
                 add(presetComboBox)
             }
 
             // Token info
             val tokenPanel = JPanel(FlowLayout(FlowLayout.LEFT, 10, 5)).apply {
-                add(JLabel("Estimated Tokens:").apply {
-                    font = Font(font.family, Font.BOLD, 12)
-                })
+                add(
+                    JLabel("Estimated Tokens:").apply {
+                        font = Font(font.family, Font.BOLD, 12)
+                    },
+                )
                 add(tokenLabel)
             }
 
@@ -186,7 +198,7 @@ class ModernClipCraftDialog(
         return JBScrollPane(previewArea).apply {
             border = BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Preview (Click anywhere to copy)"),
-                JBUI.Borders.empty(10)
+                JBUI.Borders.empty(10),
             )
 
             // Universal copy-on-click
@@ -344,7 +356,7 @@ class ModernClipCraftDialog(
             this.contentPane,
             "Content copied to clipboard!",
             "Success",
-            JOptionPane.INFORMATION_MESSAGE
+            JOptionPane.INFORMATION_MESSAGE,
         )
     }
 

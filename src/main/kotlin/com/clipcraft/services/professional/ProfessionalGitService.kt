@@ -5,7 +5,6 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
-import org.eclipse.jgit.treewalk.TreeWalk
 import java.io.File
 
 /**
@@ -24,7 +23,7 @@ object ProfessionalGitService {
         val commitDate: String,
         val isDirty: Boolean,
         val remoteUrl: String?,
-        val tags: List<String>
+        val tags: List<String>,
     )
 
     /**
@@ -79,7 +78,7 @@ object ProfessionalGitService {
                     commitDate = commitDate,
                     isDirty = isDirty,
                     remoteUrl = remoteUrl,
-                    tags = tags
+                    tags = tags,
                 )
             }
         } catch (e: Exception) {

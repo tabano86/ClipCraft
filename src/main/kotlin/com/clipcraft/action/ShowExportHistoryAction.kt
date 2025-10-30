@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.DumbAwareAction
-import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import java.awt.BorderLayout
@@ -126,7 +125,7 @@ class ShowExportHistoryAction : DumbAwareAction() {
                 dialog,
                 "Are you sure you want to clear all export history?",
                 "Clear History",
-                JOptionPane.YES_NO_OPTION
+                JOptionPane.YES_NO_OPTION,
             )
             if (result == JOptionPane.YES_OPTION) {
                 historyService.clearHistory()
@@ -210,7 +209,7 @@ class ShowExportHistoryAction : DumbAwareAction() {
                 font = java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12)
             },
             "Export Details",
-            JOptionPane.INFORMATION_MESSAGE
+            JOptionPane.INFORMATION_MESSAGE,
         )
     }
 
@@ -238,7 +237,7 @@ class ShowExportHistoryAction : DumbAwareAction() {
                 font = java.awt.Font("Monospaced", java.awt.Font.PLAIN, 14)
             },
             "Export Statistics",
-            JOptionPane.INFORMATION_MESSAGE
+            JOptionPane.INFORMATION_MESSAGE,
         )
     }
 
@@ -257,7 +256,7 @@ class ShowExportHistoryAction : DumbAwareAction() {
             value: Any?,
             index: Int,
             isSelected: Boolean,
-            cellHasFocus: Boolean
+            cellHasFocus: Boolean,
         ): java.awt.Component {
             val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
 
@@ -267,11 +266,11 @@ class ShowExportHistoryAction : DumbAwareAction() {
                 val icon = if (value.success) "✅" else "❌"
 
                 text = "<html>" +
-                        "<b>$icon ${value.presetName ?: value.exportType}</b> " +
-                        "<span style='color: gray;'>($timestamp)</span><br>" +
-                        "<small>${value.filesExported} files • ${value.getFormattedSize()} • " +
-                        "${"%,d".format(value.estimatedTokens)} tokens • ${value.format}</small>" +
-                        "</html>"
+                    "<b>$icon ${value.presetName ?: value.exportType}</b> " +
+                    "<span style='color: gray;'>($timestamp)</span><br>" +
+                    "<small>${value.filesExported} files • ${value.getFormattedSize()} • " +
+                    "${"%,d".format(value.estimatedTokens)} tokens • ${value.format}</small>" +
+                    "</html>"
             }
 
             return component

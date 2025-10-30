@@ -14,8 +14,6 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAwareAction
-import com.intellij.openapi.vfs.VirtualFileWrapper
-import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Paths
 import java.util.zip.ZipEntry
@@ -40,7 +38,12 @@ class ExportToFileAction : DumbAwareAction() {
         val descriptor = FileSaverDescriptor(
             "Export to File",
             "Choose where to save the export",
-            "md", "txt", "xml", "json", "html", "zip"
+            "md",
+            "txt",
+            "xml",
+            "json",
+            "html",
+            "zip",
         )
 
         val fileChooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
@@ -73,7 +76,7 @@ class ExportToFileAction : DumbAwareAction() {
             includeTimestamp = true,
             includeTableOfContents = true,
             includeStatistics = true,
-            groupByDirectory = true
+            groupByDirectory = true,
         )
 
         ProgressManager.getInstance().run(
@@ -88,12 +91,12 @@ class ExportToFileAction : DumbAwareAction() {
                                 files.forEachIndexed { index, virtualFile ->
                                     indicator.fraction = index.toDouble() / files.size
                                     indicator.text = "Processing ${virtualFile.name}..."
-                                    
+
                                     if (virtualFile.isDirectory) return@forEachIndexed
-                                    
+
                                     val relativePath = virtualFile.path.removePrefix(projectBasePath.toString())
                                         .removePrefix("/").removePrefix("\\")
-                                    
+
                                     val entry = ZipEntry(relativePath)
                                     zipOut.putNextEntry(entry)
                                     zipOut.write(virtualFile.contentsToByteArray())
@@ -102,18 +105,22 @@ class ExportToFileAction : DumbAwareAction() {
                             }
                             NotificationService.showSuccess(
                                 project,
-                                "ClipCraft: Exported ${files.size} files to ${outputFile.name}"
+                                "ClipCraft: Exported ${files.size} files to ${outputFile.name}",
                             )
                         } catch (ex: Exception) {
                             NotificationService.showWarning(
                                 project,
-                                "ClipCraft: Failed to create ZIP: ${ex.message}"
+                                "ClipCraft: Failed to create ZIP: ${ex.message}",
                             )
                         }
                     } else {
                         // Standard export to single file
                         val result = EnhancedFileProcessingService.processFiles(
-                            project, files, options, projectBasePath, indicator
+                            project,
+                            files,
+                            options,
+                            projectBasePath,
+                            indicator,
                         )
 
                         if (result.content.isBlank()) {
@@ -125,17 +132,17 @@ class ExportToFileAction : DumbAwareAction() {
                             outputFile.writeText(result.content)
                             NotificationService.showSuccess(
                                 project,
-                                "ClipCraft: Exported ${result.metadata.filesProcessed} files to ${outputFile.name}"
+                                "ClipCraft: Exported ${result.metadata.filesProcessed} files to ${outputFile.name}",
                             )
                         } catch (ex: Exception) {
                             NotificationService.showWarning(
                                 project,
-                                "ClipCraft: Failed to write file: ${ex.message}"
+                                "ClipCraft: Failed to write file: ${ex.message}",
                             )
                         }
                     }
                 }
-            }
+            },
         )
     }
 }

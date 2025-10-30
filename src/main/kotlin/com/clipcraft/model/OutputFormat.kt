@@ -9,5 +9,5 @@ enum class OutputFormat(val displayName: String, val fileExtension: String) {
     HTML("HTML", "html"),
     CLAUDE_OPTIMIZED("Claude-Optimized", "md"),
     CHATGPT_OPTIMIZED("ChatGPT-Optimized", "md"),
-    GEMINI_OPTIMIZED("Gemini-Optimized", "md")
+    GEMINI_OPTIMIZED("Gemini-Optimized", "md"),
 }

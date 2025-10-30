@@ -55,7 +55,7 @@ data class ExportOptions(
 
     // File grouping
     val groupByDirectory: Boolean = true,
-    val sortFiles: FileSortOrder = FileSortOrder.PATH_ALPHABETICAL
+    val sortFiles: FileSortOrder = FileSortOrder.PATH_ALPHABETICAL,
 )
 
 enum class ChunkStrategy {
@@ -63,14 +63,14 @@ enum class ChunkStrategy {
     BY_FILE_COUNT,
     BY_DIRECTORY,
     BY_FILE_TYPE,
-    SMART
+    SMART,
 }
 
 enum class PathFormat {
     RELATIVE,
     ABSOLUTE,
     PROJECT_RELATIVE,
-    CUSTOM
+    CUSTOM,
 }
 
 enum class FileSortOrder {
@@ -79,5 +79,5 @@ enum class FileSortOrder {
     SIZE_ASCENDING,
     SIZE_DESCENDING,
     MODIFIED_DATE,
-    EXTENSION
+    EXTENSION,
 }

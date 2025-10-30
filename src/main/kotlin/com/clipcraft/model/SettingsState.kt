@@ -86,7 +86,7 @@ data class SettingsState(
     // Chunking options
     var enableChunking: Boolean = false,
     var maxTokens: Int = 100000,
-    var chunkStrategy: String = "BY_SIZE"
+    var chunkStrategy: String = "BY_SIZE",
 ) {
     fun toExportOptions(): ExportOptions {
         return ExportOptions(
@@ -113,7 +113,7 @@ data class SettingsState(
                 ChunkStrategy.valueOf(chunkStrategy)
             } catch (e: Exception) {
                 ChunkStrategy.BY_SIZE
-            }
+            },
         )
     }
 }

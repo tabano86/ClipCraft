@@ -9,7 +9,7 @@ data class ExportPreset(
     val maxFileSizeKb: Int = 2048,
     val includeLineNumbers: Boolean = false,
     val stripComments: Boolean = false,
-    val includeMetadata: Boolean = true
+    val includeMetadata: Boolean = true,
 ) {
     companion object {
         val AI_LLM_PRESET = ExportPreset(
@@ -46,7 +46,7 @@ data class ExportPreset(
             outputFormat = OutputFormat.CLAUDE_OPTIMIZED,
             maxFileSizeKb = 512,
             stripComments = false,
-            includeMetadata = true
+            includeMetadata = true,
         )
 
         val DOCUMENTATION_PRESET = ExportPreset(
@@ -68,7 +68,7 @@ data class ExportPreset(
                 **/dist/**
             """.trimIndent(),
             outputFormat = OutputFormat.MARKDOWN_WITH_TOC,
-            maxFileSizeKb = 4096
+            maxFileSizeKb = 4096,
         )
 
         val CODE_REVIEW_PRESET = ExportPreset(
@@ -105,7 +105,7 @@ data class ExportPreset(
             """.trimIndent(),
             outputFormat = OutputFormat.MARKDOWN,
             maxFileSizeKb = 2048,
-            includeLineNumbers = true
+            includeLineNumbers = true,
         )
 
         val FULL_PROJECT_PRESET = ExportPreset(
@@ -127,7 +127,7 @@ data class ExportPreset(
                 **/*.so
             """.trimIndent(),
             outputFormat = OutputFormat.MARKDOWN_WITH_TOC,
-            maxFileSizeKb = 4096
+            maxFileSizeKb = 4096,
         )
 
         val TEST_FILES_PRESET = ExportPreset(
@@ -149,7 +149,7 @@ data class ExportPreset(
                 **/node_modules/**
             """.trimIndent(),
             outputFormat = OutputFormat.MARKDOWN,
-            maxFileSizeKb = 2048
+            maxFileSizeKb = 2048,
         )
 
         fun getAllPresets() = listOf(
@@ -157,7 +157,7 @@ data class ExportPreset(
             DOCUMENTATION_PRESET,
             CODE_REVIEW_PRESET,
             FULL_PROJECT_PRESET,
-            TEST_FILES_PRESET
+            TEST_FILES_PRESET,
         )
     }
 }

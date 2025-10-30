@@ -25,9 +25,8 @@ object EnhancedFileProcessingService {
         initialSelection: List<VirtualFile>,
         options: ExportOptions,
         projectBasePath: Path,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ): ProfessionalFormatter.FormattedOutput {
-
         indicator.text = "Collecting files..."
         val distinctFiles = collectDistinctFiles(initialSelection)
 
@@ -42,7 +41,9 @@ object EnhancedFileProcessingService {
 
         val gitInfo = if (options.includeGitInfo) {
             ProfessionalGitService.getGitInfo(project)
-        } else null
+        } else {
+            null
+        }
 
         val metadata = ProfessionalFormatter.MetadataInfo(
             exportTime = ProfessionalFormatter.getCurrentTimestamp(),
@@ -51,12 +52,12 @@ object EnhancedFileProcessingService {
             totalBytes = totalBytes,
             estimatedTokens = totalTokens,
             gitBranch = gitInfo?.branch,
-            gitCommit = gitInfo?.commitHashShort
+            gitCommit = gitInfo?.commitHashShort,
         )
 
         val exportData = ProfessionalFormatter.ExportData(
             metadata = metadata,
-            files = fileInfos
+            files = fileInfos,
         )
 
         indicator.text = "Formatting output..."
@@ -75,7 +76,7 @@ object EnhancedFileProcessingService {
             filesProcessed = fileInfos.size,
             filesSkipped = distinctFiles.size - fileInfos.size,
             totalBytes = totalBytes,
-            estimatedTokens = totalTokens
+            estimatedTokens = totalTokens,
         )
 
         return ProfessionalFormatter.FormattedOutput(content, formattedMetadata)
@@ -101,9 +102,8 @@ object EnhancedFileProcessingService {
         files: List<VirtualFile>,
         options: ExportOptions,
         projectBasePath: Path,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ): List<VirtualFile> {
-
         val includePatterns = options.includeGlobs.lines().filter { it.isNotBlank() }
         val excludePatterns = options.excludeGlobs.lines().filter { it.isNotBlank() }
 
@@ -146,9 +146,8 @@ object EnhancedFileProcessingService {
         files: List<VirtualFile>,
         options: ExportOptions,
         projectBasePath: Path,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ): List<ProfessionalFormatter.FileInfo> {
-
         val fileInfos = mutableListOf<ProfessionalFormatter.FileInfo>()
 
         files.forEachIndexed { index, file ->
@@ -187,10 +186,9 @@ object EnhancedFileProcessingService {
                         content = content,
                         lineCount = lineCount,
                         byteSize = file.length,
-                        tokens = tokens
-                    )
+                        tokens = tokens,
+                    ),
                 )
-
             } catch (e: IOException) {
                 // Skip files that can't be read
             }

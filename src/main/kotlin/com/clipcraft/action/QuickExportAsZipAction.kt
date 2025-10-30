@@ -42,7 +42,7 @@ class QuickExportAsZipAction : DumbAwareAction() {
         val descriptor = FileSaverDescriptor(
             "Export as ZIP",
             "Choose where to save the ZIP archive",
-            "zip"
+            "zip",
         )
 
         val fileChooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
@@ -86,16 +86,16 @@ class QuickExportAsZipAction : DumbAwareAction() {
                         }
                         NotificationService.showSuccess(
                             project,
-                            "✓ Exported ${allFiles.size} files to ${outputFile.name}"
+                            "✓ Exported ${allFiles.size} files to ${outputFile.name}",
                         )
                     } catch (ex: Exception) {
                         NotificationService.showWarning(
                             project,
-                            "ClipCraft: Failed to create ZIP: ${ex.message}"
+                            "ClipCraft: Failed to create ZIP: ${ex.message}",
                         )
                     }
                 }
-            }
+            },
         )
     }
 }

@@ -48,7 +48,7 @@ class CopyProjectForAIAction : DumbAwareAction() {
             includeTableOfContents = true,
             includeStatistics = true,
             groupByDirectory = true,
-            includeLineNumbers = false
+            includeLineNumbers = false,
         )
 
         ProgressManager.getInstance().run(
@@ -57,7 +57,11 @@ class CopyProjectForAIAction : DumbAwareAction() {
                     indicator.isIndeterminate = false
 
                     val result = EnhancedFileProcessingService.processFiles(
-                        project, listOf(projectRoot), options, projectBasePath, indicator
+                        project,
+                        listOf(projectRoot),
+                        options,
+                        projectBasePath,
+                        indicator,
                     )
 
                     if (result.content.isBlank()) {
@@ -76,16 +80,16 @@ class CopyProjectForAIAction : DumbAwareAction() {
                         estimatedTokens = result.metadata.estimatedTokens,
                         presetName = "AI Optimized",
                         exportedPaths = listOf(project.basePath ?: ""),
-                        preview = result.content
+                        preview = result.content,
                     )
                     ExportHistoryService.getInstance().addEntry(historyEntry)
 
                     NotificationService.showSuccess(
                         project,
-                        "✓ Copied ${result.metadata.filesProcessed} files - Ready for AI!"
+                        "✓ Copied ${result.metadata.filesProcessed} files - Ready for AI!",
                     )
                 }
-            }
+            },
         )
     }
 }

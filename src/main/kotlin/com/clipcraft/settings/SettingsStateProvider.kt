@@ -9,7 +9,7 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 
 @State(
     name = "com.clipcraft.settings.SettingsState",
-    storages = [Storage("clipCraftSettings.xml")]
+    storages = [Storage("clipCraftSettings.xml")],
 )
 class SettingsStateProvider : PersistentStateComponent<SettingsState> {
 

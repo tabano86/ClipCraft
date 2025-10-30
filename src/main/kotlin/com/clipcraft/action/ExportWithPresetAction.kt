@@ -42,7 +42,7 @@ class ExportWithPresetAction : DumbAwareAction() {
                 value: Any?,
                 index: Int,
                 isSelected: Boolean,
-                cellHasFocus: Boolean
+                cellHasFocus: Boolean,
             ) = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus).apply {
                 if (index >= 0 && index < presets.size) {
                     val preset = presets[index]
@@ -69,7 +69,7 @@ class ExportWithPresetAction : DumbAwareAction() {
         project: com.intellij.openapi.project.Project,
         files: List<com.intellij.openapi.vfs.VirtualFile>,
         preset: ExportPreset,
-        projectBasePath: java.nio.file.Path
+        projectBasePath: java.nio.file.Path,
     ) {
         val options = ExportOptions(
             includeGlobs = preset.includeGlobs,
@@ -82,7 +82,7 @@ class ExportWithPresetAction : DumbAwareAction() {
             includeGitInfo = true,
             includeTimestamp = true,
             includeStatistics = true,
-            groupByDirectory = true
+            groupByDirectory = true,
         )
 
         ProgressManager.getInstance().run(
@@ -91,7 +91,11 @@ class ExportWithPresetAction : DumbAwareAction() {
                     indicator.isIndeterminate = false
 
                     val result = EnhancedFileProcessingService.processFiles(
-                        project, files, options, projectBasePath, indicator
+                        project,
+                        files,
+                        options,
+                        projectBasePath,
+                        indicator,
                     )
 
                     if (result.content.isBlank()) {
@@ -102,10 +106,10 @@ class ExportWithPresetAction : DumbAwareAction() {
                     ClipboardService.copyToClipboard(result.content)
                     NotificationService.showSuccess(
                         project,
-                        "ClipCraft: Exported ${result.metadata.filesProcessed} files with ${preset.name} preset"
+                        "ClipCraft: Exported ${result.metadata.filesProcessed} files with ${preset.name} preset",
                     )
                 }
-            }
+            },
         )
     }
 }

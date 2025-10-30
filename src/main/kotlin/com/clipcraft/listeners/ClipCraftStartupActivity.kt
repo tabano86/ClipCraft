@@ -13,16 +13,16 @@ import com.intellij.openapi.util.registry.Registry
  * Shows a helpful welcome notification when ClipCraft is first installed
  */
 class ClipCraftStartupActivity : StartupActivity {
-    
+
     override fun runActivity(project: Project) {
         val shownBefore = Registry.`is`("clipcraft.welcome.shown", false)
-        
+
         if (!shownBefore) {
             showWelcomeNotification(project)
             Registry.get("clipcraft.welcome.shown").setValue(true)
         }
     }
-    
+
     private fun showWelcomeNotification(project: Project) {
         val notification = NotificationGroupManager.getInstance()
             .getNotificationGroup("ClipCraft notifications")
@@ -38,9 +38,9 @@ class ClipCraftStartupActivity : StartupActivity {
                 
                 No configuration needed - it just works! 🚀
                 """.trimIndent(),
-                NotificationType.INFORMATION
+                NotificationType.INFORMATION,
             )
-        
+
         notification.addAction(object : NotificationAction("View All Shortcuts") {
             override fun actionPerformed(e: AnActionEvent, notification: Notification) {
                 val shortcutsNotification = NotificationGroupManager.getInstance()
@@ -60,19 +60,19 @@ class ClipCraftStartupActivity : StartupActivity {
                         • Ctrl+Alt+F - Export to file
                         • Ctrl+Alt+Z - Export as ZIP
                         """.trimIndent(),
-                        NotificationType.INFORMATION
+                        NotificationType.INFORMATION,
                     )
                 shortcutsNotification.notify(project)
                 notification.expire()
             }
         })
-        
+
         notification.addAction(object : NotificationAction("Got it!") {
             override fun actionPerformed(e: AnActionEvent, notification: Notification) {
                 notification.expire()
             }
         })
-        
+
         notification.notify(project)
     }
 }

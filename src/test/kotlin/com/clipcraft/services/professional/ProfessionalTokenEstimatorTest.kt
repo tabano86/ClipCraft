@@ -1,9 +1,8 @@
 package com.clipcraft.services.professional
 
-import com.knuddels.jtokkit.api.EncodingType
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 
@@ -39,7 +38,7 @@ class ProfessionalTokenEstimatorTest {
     @CsvSource(
         "'Hello', 1, 3",
         "'Hello world', 2, 4",
-        "'The quick brown fox', 4, 6"
+        "'The quick brown fox', 4, 6",
     )
     @DisplayName("Should count tokens within expected range")
     fun `test token range for common phrases`(text: String, minTokens: Int, maxTokens: Int) {
@@ -56,7 +55,7 @@ class ProfessionalTokenEstimatorTest {
         assertThat(compatible).contains(
             ProfessionalTokenEstimator.AIModel.GPT_4,
             ProfessionalTokenEstimator.AIModel.GPT_4_32K,
-            ProfessionalTokenEstimator.AIModel.CLAUDE_3_OPUS
+            ProfessionalTokenEstimator.AIModel.CLAUDE_3_OPUS,
         )
     }
 
@@ -68,11 +67,11 @@ class ProfessionalTokenEstimatorTest {
 
         assertThat(compatible).containsAnyOf(
             ProfessionalTokenEstimator.AIModel.GPT_4_32K,
-            ProfessionalTokenEstimator.AIModel.CLAUDE_3_OPUS
+            ProfessionalTokenEstimator.AIModel.CLAUDE_3_OPUS,
         )
 
         assertThat(compatible).doesNotContain(
-            ProfessionalTokenEstimator.AIModel.GPT_4
+            ProfessionalTokenEstimator.AIModel.GPT_4,
         )
     }
 
@@ -99,7 +98,7 @@ class ProfessionalTokenEstimatorTest {
         val smallText = "Hello world"
         val fitsGPT4 = ProfessionalTokenEstimator.fitsInContextWindow(
             smallText,
-            ProfessionalTokenEstimator.AIModel.GPT_4
+            ProfessionalTokenEstimator.AIModel.GPT_4,
         )
 
         assertThat(fitsGPT4).isTrue()

@@ -40,7 +40,7 @@ class QuickExportProjectAction : DumbAwareAction() {
             includeTimestamp = true,
             includeTableOfContents = true,
             includeStatistics = true,
-            groupByDirectory = true
+            groupByDirectory = true,
         )
 
         ProgressManager.getInstance().run(
@@ -49,7 +49,11 @@ class QuickExportProjectAction : DumbAwareAction() {
                     indicator.isIndeterminate = false
 
                     val result = EnhancedFileProcessingService.processFiles(
-                        project, listOf(projectDir), options, projectBasePath, indicator
+                        project,
+                        listOf(projectDir),
+                        options,
+                        projectBasePath,
+                        indicator,
                     )
 
                     if (result.content.isBlank()) {
@@ -61,10 +65,10 @@ class QuickExportProjectAction : DumbAwareAction() {
                     NotificationService.showSuccess(
                         project,
                         "ClipCraft: Exported ${result.metadata.filesProcessed} files " +
-                                "(${result.metadata.estimatedTokens} tokens)"
+                            "(${result.metadata.estimatedTokens} tokens)",
                     )
                 }
-            }
+            },
         )
     }
 }

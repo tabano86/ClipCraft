@@ -38,7 +38,11 @@ class ClipCraftAction : DumbAwareAction() {
                     indicator.isIndeterminate = false
 
                     val result = EnhancedFileProcessingService.processFiles(
-                        project, files, options, projectBasePath, indicator
+                        project,
+                        files,
+                        options,
+                        projectBasePath,
+                        indicator,
                     )
 
                     if (result.content.isBlank()) {
@@ -58,7 +62,7 @@ class ClipCraftAction : DumbAwareAction() {
 
                     NotificationService.showSuccess(project, finalMsg)
                 }
-            }
+            },
         )
     }
 }

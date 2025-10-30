@@ -27,7 +27,7 @@ object ProfessionalTokenEstimator {
         CLAUDE_3_SONNET("claude-3-sonnet", 200000, EncodingType.CL100K_BASE),
         CLAUDE_3_HAIKU("claude-3-haiku", 200000, EncodingType.CL100K_BASE),
         GEMINI_PRO("gemini-pro", 32760, EncodingType.CL100K_BASE),
-        GEMINI_ULTRA("gemini-ultra", 32760, EncodingType.CL100K_BASE)
+        GEMINI_ULTRA("gemini-ultra", 32760, EncodingType.CL100K_BASE),
     }
 
     /**

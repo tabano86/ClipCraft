@@ -5,12 +5,12 @@ import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.SettingsState
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.builder.bindText
-import com.intellij.ui.dsl.builder.bindSelected
-import com.intellij.ui.dsl.builder.bindItem
-import com.intellij.ui.dsl.builder.rows
 import com.intellij.ui.dsl.builder.bindIntText
+import com.intellij.ui.dsl.builder.bindItem
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.rows
 import javax.swing.JComponent
 
 class EnhancedClipCraftConfigurable : Configurable {
@@ -54,7 +54,7 @@ class EnhancedClipCraftConfigurable : Configurable {
                     comboBox(OutputFormat.values().toList())
                         .bindItem(
                             { try { OutputFormat.valueOf(newUiState.defaultOutputFormat) } catch (e: Exception) { OutputFormat.MARKDOWN } },
-                            { newUiState.defaultOutputFormat = it?.name ?: "MARKDOWN" }
+                            { newUiState.defaultOutputFormat = it?.name ?: "MARKDOWN" },
                         )
                 }
 
@@ -121,7 +121,7 @@ class EnhancedClipCraftConfigurable : Configurable {
                     comboBox(ChunkStrategy.values().toList())
                         .bindItem(
                             { try { ChunkStrategy.valueOf(newUiState.chunkStrategy) } catch (e: Exception) { ChunkStrategy.BY_SIZE } },
-                            { newUiState.chunkStrategy = it?.name ?: "BY_SIZE" }
+                            { newUiState.chunkStrategy = it?.name ?: "BY_SIZE" },
                         )
                 }
             }
@@ -136,7 +136,7 @@ class EnhancedClipCraftConfigurable : Configurable {
                         <li><b>Export with Presets:</b> Select files → ClipCraft → Export with Preset</li>
                         <li><b>Export to File:</b> Select files → ClipCraft → Export to File</li>
                         </ul>
-                        """.trimIndent()
+                        """.trimIndent(),
                     )
                 }
             }

@@ -22,7 +22,7 @@ class ProfessionalFormatterTest {
                 totalBytes = 1024L,
                 estimatedTokens = 500,
                 gitBranch = "main",
-                gitCommit = "abc123"
+                gitCommit = "abc123",
             ),
             files = listOf(
                 ProfessionalFormatter.FileInfo(
@@ -31,7 +31,7 @@ class ProfessionalFormatterTest {
                     content = "fun main() { println(\"Hello\") }",
                     lineCount = 1,
                     byteSize = 34L,
-                    tokens = 10
+                    tokens = 10,
                 ),
                 ProfessionalFormatter.FileInfo(
                     path = "src/Utils.kt",
@@ -39,9 +39,9 @@ class ProfessionalFormatterTest {
                     content = "fun util() { }",
                     lineCount = 1,
                     byteSize = 14L,
-                    tokens = 5
-                )
-            )
+                    tokens = 5,
+                ),
+            ),
         )
     }
 
@@ -112,7 +112,7 @@ class ProfessionalFormatterTest {
         val markdown = ProfessionalFormatter.toMarkdown(
             sampleData,
             includeMetadata = true,
-            includeToc = true
+            includeToc = true,
         )
 
         assertThat(markdown).contains("## Table of Contents")
@@ -154,7 +154,7 @@ class ProfessionalFormatterTest {
         assertThat(plainText).contains("CODE EXPORT")
         assertThat(plainText).contains("TestProject")
         assertThat(plainText).contains("FILE: src/Main.kt")
-        assertThat(plainText).contains("=" .repeat(80)) // Separator
+        assertThat(plainText).contains("=".repeat(80)) // Separator
     }
 
     @Test
@@ -190,9 +190,9 @@ class ProfessionalFormatterTest {
                     content = "val quote = \"Hello & goodbye <tag>\"",
                     lineCount = 1,
                     byteSize = 36L,
-                    tokens = 10
-                )
-            )
+                    tokens = 10,
+                ),
+            ),
         )
 
         val json = ProfessionalFormatter.toJson(specialData)

@@ -47,7 +47,7 @@ object ProfessionalFormatter {
 
     data class ExportData(
         val metadata: MetadataInfo,
-        val files: List<FileInfo>
+        val files: List<FileInfo>,
     )
 
     data class MetadataInfo(
@@ -57,7 +57,7 @@ object ProfessionalFormatter {
         val totalBytes: Long,
         val estimatedTokens: Int,
         val gitBranch: String?,
-        val gitCommit: String?
+        val gitCommit: String?,
     )
 
     data class FileInfo(
@@ -66,19 +66,19 @@ object ProfessionalFormatter {
         val content: String,
         val lineCount: Int,
         val byteSize: Long,
-        val tokens: Int?
+        val tokens: Int?,
     )
 
     data class FormattedOutput(
         val content: String,
-        val metadata: FormattedMetadata
+        val metadata: FormattedMetadata,
     )
 
     data class FormattedMetadata(
         val filesProcessed: Int,
         val filesSkipped: Int,
         val totalBytes: Long,
-        val estimatedTokens: Int
+        val estimatedTokens: Int,
     )
 
     /**
@@ -159,7 +159,8 @@ object ProfessionalFormatter {
      * Export to HTML using JSoup for professional structure.
      */
     fun toHtml(data: ExportData, includeMetadata: Boolean = true): String {
-        val doc: Document = Jsoup.parse("""
+        val doc: Document = Jsoup.parse(
+            """
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -335,7 +336,8 @@ object ProfessionalFormatter {
                 </div>
             </body>
             </html>
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val container = doc.select(".container").first()!!
 
@@ -349,7 +351,7 @@ object ProfessionalFormatter {
                 "Total Size" to formatBytes(data.metadata.totalBytes),
                 "Estimated Tokens" to ProfessionalTokenEstimator.formatTokenCount(data.metadata.estimatedTokens),
                 "Git Branch" to data.metadata.gitBranch,
-                "Git Commit" to data.metadata.gitCommit
+                "Git Commit" to data.metadata.gitCommit,
             ).filter { it.second != null }
 
             metadataItems.forEach { (label, value) ->
@@ -393,7 +395,7 @@ object ProfessionalFormatter {
     fun toPlainText(data: ExportData, includeMetadata: Boolean = true): String {
         return buildString {
             if (includeMetadata) {
-                appendLine("=" .repeat(80))
+                appendLine("=".repeat(80))
                 appendLine("CODE EXPORT - ${data.metadata.projectName ?: "Untitled"}")
                 appendLine("=".repeat(80))
                 appendLine()

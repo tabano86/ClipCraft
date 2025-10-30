@@ -222,7 +222,7 @@ idea --export-clipcraft --preset=documentation --output=docs/export.md
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourorg/clipcraft.git
+git clone https://github.com/tabano86/ClipCraft.git
 cd clipcraft
 ./gradlew build
 ```

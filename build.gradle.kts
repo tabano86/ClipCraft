@@ -58,20 +58,75 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        // Example: Target IntelliJ IDEA Community 2023.3
         intellijIdeaCommunity("2023.3")
         bundledPlugin("com.intellij.java")
+        bundledPlugin("Git4Idea")
         testFramework(TestFrameworkType.Platform)
         pluginVerifier()
         zipSigner()
     }
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-    implementation("org.apache.commons:commons-text:1.13.0")
-    implementation("org.apache.commons:commons-lang3:3.17.0")
+    // JSON/XML/YAML Processing - Industry Standard
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.18.2")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2")
 
-    testImplementation("junit:junit:4.13.2")
+    // Markdown Processing - Industry Standard
+    implementation("org.commonmark:commonmark:0.22.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.22.0")
+    implementation("org.commonmark:commonmark-ext-heading-anchor:0.22.0")
+    implementation("org.commonmark:commonmark-ext-yaml-front-matter:0.22.0")
+
+    // AI Token Counting - Use tiktoken
+    implementation("com.knuddels:jtokkit:1.1.0")
+
+    // Utilities - Google Guava (battle-tested)
+    implementation("com.google.guava:guava:33.3.1-jre")
+
+    // Path Matching - Use Spring's PathMatcher (rock-solid)
+    implementation("org.springframework:spring-core:6.2.1") {
+        exclude(group = "org.springframework", module = "spring-jcl")
+    }
+
+    // YAML Processing
+    implementation("org.yaml:snakeyaml:2.3")
+
+    // Git Integration - JGit (don't reinvent git)
+    implementation("org.eclipse.jgit:org.eclipse.jgit:7.1.0.202411261347-r")
+
+    // Gitignore Parsing
+    implementation("org.eclipse.jgit:org.eclipse.jgit.pgm:7.1.0.202411261347-r")
+
+    // Secret Detection - Use Yelp's detect-secrets patterns
+    implementation("com.github.mavenreposs:detect-secrets:1.0.3")
+
+    // Compression for large exports
+    implementation("org.apache.commons:commons-compress:1.27.1")
+
+    // Fast JSON for simple cases
+    implementation("com.google.code.gson:gson:2.11.0")
+
+    // HTML generation
+    implementation("org.jsoup:jsoup:1.18.3")
+
+    // Modern UI - FlatLaf themes
+    implementation("com.formdev:flatlaf:3.5.5")
+    implementation("com.formdev:flatlaf-extras:3.5.5")
+    implementation("com.formdev:flatlaf-intellij-themes:3.5.5")
+
+    // Kotlin coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
+
+    // Testing - Modern stack
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.11.4")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+    testImplementation("io.mockk:mockk:1.13.14")
+    testImplementation("org.assertj:assertj-core:3.27.3")
+    testImplementation("com.google.truth:truth:1.4.4")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
 }
 

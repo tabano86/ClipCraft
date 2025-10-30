@@ -16,11 +16,12 @@
 
     <h3>🚀 Key Features</h3>
     <ul>
+        <li><b>⚡ Super Simple:</b> One-click "Copy for AI" - No dialogs, no configuration, instant results!</li>
+        <li><b>8 Keyboard Shortcuts:</b> Lightning-fast access to all features</li>
         <li><b>Multiple Export Formats:</b> Markdown, XML, JSON, HTML, Plain Text, ZIP archives</li>
         <li><b>AI-Optimized:</b> Claude, ChatGPT, and Gemini optimized formats with token estimation</li>
         <li><b>Smart Presets:</b> AI/LLM, Documentation, Code Review, Full Project, Test Files</li>
         <li><b>Export Options:</b> Copy to clipboard, save to file, or export as ZIP</li>
-        <li><b>Keyboard Shortcuts:</b> 6 quick keyboard shortcuts for instant access</li>
         <li><b>Advanced Filtering:</b> Glob patterns, regex, .gitignore support, file size limits</li>
         <li><b>Token Estimation:</b> Know exactly how much context you're using</li>
         <li><b>Smart Chunking:</b> Automatically split large exports for AI context windows</li>
@@ -37,12 +38,14 @@
         <li><b>Tools menu:</b> Tools → ClipCraft</li>
         <li><b>Keyboard shortcuts:</b>
             <ul>
-                <li>Ctrl+Alt+C: Copy as Markdown</li>
-                <li>Ctrl+Alt+E: Quick Export Current File</li>
-                <li>Ctrl+Alt+Shift+E: Quick Export Project</li>
+                <li>⚡ Ctrl+Alt+C: Copy File for AI (Simple, no dialogs!)</li>
+                <li>⚡ Ctrl+Alt+Shift+C: Copy Project for AI (Simple, no dialogs!)</li>
+                <li>Ctrl+Alt+M: Copy as Markdown</li>
+                <li>Ctrl+Alt+E: Export Current File</li>
+                <li>Ctrl+Alt+Shift+E: Export Project</li>
                 <li>Ctrl+Alt+P: Export with Preset</li>
                 <li>Ctrl+Alt+F: Export to File</li>
-                <li>Ctrl+Alt+Z: Quick Export as ZIP</li>
+                <li>Ctrl+Alt+Z: Export as ZIP</li>
             </ul>
         </li>
         <li><b>Settings:</b> Configure presets in Settings → Tools → ClipCraft Settings</li>
@@ -69,6 +72,7 @@
                 id="com.clipcraft.settings.EnhancedClipCraftConfigurable"
                 key="settings.displayName"/>
         <notificationGroup id="ClipCraft notifications" displayType="BALLOON" key="notification.group.name"/>
+        <postStartupActivity implementation="com.clipcraft.listeners.ClipCraftStartupActivity"/>
     </extensions>
 
     <actions>
@@ -84,37 +88,52 @@
             <add-to-group group-id="FavoritesViewPopupMenu" anchor="last"/>
             <add-to-group group-id="NavBarToolBar" anchor="last"/>
 
-            <!-- Primary action -->
+            <!-- ⚡ SUPER SIMPLE ONE-CLICK ACTIONS ⚡ -->
             <action
-                    id="com.clipcraft.action.ClipCraftAction"
-                    class="com.clipcraft.action.ClipCraftAction"
-                    text="Copy as Markdown"
-                    description="Copy selected files as formatted Markdown to clipboard"
-                    icon="AllIcons.Actions.Copy">
-                <!-- Add keyboard shortcut for quick access -->
+                    id="com.clipcraft.action.CopyFileForAIAction"
+                    class="com.clipcraft.action.CopyFileForAIAction"
+                    text="⚡ Copy for AI (Simple)"
+                    description="One-click: Copy current file for AI - No dialogs!"
+                    icon="AllIcons.Actions.Lightning">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
+            </action>
+
+            <action
+                    id="com.clipcraft.action.CopyProjectForAIAction"
+                    class="com.clipcraft.action.CopyProjectForAIAction"
+                    text="⚡ Copy Project for AI"
+                    description="One-click: Copy entire project optimized for AI - No dialogs!"
+                    icon="AllIcons.Actions.Lightning">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift C"/>
             </action>
 
             <separator/>
 
-            <!-- Quick actions -->
+            <!-- Standard actions -->
+            <action
+                    id="com.clipcraft.action.ClipCraftAction"
+                    class="com.clipcraft.action.ClipCraftAction"
+                    text="Copy as Markdown..."
+                    description="Copy selected files as formatted Markdown (with options)"
+                    icon="AllIcons.Actions.Copy">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt M"/>
+            </action>
+
             <action
                     id="com.clipcraft.action.QuickExportCurrentFileAction"
                     class="com.clipcraft.action.QuickExportCurrentFileAction"
-                    text="Quick Export Current File"
-                    description="Quickly export the current file to clipboard"
+                    text="Export Current File..."
+                    description="Export the current file with options"
                     icon="AllIcons.Actions.QuickfixBulb">
-                <!-- Add keyboard shortcut -->
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt E"/>
             </action>
 
             <action
                     id="com.clipcraft.action.QuickExportProjectAction"
                     class="com.clipcraft.action.QuickExportProjectAction"
-                    text="Quick Export Project"
-                    description="Export entire project with AI/LLM preset"
+                    text="Export Project..."
+                    description="Export entire project with options"
                     icon="AllIcons.Nodes.Module">
-                <!-- Add keyboard shortcut -->
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift E"/>
             </action>
 
@@ -156,11 +175,28 @@
         <group id="com.clipcraft.ToolsMenuGroup" text="ClipCraft" description="ClipCraft export tools">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
 
+            <!-- Simple one-click actions first -->
+            <action
+                    id="com.clipcraft.action.CopyFileForAIActionToolsMenu"
+                    class="com.clipcraft.action.CopyFileForAIAction"
+                    text="⚡ Copy File for AI (Simple)"
+                    description="One-click: Copy current file for AI"
+                    icon="AllIcons.Actions.Lightning"/>
+
+            <action
+                    id="com.clipcraft.action.CopyProjectForAIActionToolsMenu"
+                    class="com.clipcraft.action.CopyProjectForAIAction"
+                    text="⚡ Copy Project for AI"
+                    description="One-click: Copy entire project for AI"
+                    icon="AllIcons.Actions.Lightning"/>
+
+            <separator/>
+
             <action
                     id="com.clipcraft.action.QuickExportProjectActionToolsMenu"
                     class="com.clipcraft.action.QuickExportProjectAction"
-                    text="Quick Export Project"
-                    description="Export entire project with AI/LLM preset"
+                    text="Export Project..."
+                    description="Export entire project with options"
                     icon="AllIcons.Actions.Copy"/>
 
             <action
@@ -173,8 +209,8 @@
             <action
                     id="com.clipcraft.action.QuickExportAsZipActionToolsMenu"
                     class="com.clipcraft.action.QuickExportAsZipAction"
-                    text="Quick Export as ZIP"
-                    description="Quickly export files as a ZIP archive"
+                    text="Export as ZIP..."
+                    description="Export files as a ZIP archive"
                     icon="AllIcons.FileTypes.Archive"/>
         </group>
 
@@ -182,18 +218,35 @@
         <group id="com.clipcraft.MainMenuGroup" text="ClipCraft" description="ClipCraft export tools" popup="true" icon="AllIcons.Actions.Copy">
             <add-to-group group-id="MainMenu" anchor="before" relative-to-action="ToolsMenu"/>
 
+            <!-- Simple one-click actions at the top -->
+            <action
+                    id="com.clipcraft.action.CopyFileForAIActionMainMenu"
+                    class="com.clipcraft.action.CopyFileForAIAction"
+                    text="⚡ Copy File for AI"
+                    description="One-click: Copy current file for AI"
+                    icon="AllIcons.Actions.Lightning"/>
+
+            <action
+                    id="com.clipcraft.action.CopyProjectForAIActionMainMenu"
+                    class="com.clipcraft.action.CopyProjectForAIAction"
+                    text="⚡ Copy Project for AI"
+                    description="One-click: Copy entire project for AI"
+                    icon="AllIcons.Actions.Lightning"/>
+
+            <separator/>
+
             <action
                     id="com.clipcraft.action.QuickExportCurrentFileActionMainMenu"
                     class="com.clipcraft.action.QuickExportCurrentFileAction"
-                    text="Export Current File"
-                    description="Quickly export the current file to clipboard"
+                    text="Export Current File..."
+                    description="Export the current file with options"
                     icon="AllIcons.Actions.QuickfixBulb"/>
 
             <action
                     id="com.clipcraft.action.QuickExportProjectActionMainMenu"
                     class="com.clipcraft.action.QuickExportProjectAction"
-                    text="Export Project"
-                    description="Export entire project with AI/LLM preset"
+                    text="Export Project..."
+                    description="Export entire project with options"
                     icon="AllIcons.Nodes.Module"/>
 
             <separator/>
@@ -208,8 +261,8 @@
             <action
                     id="com.clipcraft.action.QuickExportAsZipActionMainMenu"
                     class="com.clipcraft.action.QuickExportAsZipAction"
-                    text="Export as ZIP"
-                    description="Quickly export files as a ZIP archive"
+                    text="Export as ZIP..."
+                    description="Export files as a ZIP archive"
                     icon="AllIcons.FileTypes.Archive"/>
         </group>
     </actions>

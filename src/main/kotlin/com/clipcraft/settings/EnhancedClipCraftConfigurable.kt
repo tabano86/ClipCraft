@@ -5,7 +5,12 @@ import com.clipcraft.model.OutputFormat
 import com.clipcraft.model.SettingsState
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.dsl.builder.*
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindItem
+import com.intellij.ui.dsl.builder.rows
+import com.intellij.ui.dsl.builder.bindIntText
 import javax.swing.JComponent
 
 class EnhancedClipCraftConfigurable : Configurable {

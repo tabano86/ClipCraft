@@ -57,20 +57,20 @@ class QuickExportAsZipAction : DumbAwareAction() {
                     indicator.isIndeterminate = false
 
                     try {
-                        ZipOutputStream(FileOutputStream(outputFile)).use { zipOut ->
-                            val allFiles = mutableListOf<com.intellij.openapi.vfs.VirtualFile>()
-                            
-                            // Recursively collect all files
-                            fun collectFiles(file: com.intellij.openapi.vfs.VirtualFile) {
-                                if (file.isDirectory) {
-                                    file.children?.forEach { collectFiles(it) }
-                                } else {
-                                    allFiles.add(file)
-                                }
+                        val allFiles = mutableListOf<com.intellij.openapi.vfs.VirtualFile>()
+
+                        // Recursively collect all files
+                        fun collectFiles(file: com.intellij.openapi.vfs.VirtualFile) {
+                            if (file.isDirectory) {
+                                file.children?.forEach { collectFiles(it) }
+                            } else {
+                                allFiles.add(file)
                             }
-                            
-                            files.forEach { collectFiles(it) }
-                            
+                        }
+
+                        files.forEach { collectFiles(it) }
+
+                        ZipOutputStream(FileOutputStream(outputFile)).use { zipOut ->
                             allFiles.forEachIndexed { index, virtualFile ->
                                 indicator.fraction = index.toDouble() / allFiles.size
                                 indicator.text = "Adding ${virtualFile.name}..."

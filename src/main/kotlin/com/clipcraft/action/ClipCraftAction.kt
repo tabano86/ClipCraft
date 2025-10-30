@@ -3,7 +3,7 @@ package com.clipcraft.action
 import com.clipcraft.services.ClipboardService
 import com.clipcraft.services.EnhancedFileProcessingService
 import com.clipcraft.services.NotificationService
-import com.clipcraft.services.TokenEstimator
+import com.clipcraft.services.professional.ProfessionalTokenEstimator
 import com.clipcraft.settings.SettingsStateProvider
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -48,7 +48,7 @@ class ClipCraftAction : DumbAwareAction() {
 
                     ClipboardService.copyToClipboard(result.content)
 
-                    val tokenInfo = TokenEstimator.formatTokenCount(result.metadata.estimatedTokens)
+                    val tokenInfo = ProfessionalTokenEstimator.formatTokenCount(result.metadata.estimatedTokens)
                     val successMsg = "ClipCraft: Copied ${result.metadata.filesProcessed} files ($tokenInfo)"
                     val finalMsg = if (result.metadata.filesSkipped > 0) {
                         "$successMsg - ${result.metadata.filesSkipped} skipped"

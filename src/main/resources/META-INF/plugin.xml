@@ -107,6 +107,18 @@
 
             <separator/>
 
+            <!-- Export History -->
+            <action
+                    id="com.clipcraft.action.ShowExportHistoryAction"
+                    class="com.clipcraft.action.ShowExportHistoryAction"
+                    text="📋 Export History..."
+                    description="View and search export history - Re-export with same settings"
+                    icon="AllIcons.Vcs.History">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt H"/>
+            </action>
+
+            <separator/>
+
             <!-- Standard actions -->
             <action
                     id="com.clipcraft.action.ClipCraftAction"

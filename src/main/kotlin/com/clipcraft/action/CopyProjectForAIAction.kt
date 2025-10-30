@@ -1,8 +1,10 @@
 package com.clipcraft.action
 
+import com.clipcraft.model.ExportHistoryEntry
 import com.clipcraft.model.ExportOptions
 import com.clipcraft.model.OutputFormat
 import com.clipcraft.services.EnhancedFileProcessingService
+import com.clipcraft.services.ExportHistoryService
 import com.clipcraft.services.NotificationService
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -64,6 +66,20 @@ class CopyProjectForAIAction : DumbAwareAction() {
                     }
 
                     CopyPasteManager.getInstance().setContents(StringSelection(result.content))
+
+                    // Save to history
+                    val historyEntry = ExportHistoryEntry.create(
+                        exportType = "project",
+                        format = "markdown",
+                        filesExported = result.metadata.filesProcessed,
+                        totalSize = result.metadata.totalBytes,
+                        estimatedTokens = result.metadata.estimatedTokens,
+                        presetName = "AI Optimized",
+                        options = options,
+                        exportedPaths = listOf(project.basePath ?: ""),
+                        preview = result.content
+                    )
+                    ExportHistoryService.getInstance().addEntry(historyEntry)
 
                     NotificationService.showSuccess(
                         project,

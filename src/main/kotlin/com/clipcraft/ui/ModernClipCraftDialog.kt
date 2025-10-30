@@ -12,8 +12,29 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
-import java.awt.*
-import javax.swing.*
+import java.awt.BorderLayout
+import java.awt.BoxLayout
+import java.awt.Color
+import java.awt.Cursor
+import java.awt.Dimension
+import java.awt.FlowLayout
+import java.awt.Font
+import java.awt.GradientPaint
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
+import java.awt.Toolkit
+import javax.swing.Action
+import javax.swing.BorderFactory
+import javax.swing.BoxLayout
+import javax.swing.JButton
+import javax.swing.JComboBox
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JOptionPane
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.Timer
 
 /**
  * Modern, gradient-rich dialog with sharp icons and universal copy functionality.

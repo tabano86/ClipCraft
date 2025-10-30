@@ -122,32 +122,23 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-      - name: "Auto-tag if on main branch without a tag"
-        if: startsWith(github.ref, 'refs/heads/main')
+      - name: "Set RELEASE_TAG from git tag"
         run: |
-          TAG="auto-v$(date +%Y%m%d%H%M%S)-${GITHUB_SHA:0:7}"
-          echo "Generated tag: $TAG"
-          git tag "$TAG"
-          git push origin "$TAG"
-          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-
-      - name: "Set RELEASE_TAG if not set"
-        run: |
-          if [ -z "${RELEASE_TAG}" ]; then
-            if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-              TAG_NAME="${GITHUB_REF#refs/tags/}"
-              echo "Using existing tag: $TAG_NAME"
-              echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
-            else
-              echo "No tag found. Using fallback 'dev-build'"
-              echo "RELEASE_TAG=dev-build" >> $GITHUB_ENV
-            fi
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            echo "Using existing tag: $TAG_NAME"
+            echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+          else
+            echo "No version tag found. Skipping release."
+            echo "RELEASE_TAG=" >> $GITHUB_ENV
           fi
 
       - name: "Compute and Print Plugin Version"
+        if: env.RELEASE_TAG != ''
         run: ./gradlew printVersion --stacktrace
 
       - name: "Run Release Build & Publish Plugin"
+        if: env.RELEASE_TAG != '' && startsWith(github.ref, 'refs/tags/v')
         env:
           ORG_GRADLE_PROJECT_intellijPlatformPublishingToken: ${{ secrets.JB_PLUGIN_REPOSITORY_TOKEN }}
         run: |
@@ -155,12 +146,14 @@ jobs:
           ls -lah build/distributions
 
       - name: "Upload Plugin Artifact"
+        if: env.RELEASE_TAG != '' && startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: plugin-distribution
           path: build/distributions/*.zip
 
       - name: "Create GitHub Release"
+        if: env.RELEASE_TAG != '' && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
@@ -171,7 +164,7 @@ jobs:
 
   # --- Repository Metadata Update ---
   update-ui:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
     needs: release
     runs-on: ubuntu-latest
     steps:

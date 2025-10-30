@@ -31,8 +31,9 @@ class CopyFileForAIAction : DumbAwareAction() {
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
         val projectBasePath = project.basePath?.let { Paths.get(it) } ?: return
 
+        // Simple, clean output - just the code for AI
         val options = ExportOptions(
-            includeGlobs = "",
+            includeGlobs = "**/*",
             excludeGlobs = "",
             maxFileSizeKb = 1024,
             outputFormat = OutputFormat.MARKDOWN,
@@ -41,7 +42,8 @@ class CopyFileForAIAction : DumbAwareAction() {
             includeTimestamp = false,
             includeTableOfContents = false,
             includeStatistics = false,
-            includeLineNumbers = true
+            groupByDirectory = false,
+            includeLineNumbers = false
         )
 
         val result = EnhancedFileProcessingService.processFiles(

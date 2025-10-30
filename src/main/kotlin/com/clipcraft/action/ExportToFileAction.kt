@@ -44,7 +44,8 @@ class ExportToFileAction : DumbAwareAction() {
         )
 
         val fileChooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-        val fileWrapper = fileChooser.save(project.baseDir, "clipcraft-export.md")
+        val projectDir = project.basePath?.let { com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByPath(it) }
+        val fileWrapper = fileChooser.save(projectDir, "clipcraft-export.md")
 
         val outputFile = fileWrapper?.file ?: return
         val extension = outputFile.extension.lowercase()

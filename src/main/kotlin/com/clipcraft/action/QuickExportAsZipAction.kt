@@ -19,16 +19,24 @@ class QuickExportAsZipAction : DumbAwareAction() {
 
     override fun update(e: AnActionEvent) {
         val project = e.project
-        val files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
-        e.presentation.isEnabledAndVisible = project != null && !files.isNullOrEmpty()
+        e.presentation.isEnabledAndVisible = project != null
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.toList() ?: return
         val projectBasePath = project.basePath?.let { Paths.get(it) } ?: return
+
+        // Get selected files, or use entire project if nothing selected
+        val selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.toList()
+        val files = if (selectedFiles.isNullOrEmpty()) {
+            // Export entire project
+            val projectRoot = com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByPath(project.basePath!!)
+            if (projectRoot != null) listOf(projectRoot) else return
+        } else {
+            selectedFiles
+        }
 
         // Show file chooser for ZIP
         val descriptor = FileSaverDescriptor(
@@ -38,7 +46,8 @@ class QuickExportAsZipAction : DumbAwareAction() {
         )
 
         val fileChooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-        val fileWrapper = fileChooser.save(project.baseDir, "clipcraft-export.zip")
+        val projectDir = project.basePath?.let { com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByPath(it) }
+        val fileWrapper = fileChooser.save(projectDir, "clipcraft-export.zip")
 
         val outputFile = fileWrapper?.file ?: return
 
@@ -77,7 +86,7 @@ class QuickExportAsZipAction : DumbAwareAction() {
                         }
                         NotificationService.showSuccess(
                             project,
-                            "ClipCraft: Exported ${files.size} items to ${outputFile.name}"
+                            "✓ Exported ${allFiles.size} files to ${outputFile.name}"
                         )
                     } catch (ex: Exception) {
                         NotificationService.showWarning(

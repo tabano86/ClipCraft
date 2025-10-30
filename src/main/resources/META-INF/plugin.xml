@@ -84,7 +84,6 @@
             <add-to-group group-id="ChangesViewPopupMenu" anchor="last"/>
             <add-to-group group-id="ScopeViewPopupMenu" anchor="last"/>
             <add-to-group group-id="StructureViewPopupMenu" anchor="last"/>
-            <add-to-group group-id="FavoritesViewPopupMenu" anchor="last"/>
             <add-to-group group-id="NavBarToolBar" anchor="last"/>
 
             <!-- ⚡ SUPER SIMPLE ONE-CLICK ACTIONS ⚡ -->

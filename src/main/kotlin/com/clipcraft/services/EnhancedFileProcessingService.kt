@@ -71,7 +71,13 @@ object EnhancedFileProcessingService {
             else -> ProfessionalFormatter.toMarkdown(exportData, options.includeMetadata, includeToc = false)
         }
 
-        return ProfessionalFormatter.FormattedOutput(content, metadata)
+        val formattedMetadata = ProfessionalFormatter.FormattedMetadata(
+            filesProcessed = fileInfos.size,
+            filesSkipped = distinctFiles.size - fileInfos.size,
+            estimatedTokens = totalTokens
+        )
+
+        return ProfessionalFormatter.FormattedOutput(content, formattedMetadata)
     }
 
     private fun collectDistinctFiles(initialSelection: List<VirtualFile>): List<VirtualFile> {

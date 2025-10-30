@@ -15,6 +15,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.vfs.VirtualFileWrapper
+import java.io.File
 import java.nio.file.Paths
 
 class ExportToFileAction : DumbAwareAction() {
@@ -40,7 +41,7 @@ class ExportToFileAction : DumbAwareAction() {
         )
 
         val fileChooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-        val fileWrapper = fileChooser.save(null as VirtualFileWrapper?, "clipcraft-export.md")
+        val fileWrapper = fileChooser.save(project.baseDir, "clipcraft-export.md")
 
         val outputFile = fileWrapper?.file ?: return
         val extension = outputFile.extension.lowercase()

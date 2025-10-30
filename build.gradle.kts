@@ -99,9 +99,6 @@ dependencies {
     // Gitignore Parsing
     implementation("org.eclipse.jgit:org.eclipse.jgit.pgm:7.1.0.202411261347-r")
 
-    // Secret Detection - Use Yelp's detect-secrets patterns
-    implementation("com.github.mavenreposs:detect-secrets:1.0.3")
-
     // Compression for large exports
     implementation("org.apache.commons:commons-compress:1.27.1")
 
@@ -112,9 +109,9 @@ dependencies {
     implementation("org.jsoup:jsoup:1.18.3")
 
     // Modern UI - FlatLaf themes
-    implementation("com.formdev:flatlaf:3.5.5")
-    implementation("com.formdev:flatlaf-extras:3.5.5")
-    implementation("com.formdev:flatlaf-intellij-themes:3.5.5")
+    implementation("com.formdev:flatlaf:3.5.2")
+    implementation("com.formdev:flatlaf-extras:3.5.2")
+    implementation("com.formdev:flatlaf-intellij-themes:3.5.2")
 
     // Kotlin coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
@@ -131,12 +128,12 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 tasks {
     compileKotlin {
-        kotlinOptions.jvmTarget = "17"
+        kotlinOptions.jvmTarget = "21"
     }
     test {
         useJUnitPlatform()

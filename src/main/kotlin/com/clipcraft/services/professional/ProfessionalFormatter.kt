@@ -69,6 +69,17 @@ object ProfessionalFormatter {
         val tokens: Int?
     )
 
+    data class FormattedOutput(
+        val content: String,
+        val metadata: FormattedMetadata
+    )
+
+    data class FormattedMetadata(
+        val filesProcessed: Int,
+        val filesSkipped: Int,
+        val estimatedTokens: Int
+    )
+
     /**
      * Export to JSON using Jackson (industry standard).
      */

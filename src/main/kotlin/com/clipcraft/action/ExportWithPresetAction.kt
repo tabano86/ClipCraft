@@ -54,13 +54,13 @@ class ExportWithPresetAction : DumbAwareAction() {
         JBPopupFactory.getInstance()
             .createListPopupBuilder(listModel)
             .setTitle("Select Export Preset")
-            .setItemChosenCallback {
+            .setItemChosenCallback(Runnable {
                 val selectedIndex = listModel.selectedIndex
                 if (selectedIndex >= 0) {
                     val preset = presets[selectedIndex]
                     executeExport(project, files, preset, projectBasePath)
                 }
-            }
+            })
             .createPopup()
             .showInBestPositionFor(e.dataContext)
     }

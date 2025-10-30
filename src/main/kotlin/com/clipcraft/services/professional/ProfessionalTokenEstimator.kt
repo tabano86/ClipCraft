@@ -4,7 +4,6 @@ import com.knuddels.jtokkit.Encodings
 import com.knuddels.jtokkit.api.Encoding
 import com.knuddels.jtokkit.api.EncodingRegistry
 import com.knuddels.jtokkit.api.EncodingType
-import com.knuddels.jtokkit.api.ModelType
 
 /**
  * Professional token estimation using tiktoken (OpenAI's actual tokenizer).
@@ -18,7 +17,7 @@ object ProfessionalTokenEstimator {
     private val cl100kEncoding: Encoding = registry.getEncoding(EncodingType.CL100K_BASE)
     private val gpt2Encoding: Encoding = registry.getEncoding(EncodingType.R50K_BASE)
 
-    enum class AIModel(val maxTokens: Int, val encodingType: EncodingType) {
+    enum class AIModel(val modelName: String, val maxTokens: Int, val encodingType: EncodingType) {
         GPT_4("gpt-4", 8192, EncodingType.CL100K_BASE),
         GPT_4_32K("gpt-4-32k", 32768, EncodingType.CL100K_BASE),
         GPT_4_TURBO("gpt-4-turbo", 128000, EncodingType.CL100K_BASE),
@@ -28,13 +27,7 @@ object ProfessionalTokenEstimator {
         CLAUDE_3_SONNET("claude-3-sonnet", 200000, EncodingType.CL100K_BASE),
         CLAUDE_3_HAIKU("claude-3-haiku", 200000, EncodingType.CL100K_BASE),
         GEMINI_PRO("gemini-pro", 32760, EncodingType.CL100K_BASE),
-        GEMINI_ULTRA("gemini-ultra", 32760, EncodingType.CL100K_BASE);
-
-        constructor(
-            modelName: String,
-            maxTokens: Int,
-            encodingType: EncodingType
-        ) : this(maxTokens, encodingType)
+        GEMINI_ULTRA("gemini-ultra", 32760, EncodingType.CL100K_BASE)
     }
 
     /**

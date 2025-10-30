@@ -59,9 +59,6 @@ class ExportWithPresetAction : DumbAwareAction() {
                 if (selectedIndex >= 0) {
                     val preset = presets[selectedIndex]
                     executeExport(project, files, preset, projectBasePath)
-                    true
-                } else {
-                    false
                 }
             }
             .createPopup()

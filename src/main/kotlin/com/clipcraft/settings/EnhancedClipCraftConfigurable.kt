@@ -130,14 +130,12 @@ class EnhancedClipCraftConfigurable : Configurable {
                 row {
                     text(
                         """
-                        <html>
                         <ul>
                         <li><b>Quick Export Current File:</b> Right-click any file → ClipCraft → Quick Export Current File</li>
                         <li><b>Quick Export Project:</b> Tools → ClipCraft → Quick Export Project</li>
                         <li><b>Export with Presets:</b> Select files → ClipCraft → Export with Preset</li>
                         <li><b>Export to File:</b> Select files → ClipCraft → Export to File</li>
                         </ul>
-                        </html>
                         """.trimIndent()
                     )
                 }

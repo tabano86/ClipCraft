@@ -1,12 +1,10 @@
 package com.clipcraft.model
 
-import kotlinx.serialization.Serializable
 import java.time.Instant
 
 /**
  * Represents a single export in the history
  */
-@Serializable
 data class ExportHistoryEntry(
     val id: String,
     val timestamp: Long,
@@ -16,7 +14,6 @@ data class ExportHistoryEntry(
     val totalSize: Long,
     val estimatedTokens: Int,
     val presetName: String? = null,
-    val options: ExportOptions,
     val exportedPaths: List<String>, // Relative paths of exported files
     val preview: String, // First 200 chars of export
     val success: Boolean = true,
@@ -30,7 +27,6 @@ data class ExportHistoryEntry(
             totalSize: Long,
             estimatedTokens: Int,
             presetName: String? = null,
-            options: ExportOptions,
             exportedPaths: List<String>,
             preview: String
         ): ExportHistoryEntry {
@@ -43,7 +39,6 @@ data class ExportHistoryEntry(
                 totalSize = totalSize,
                 estimatedTokens = estimatedTokens,
                 presetName = presetName,
-                options = options,
                 exportedPaths = exportedPaths,
                 preview = preview.take(200)
             )
@@ -61,5 +56,25 @@ data class ExportHistoryEntry(
             totalSize < 1024 * 1024 -> "${totalSize / 1024} KB"
             else -> "${totalSize / (1024 * 1024)} MB"
         }
+    }
+
+    // Convert to XML format for storage
+    fun toXml(): String {
+        return """
+            <entry>
+                <id>$id</id>
+                <timestamp>$timestamp</timestamp>
+                <exportType>$exportType</exportType>
+                <format>$format</format>
+                <filesExported>$filesExported</filesExported>
+                <totalSize>$totalSize</totalSize>
+                <estimatedTokens>$estimatedTokens</estimatedTokens>
+                <presetName>${presetName ?: ""}</presetName>
+                <exportedPaths>${exportedPaths.joinToString(",")}</exportedPaths>
+                <preview><![CDATA[${preview}]]></preview>
+                <success>$success</success>
+                <errorMessage>${errorMessage ?: ""}</errorMessage>
+            </entry>
+        """.trimIndent()
     }
 }
